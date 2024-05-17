@@ -14,3 +14,5 @@ Route::post('students', [StudentController::class, 'store']); // Create a new st
 Route::get('students/{id}', [StudentController::class, 'show']); // Get a specific student by ID
 Route::put('students/{id}', [StudentController::class, 'update']); // Update a specific student by ID
 Route::delete('students/{id}', [StudentController::class, 'destroy']); // Delete a specific student by ID
+
+// Hello this is Nikhil
