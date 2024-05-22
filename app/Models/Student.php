@@ -14,6 +14,7 @@ class Student extends Model
      *
      * @var array
      */
+    protected $table ='students';
     protected $fillable = [
         'first_name',
         'middle_name',
@@ -47,7 +48,6 @@ class Student extends Model
         'height',
         'roll_no',
         'category',
-        'terms_and_conditions',
         'weight',
         'has_spectacles'];
 }
