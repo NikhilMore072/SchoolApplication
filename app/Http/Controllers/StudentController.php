@@ -7,14 +7,19 @@ use Illuminate\Http\Request;
 
 class StudentController extends Controller
 {
-    // Display a listing of the resource.
     public function index()
     {
         $students = Student::all();
         return response()->json($students);
     }
+    
 
-    // Store a newly created resource in storage.
+    public function list()
+    {
+        $students = Student::all();
+        return view('studentlist',compact('students'));
+    }
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -62,14 +67,12 @@ class StudentController extends Controller
         ], 201);
     }
 
-    // Display the specified resource.
     public function show($id)
     {
         $student = Student::findOrFail($id);
         return response()->json($student);
     }
 
-    // Update the specified resource in storage.
     public function update(Request $request, $id)
     {
         $validatedData = $request->validate([
@@ -118,7 +121,6 @@ class StudentController extends Controller
         ], 201);
     }
 
-    // Remove the specified resource from storage.
     public function destroy($id)
     {
         $student = Student::findOrFail($id);
