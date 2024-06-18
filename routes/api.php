@@ -1,40 +1,62 @@
- <?php
-
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\StudentController;
-
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
-});
-
-Route::group(['middleware' => ['auth:sanctum']], function () {
-    Route::get('students', [StudentController::class, 'index']); 
-    Route::post('students', [StudentController::class, 'store']); 
-    Route::get('students/{id}/edit', [StudentController::class, 'show']); 
-    Route::put('students/{id}/update', [StudentController::class, 'update']); 
-    Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
-});
-
-Route::post('/login', [LoginController::class, 'authenticate'])->name('login');
-Route::get('/getdata', [LoginController::class, 'getdata'])->name('getdata');
-Route::middleware('auth:sanctum')->post('/logout', [LoginController::class, 'logout'])->name('logout');
-
-
-Route::middleware([\Illuminate\Session\Middleware\StartSession::class])->get('/test-session', function (Request $request) {
-    // Store a value in the session
-    $request->session()->put('test_key', 'test_value');
-
-    // Retrieve the value from the session
-    $value = $request->session()->get('test_key');
-
-    return response()->json(['session_value' => $value]);
-});
+    <?php
 
 
 
+
+    use Illuminate\Http\Request;
+    use Illuminate\Support\Facades\Route;
+    use App\Http\Controllers\LoginController;
+    use App\Http\Controllers\MastersController;
+    use App\Http\Controllers\StudentController;
+    use Illuminate\Session\Middleware\StartSession;
+
+
+
+
+    Route::middleware([StartSession::class])->post('/login', [LoginController::class, 'authenticate'])->name('login');
+    Route::middleware(['auth:sanctum', StartSession::class])->group(function () {
+
+        Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+        Route::get('/session-data', [LoginController::class, 'getSessionData']);
+        Route::get('/getAcademicyear', [LoginController::class, 'getAcademicyear']);
+        Route::put('/updateAcademicYear', [LoginController::class, 'updateAcademicYear']);
+
+
+        //Master and its sub module routes  Module Routes 
+        //Section model Routes 
+        Route::get('/sections', [MastersController::class, 'showSection']);
+        Route::post('/sections', [MastersController::class, 'storeSection']);
+        Route::get('/sections/{id}/edit', [MastersController::class, 'editSection']);
+        Route::put('/sections/{id}', [MastersController::class, 'updateSection']);
+        Route::delete('/sections/{id}', [MastersController::class, 'deleteSection']);
+
+        //Classes Module Route  
+        Route::get('/classes', [MastersController::class, 'getClass']);
+        Route::post('/classes', [MastersController::class, 'storeClass']);
+        Route::get('/classes/{id}', [MastersController::class, 'showClass']);
+        Route::put('/classes/{id}', [MastersController::class, 'updateClass']);
+        Route::delete('/classes/{id}', [MastersController::class, 'destroyClass']);
+
+        // Division Module Routes 
+        Route::get('/getDivision', [MastersController::class, 'getDivision']);
+
+
+        // staff 
+        Route::get('/studentss', [MastersController::class, 'getStudentData']);
+        Route::get('/staff', [MastersController::class, 'staff']);
+        Route::get('/getbirthday', [MastersController::class, 'getbirthday']);
+
+
+        //Students Module Routes 
+        Route::get('students', [StudentController::class, 'index']); 
+        Route::post('students', [StudentController::class, 'store']); 
+        Route::get('students/{id}/edit', [StudentController::class, 'show']); 
+        Route::put('students/{id}/update', [StudentController::class, 'update']); 
+        Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
+
+
+
+    });
 
 
 
