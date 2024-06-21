@@ -41,10 +41,13 @@
         Route::get('/getDivision', [MastersController::class, 'getDivision']);
 
 
-        // staff 
+        // Dashboard API 
         Route::get('/studentss', [MastersController::class, 'getStudentData']);
         Route::get('/staff', [MastersController::class, 'staff']);
         Route::get('/getbirthday', [MastersController::class, 'getbirthday']);
+        Route::get('/events', [MastersController::class, 'getEvents']);
+        Route::get('/parent-notices', [MastersController::class, 'getParentNotices']);
+        Route::get('/staff-notices', [MastersController::class, 'getNoticesForTeachers']);
 
 
         //Students Module Routes 
