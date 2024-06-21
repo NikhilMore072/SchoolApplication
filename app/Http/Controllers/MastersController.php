@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
+use App\Models\Notice;
 use App\Models\Classes;
 use App\Models\Section;
 use App\Models\Division;
 use App\Models\Students;
 use App\Models\Attendence;
 use App\Models\UserMaster;
+use App\Models\StaffNotice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
@@ -78,6 +83,91 @@ class MastersController extends Controller
             'count'=>$count,
             'list'=>$list,
         ]);                  
+    }
+
+   
+    public function getEvents(Request $request): JsonResponse
+    {
+        $academicYr = $request->header('X-Academic-Year');
+        if (!$academicYr) {
+            return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+        }
+
+        $currentDate = Carbon::now();
+        $month = $request->input('month', $currentDate->month);
+        $year = $request->input('year', $currentDate->year);
+
+        $events = Event::select([
+                'events.unq_id',
+                'events.title',
+                'events.event_desc',
+                'events.start_date',
+                'events.end_date',
+                'events.start_time',
+                'events.end_time',
+                DB::raw('GROUP_CONCAT(class.name) as class_name')
+            ])
+            ->join('class', 'events.class_id', '=', 'class.class_id')
+            ->where('events.isDelete', 'N')
+            ->where('events.publish', 'Y')
+            ->where('events.academic_yr', $academicYr)
+            ->whereMonth('events.start_date', $month)
+            ->whereYear('events.start_date', $year)
+            ->groupBy('events.unq_id', 'events.title', 'events.event_desc', 'events.start_date', 'events.end_date', 'events.start_time', 'events.end_time')
+            ->orderBy('events.start_date')
+            ->orderByDesc('events.start_time')
+            ->get();
+
+        return response()->json($events);
+    }
+
+    public function getParentNotices(Request $request): JsonResponse
+    {
+        $academicYr = $request->header('X-Academic-Year');
+        if (!$academicYr) {
+            return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+        }
+
+        // Retrieve parent notices with their related class names
+        $parentNotices = Notice::select([
+                'subject',
+                'notice_desc',
+                'notice_date',
+                'notice_type',
+                \DB::raw('GROUP_CONCAT(class.name) as class_name')
+            ])
+            ->join('class', 'notice.class_id', '=', 'class.class_id') // Adjusted table name to singular 'class'
+            ->where('notice.publish', 'Y')
+            ->where('notice.academic_yr', $academicYr)
+            ->groupBy('notice.subject', 'notice.notice_desc', 'notice.notice_date', 'notice.notice_type')
+            ->orderBy('notice_date')
+            ->get();
+
+        return response()->json(['parent_notices' => $parentNotices]);
+    }
+
+    public function getNoticesForTeachers(Request $request): JsonResponse
+    {
+        $academicYr = $request->header('X-Academic-Year');
+        if (!$academicYr) {
+            return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+        }
+        // Fetch notices with teacher names
+        $notices = StaffNotice::select([
+                'staff_notice.subject',
+                'staff_notice.notice_desc',
+                'staff_notice.notice_date',
+                'staff_notice.notice_type',
+                DB::raw('GROUP_CONCAT(t.name) as staff_name')
+            ])
+            ->join('teacher as t', 't.teacher_id', '=', 'staff_notice.teacher_id')
+            ->where('staff_notice.publish', 'Y')
+            ->where('staff_notice.academic_yr', $academicYr)
+            ->groupBy('staff_notice.subject', 'staff_notice.notice_desc', 'staff_notice.notice_date', 'staff_notice.notice_type')
+            ->orderBy('staff_notice.notice_date')
+            ->get();
+
+        return response()->json(['notices' => $notices, 'success' => true]);
     }
 
 
@@ -192,92 +282,6 @@ public function getClass(Request $request)
     return response()->json($classes);
 }
 
-
-// public function storeClass(Request $request)
-// {
-//     $academicYr = $request->header('X-Academic-Year');
-//     if (!$academicYr) {
-//         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
-//     }
-
-//     $request->validate([
-//         'name' => ['required', 'string', 'max:255'],
-//         'name_numeric' => ['required', 'integer'],
-//         'department_id' => ['required', 'integer'],
-//     ], [
-//         'name.required' => 'The name field is required.',
-//         'name.string' => 'The name field must be a string.',
-//         'name.max' => 'The name field must not exceed 255 characters.',
-//         'name_numeric.required' => 'The numeric name field is required.',
-//         'name_numeric.integer' => 'The numeric name field must be an integer.',
-//         'department_id.required' => 'The department ID is required.',
-//         'department_id.integer' => 'The department ID must be an integer.',
-//     ]);
-
-//     $class = new Classes();
-//     $class->name = $request->name;
-//     $class->name_numeric = $request->name_numeric;
-//     $class->department_id = $request->department_id;
-//     $class->academic_yr = $academicYr;
-
-//     $class->save();
-
-//     return response()->json([
-//         'status' => 200,
-//         'message' => 'Class created successfully',
-//     ]);
-// }
-
-// public function showClass($id)
-// {
-//     $class = Classes::find($id);
-
-//     if (!$class) {
-//         return response()->json(['message' => 'Class not found', 'success' => false], 404);
-//     }
-
-//     return response()->json($class);
-// }
-
-// public function updateClass(Request $request, $id)
-// {
-//     $request->validate([
-//         'name' => ['required', 'string', 'max:255'],
-//         'name_numeric' => ['required', 'integer'],
-//         'department_id' => ['required', 'integer'],
-//     ], [
-//         'name.required' => 'The name field is required.',
-//         'name.string' => 'The name field must be a string.',
-//         'name.max' => 'The name field must not exceed 255 characters.',
-//         'name_numeric.required' => 'The numeric name field is required.',
-//         'name_numeric.integer' => 'The numeric name field must be an integer.',
-//         'department_id.required' => 'The department ID is required.',
-//         'department_id.integer' => 'The department ID must be an integer.',
-//     ]);
-
-//     $class = Classes::find($id);
-
-//     if (!$class) {
-//         return response()->json(['message' => 'Class not found', 'success' => false], 404);
-//     }
-
-//     $academicYr = $request->header('X-Academic-Year');
-//     if (!$academicYr) {
-//         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
-//     }
-
-//     $class->name = $request->name;
-//     $class->name_numeric = $request->name_numeric;
-//     $class->department_id = $request->department_id;
-//     $class->academic_yr = $academicYr;
-
-//     $class->save();
-
-//     return response()->json([
-//         'status' => 200,
-//         'message' => 'Class updated successfully',
-//     ]);
-// }
 public function storeClass(Request $request)
 {
     $academicYr = $request->header('X-Academic-Year');
