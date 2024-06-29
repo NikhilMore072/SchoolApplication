@@ -48,6 +48,7 @@
         Route::get('/events', [MastersController::class, 'getEvents']);
         Route::get('/parent-notices', [MastersController::class, 'getParentNotices']);
         Route::get('/staff-notices', [MastersController::class, 'getNoticesForTeachers']);
+        Route::get('/getClassDivisionTotalStudents', [MastersController::class, 'getClassDivisionTotalStudents']);
 
 
         //Students Module Routes 

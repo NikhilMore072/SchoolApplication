@@ -13,4 +13,10 @@ class Section extends Model
     public $incrementing = true; 
     protected $fillable = ['department_id','name','academic_yr'];
 
+
+    public function classes()
+    {
+        return $this->hasMany(Classes::class, 'department_id', 'department_id');
+    }
+
 }

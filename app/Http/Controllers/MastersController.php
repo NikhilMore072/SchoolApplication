@@ -64,6 +64,8 @@ class MastersController extends Controller
     }
 
 
+    
+
     public function getbirthday(Request $request){
         $academicYr = $request->header('X-Academic-Year');
         if (!$academicYr) {
@@ -169,6 +171,25 @@ class MastersController extends Controller
 
         return response()->json(['notices' => $notices, 'success' => true]);
     }
+
+public function getClassDivisionTotalStudents()
+{
+    $results = DB::table('class as c')
+        ->leftJoin('section as s', 'c.class_id', '=', 's.class_id')
+        ->leftJoin(DB::raw('(SELECT section_id, COUNT(student_id) AS students_count FROM student GROUP BY section_id) as st'), 's.section_id', '=', 'st.section_id')
+        ->select(
+            DB::raw("CONCAT(c.name, ' ', COALESCE(s.name, 'No division assigned')) AS class_division"),
+            DB::raw("SUM(st.students_count) AS total_students"),
+            'c.name as class_name',
+            's.name as section_name'
+        )
+        ->groupBy('c.name', 's.name')
+        ->orderBy('c.name')
+        ->orderBy('s.name')
+        ->get();
+
+    return response()->json($results);
+}
 
 
     public function showSection(Request $request)

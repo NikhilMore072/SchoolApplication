@@ -76,4 +76,9 @@ class Students extends Model
         'added_bk_date',
         'added_by'
     ];
+
+    public function class()
+    {
+        return $this->belongsTo(Classes::class, 'class_id');
+    }
 }
