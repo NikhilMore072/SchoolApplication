@@ -51,6 +51,8 @@
         Route::get('/getClassDivisionTotalStudents', [MastersController::class, 'getClassDivisionTotalStudents']);
         Route::get('/staffbirthdaycount', [MastersController::class, 'staffBirthdaycount']);
         Route::get('/staffbirthdaylist', [MastersController::class, 'staffBirthdayList']);
+        Route::get('/ticketcount', [MastersController::class, 'ticketCount']);
+        Route::get('/ticketlist', [MastersController::class, 'getTicketList']);
 
         //Students Module Routes 
         Route::get('students', [StudentController::class, 'index']); 
@@ -58,8 +60,6 @@
         Route::get('students/{id}/edit', [StudentController::class, 'show']); 
         Route::put('students/{id}/update', [StudentController::class, 'update']); 
         Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
-
-
 
     });
 
