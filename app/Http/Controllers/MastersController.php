@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\Notice;
 use App\Models\Classes;
 use App\Models\Section;
+use App\Models\Teacher;
 use App\Models\Division;
 use App\Models\Students;
 use App\Models\Attendence;
@@ -29,7 +30,7 @@ class MastersController extends Controller
 
           }
 
-    public function getStudentData(){
+    public function getStudentData(Request $request){
 
         $academicYr = $request->header('X-Academic-Year');
         if (!$academicYr) {
@@ -66,26 +67,54 @@ class MastersController extends Controller
 
     
 
-    public function getbirthday(Request $request){
-        $academicYr = $request->header('X-Academic-Year');
-        if (!$academicYr) {
-            return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
-        }
-        $currentDate = Carbon::now()->toDateString();
+    // public function getbirthday(Request $request){
+    //     $academicYr = $request->header('X-Academic-Year');
+    //     if (!$academicYr) {
+    //         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    //     }
+    //     $currentDate = Carbon::now()->toDateString();
 
-        $count  =Students::where('IsDelete', 'N')
-                          ->where('dob',$currentDate)
-                          ->where('academic_yr',$academicYr)
-                          ->count();
+    //     $count  =Students::where('IsDelete', 'N')
+    //                       ->where('dob',$currentDate)
+    //                       ->where('academic_yr',$academicYr)
+    //                       ->count();
 
-          $list  =Students::where('IsDelete', 'N')
-                          ->where('dob',$currentDate)
-                          ->get();
-        return response()->json([
-            'count'=>$count,
-            'list'=>$list,
-        ]);                  
+    //       $list  =Students::where('IsDelete', 'N')
+    //                       ->where('dob',$currentDate)
+    //                       ->get();
+    //     return response()->json([
+    //         'count'=>$count,
+    //         'list'=>$list,
+    //     ]);                  
+    // }
+
+    public function getbirthday(Request $request)
+{
+    $academicYr = $request->header('X-Academic-Year');
+    if (!$academicYr) {
+        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
     }
+
+    $currentDate = Carbon::now();
+
+    $count = Students::where('IsDelete', 'N')
+                     ->whereMonth('dob', $currentDate->month)
+                     ->whereDay('dob', $currentDate->day)
+                     ->where('academic_yr', $academicYr)
+                     ->count();
+
+    $list = Students::where('IsDelete', 'N')
+                    ->whereMonth('dob', $currentDate->month)
+                    ->whereDay('dob', $currentDate->day)
+                    ->where('academic_yr', $academicYr)
+                    ->get();
+
+    return response()->json([
+        'count' => $count,
+        'list' => $list,
+    ]);
+}
+
 
    
     public function getEvents(Request $request): JsonResponse
@@ -190,6 +219,49 @@ public function getClassDivisionTotalStudents()
 
     return response()->json($results);
 }
+ public function getTicketCount(){
+    
+    return response()->json($count);
+ }
+ public function getTicketList(){
+    
+    return response()->json($ticketList);
+ }
+
+
+
+ public function feecollection(){
+
+    return response()->json($count);
+ }
+
+ public function feecollectionList(){
+
+    return response()->json($list);
+ }
+
+ 
+ public function staffBirthdayCount()
+ {
+     $currentDate = Carbon::now();
+     $count = Teacher::whereMonth('birthday', $currentDate->month)
+                     ->whereDay('birthday', $currentDate->day)
+                     ->where('isDelete', 'N')
+                     ->count();
+ 
+     return response()->json($count);
+ }
+ 
+ public function staffBirthdayList()
+ {
+     $currentDate = Carbon::now();
+     $list = Teacher::whereMonth('birthday', $currentDate->month)
+                    ->whereDay('birthday', $currentDate->day)
+                    ->where('isDelete', 'N')
+                    ->get();
+ 
+     return response()->json($list);
+ }
 
 
     public function showSection(Request $request)
