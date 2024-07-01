@@ -219,13 +219,50 @@ public function getClassDivisionTotalStudents()
 
     return response()->json($results);
 }
- public function getTicketCount(){
-    
-    return response()->json($count);
+
+ public function ticketCount(Request $request){
+    $academicYr = $request->header('X-Academic-Year');
+    $role_id = $request->header('role_id');
+
+    if (!$academicYr) {
+        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    }
+
+    $count = DB::table('ticket')
+           ->join('service_type', 'service_type.service_id', '=', 'ticket.service_id')
+           ->where('service_type.role_id',$role_id)
+           ->where('ticket.acd_yr',$academicYr)
+           ->where('ticket.status', '!=', 'Closed')
+           ->count();
+
+           return response()->json(['count' => $count]);
  }
- public function getTicketList(){
-    
-    return response()->json($ticketList);
+ public function getTicketList(Request $request){
+    $academicYr = $request->header('X-Academic-Year');
+    $role_id = $request->header('role_id');
+
+    if (!$academicYr) {
+        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    }
+
+    $tickets = DB::table('ticket')
+             ->join('service_type', 'service_type.service_id', '=', 'ticket.service_id')
+             ->join('student', 'ticket.student_id', '=', 'student.student_id')
+             ->where('service_type.role_id', $role_id)
+             ->where('ticket.acd_yr',$academicYr)
+             ->where('ticket.status', '!=', 'Closed')
+             ->orderBy('ticket.raised_on', 'DESC')
+             ->select(
+                 'ticket.*', 
+                 'service_type.service_name', 
+                 'student.first_name', 
+                 'student.mid_name', 
+                 'student.last_name'
+             )
+             ->get();
+
+return response()->json($tickets);
+
  }
 
 

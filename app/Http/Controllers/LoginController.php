@@ -38,8 +38,8 @@ class LoginController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
     
         $academic_yr = Setting::where('active', 'Y')->first()->academic_yr;
-        $reg_id = User::where('IsDelete', 'N')->first()->academic_yr;
-        $role_id = User::where('IsDelete', 'N')->first()->role_id;
+        $reg_id = $user->reg_id;
+        $role_id = $user->role_id;  
         $institutename = Setting::where('active', 'Y')->first()->institute_name;
     
         $sessionData = [
@@ -75,23 +75,6 @@ class LoginController extends Controller
         Session::forget('sessionData');
         return response()->json(['message' => 'Logout successfully', 'success' => true], 200);
     }
-
-// public function getSessionData(Request $request){
-//         $sessionData = $request->session()->get('sessionData');
-    
-//     return response()->json([
-//         'session_data' => $sessionData
-//     ]);
-// }
-
-// public function getSessionData(Request $request)
-// {
-//     $sessionData = $request->session()->get('sessionData');
-    
-//     return response()->json([
-//         'session_data' => $sessionData
-//     ]);
-// }
 
 public function getSessionData(Request $request)
 {
