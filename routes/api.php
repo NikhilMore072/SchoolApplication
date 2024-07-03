@@ -41,7 +41,7 @@
         Route::get('/getDivision', [MastersController::class, 'getDivision']);
 
 
-        // Dashboard API 
+        // Dashboard API   
         Route::get('/studentss', [MastersController::class, 'getStudentData']);
         Route::get('/staff', [MastersController::class, 'staff']);
         Route::get('/getbirthday', [MastersController::class, 'getbirthday']);
@@ -51,8 +51,11 @@
         Route::get('/getClassDivisionTotalStudents', [MastersController::class, 'getClassDivisionTotalStudents']);
         Route::get('/staffbirthdaycount', [MastersController::class, 'staffBirthdaycount']);
         Route::get('/staffbirthdaylist', [MastersController::class, 'staffBirthdayList']);
+        Route::get('/send_teacher_birthday_email', [MastersController::class, 'sendTeacherBirthdayEmail']);
         Route::get('/ticketcount', [MastersController::class, 'ticketCount']);
         Route::get('/ticketlist', [MastersController::class, 'getTicketList']);
+        Route::get('/feecollection', [MastersController::class, 'feeCollection']);
+        Route::get('/fee_collection_list', [MastersController::class, 'feeCollectionList']);
 
         //Students Module Routes 
         Route::get('students', [StudentController::class, 'index']); 

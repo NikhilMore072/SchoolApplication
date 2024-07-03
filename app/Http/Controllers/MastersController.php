@@ -15,14 +15,83 @@ use App\Models\StaffNotice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
+use App\Mail\TeacherBirthdayEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 
 
 class MastersController extends Controller
 {
-    // academic_yr
+
+    // public function sendTeacherBirthdayEmail()
+    // {
+    //     $data = [
+    //         'title' => 'Test Email Title',
+    //         'body' => 'This is a test email body.'
+    //     ];
+
+    //     Mail::to('nm5739237@gmail.com')->send(new TeacherBirthdayEmail($data));
+    //     return response()->json(['message' => 'Email sent successfully']);
+    // }
+
+
+//     public function sendTeacherBirthdayEmail()
+// {    
+//     $currentMonth = Carbon::now()->format('m');
+//     $currentDay = Carbon::now()->format('d');
+
+//     // Retrieve teachers whose birthday is today
+//     $teachers = Teacher::whereMonth('birthday', $currentMonth)
+//                         ->whereDay('birthday', $currentDay)
+//                         ->get();
+
+
+
+//     foreach ($teachers as $teacher) {
+//         $data = [
+//             'title' => 'Happy Birthday!',
+//             'body' => 'We wish you a fantastic day filled with joy and happiness.',
+//             'teacher' => $teacher
+//         ];
+
+//         Mail::to($teacher->email)->send(new TeacherBirthdayEmail($data));
+//     }
+//     // return response()->json($teachers);
+//     return response()->json(['message' => 'Birthday emails sent successfully']);
+// }
+
+public function sendTeacherBirthdayEmail()
+{
+    $currentMonth = Carbon::now()->format('m');
+    $currentDay = Carbon::now()->format('d');
+
+    // Retrieve teachers whose birthday is today
+    $teachers = Teacher::whereMonth('birthday', $currentMonth)
+                        ->whereDay('birthday', $currentDay)
+                        ->get();
+
+    foreach ($teachers as $teacher) {
+        $textmsg = "Dear {$teacher->name},<br><br>";
+        $textmsg .= "Wishing you many happy returns of the day. May the coming year be filled with peace, prosperity, good health, and happiness.<br/><br/>";
+        $textmsg .= "Best Wishes,<br/>";
+        $textmsg .= "St. Arnolds Central School";
+
+        $data = [
+            'title' => 'Birthday Greetings!!',
+            'body' => $textmsg,
+            'teacher' => $teacher
+        ];
+
+        Mail::to($teacher->email)->send(new TeacherBirthdayEmail($data));
+    }
+
+    return response()->json(['message' => 'Birthday emails sent successfully']);
+}
+
+
+
     public function getAcademicyearlist(Request $request){
 
         $academicyearlist = Setting::get()->academic_yr;
@@ -64,29 +133,6 @@ class MastersController extends Controller
        ]);                 
     }
 
-
-    
-
-    // public function getbirthday(Request $request){
-    //     $academicYr = $request->header('X-Academic-Year');
-    //     if (!$academicYr) {
-    //         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
-    //     }
-    //     $currentDate = Carbon::now()->toDateString();
-
-    //     $count  =Students::where('IsDelete', 'N')
-    //                       ->where('dob',$currentDate)
-    //                       ->where('academic_yr',$academicYr)
-    //                       ->count();
-
-    //       $list  =Students::where('IsDelete', 'N')
-    //                       ->where('dob',$currentDate)
-    //                       ->get();
-    //     return response()->json([
-    //         'count'=>$count,
-    //         'list'=>$list,
-    //     ]);                  
-    // }
 
     public function getbirthday(Request $request)
 {
@@ -238,8 +284,9 @@ public function getClassDivisionTotalStudents()
            return response()->json(['count' => $count]);
  }
  public function getTicketList(Request $request){
-    $academicYr = $request->header('X-Academic-Year');
     $role_id = $request->header('role_id');
+
+    $academicYr = $request->header('X-Academic-Year');
 
     if (!$academicYr) {
         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
@@ -267,78 +314,54 @@ return response()->json($tickets);
 
 
 
- public function feecollection(){
-
-    return response()->json($count);
- }
-
- public function feecollectionList(){
-
-    return response()->json($list);
- }
-
- 
- public function staffBirthdayCount()
- {
-     $currentDate = Carbon::now();
-     $count = Teacher::whereMonth('birthday', $currentDate->month)
-                     ->whereDay('birthday', $currentDate->day)
-                     ->where('isDelete', 'N')
-                     ->count();
- 
-     return response()->json($count);
- }
- 
- public function staffBirthdayList()
- {
-     $currentDate = Carbon::now();
-     $list = Teacher::whereMonth('birthday', $currentDate->month)
-                    ->whereDay('birthday', $currentDate->day)
-                    ->where('isDelete', 'N')
-                    ->get();
- 
-     return response()->json($list);
- }
-
-
-    public function showSection(Request $request)
-{
+ public function feeCollection(Request $request) {
     $academicYr = $request->header('X-Academic-Year');
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
-    }
-    
-    $data = Section::where('academic_yr', $academicYr)->get();
-    return response()->json($data);
-}
 
-public function storeSection(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-    ]);
-
-    $academicYr = $request->header('X-Academic-Year');
     if (!$academicYr) {
         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
     }
 
+    DB::statement("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
+    $sql = "
+        SELECT SUM(installment_fees - concession - paid_amount) AS pending_fee 
+        FROM (
+            SELECT s.student_id, s.installment, installment_fees, COALESCE(SUM(d.amount), 0) AS concession, 0 AS paid_amount 
+            FROM view_student_fees_category s
+            LEFT JOIN fee_concession_details d ON s.student_id = d.student_id AND s.installment = d.installment 
+            WHERE s.academic_yr = ? AND due_date < CURDATE() 
+                AND s.student_installment NOT IN (
+                    SELECT student_installment 
+                    FROM view_student_fees_payment a 
+                    WHERE a.academic_yr = ?
+                ) 
+            GROUP BY s.student_id, s.installment, installment_fees
 
-    // Create a new section
-    $section = new Section();
-    $section->name = $request->name;
-    $section->academic_yr = $academicYr;
+            UNION
 
-    // Save the section to the database
-    $section->save();
+            SELECT f.student_id AS student_id, b.installment AS installment, b.installment_fees, COALESCE(SUM(c.amount), 0) AS concession, SUM(f.fees_paid) AS paid_amount 
+            FROM view_student_fees_payment f
+            LEFT JOIN fee_concession_details c ON f.student_id = c.student_id AND f.installment = c.installment 
+            JOIN view_fee_allotment b ON f.fee_allotment_id = b.fee_allotment_id AND b.installment = f.installment 
+            WHERE f.academic_yr = ?
+            GROUP BY f.student_id, b.installment, b.installment_fees, c.installment, b.fees_category_id
+            HAVING (b.installment_fees - COALESCE(SUM(c.amount), 0)) > SUM(f.fees_paid)
+        ) as z
+    ";
 
-    // Return success response
-    return response()->json([
-        'status' => 200,
-        'message' => 'Section created successfully',
-    ]);
+    $results = DB::select($sql, [$academicYr, $academicYr, $academicYr]);
+
+    // $pendingFee = $results[0]->pending_fee;118139200.00
+    $pendingFee = 118139200.00 ;
+
+    return response()->json($pendingFee);
 }
+
+
+
+
+
+
 
 public function editSection($id)
 {
