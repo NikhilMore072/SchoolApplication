@@ -372,7 +372,6 @@ public function getHouseViseStudent(Request $request) {
         ->orderBy('house_name')
         ->get();
 
-    Log::info('Query Results: ' . json_encode($results));
 
     return response()->json($results);
 }
@@ -386,11 +385,6 @@ public function getAcademicYears(Request $request)
                               'settings' => $settings
                                  ]);
 }
-
-
-
-
-
 
 
 public function editSection($id)
