@@ -312,8 +312,6 @@ return response()->json($tickets);
 
  }
 
-
-
  public function feeCollection(Request $request) {
     $academicYr = $request->header('X-Academic-Year');
 
@@ -357,8 +355,26 @@ return response()->json($tickets);
     return response()->json($pendingFee);
 }
 
+public function getHouseViseStudent(Request $request) {
+    $className = $request->input('class_name');
+    $academicYear = $request->header('X-Academic-Year');
 
+    $results = DB::table('student')
+        ->select(DB::raw('CONCAT(class.name, " ", section.name) AS class_section, student.house AS house_name, COUNT(student.student_id) AS student_counts'))
+        ->join('class', 'student.class_id', '=', 'class.class_id')
+        ->join('section', 'student.section_id', '=', 'section.section_id')
+        ->where('student.IsDelete', 'N')
+        ->where('class.name',$className )
+        ->where('student.academic_yr',$academicYear)
+        ->groupBy('class_section', 'house_name')
+        ->orderBy('class_section')
+        ->orderBy('house_name')
+        ->get();
 
+    Log::info('Query Results: ' . json_encode($results));
+
+    return response()->json($results);
+}
 
 
 
@@ -404,6 +420,8 @@ public function updateSection(Request $request, $id)
         'message' => 'Section updated successfully',
     ]);
 }
+
+
 
 
 public function deleteSection($id)
