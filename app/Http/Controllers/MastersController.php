@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\Notice;
 use App\Models\Classes;
 use App\Models\Section;
+use App\Models\Setting;
 use App\Models\Teacher;
 use App\Models\Division;
 use App\Models\Students;
@@ -371,12 +372,19 @@ public function getHouseViseStudent(Request $request) {
         ->orderBy('house_name')
         ->get();
 
-    Log::info('Query Results: ' . json_encode($results));
 
     return response()->json($results);
 }
 
+public function getAcademicYears(Request $request)
+{
+    $settings = Setting::all();
+    $academicYears = $settings->pluck('academic_yr');
 
+    return response()->json(['academic_years' => $academicYears,
+                              'settings' => $settings
+                                 ]);
+}
 
 
 public function editSection($id)
