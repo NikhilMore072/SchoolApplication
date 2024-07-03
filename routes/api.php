@@ -57,6 +57,8 @@
         Route::get('/ticketlist', [MastersController::class, 'getTicketList']);
         Route::get('/feecollection', [MastersController::class, 'feeCollection']);
         Route::get('/fee_collection_list', [MastersController::class, 'feeCollectionList']);
+        Route::get('/getAcademicYear', [MastersController::class, 'getAcademicYears']);
+
 
         //Students Module Routes 
         Route::get('students', [StudentController::class, 'index']); 
