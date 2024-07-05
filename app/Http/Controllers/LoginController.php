@@ -79,11 +79,7 @@ class LoginController extends Controller
 public function getSessionData(Request $request)
 {
     $academicYear = null;
-
-    // Get session data from localStorage
     $sessionData = json_decode($request->session()->get('sessionData'), true);
-
-    // Check if session data exists and contains academic year
     if ($sessionData && isset($sessionData['academic_yr'])) {
         $academicYear = $sessionData['academic_yr'];
     }
