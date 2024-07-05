@@ -15,6 +15,8 @@
 
     Route::middleware([StartSession::class])->post('/login', [LoginController::class, 'authenticate'])->name('login');
     Route::middleware(['auth:sanctum', StartSession::class])->group(function () {
+        Route::get('/getAuthUser', [MastersController::class, 'getAuthUser']);
+
 
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
         Route::get('/session-data', [LoginController::class, 'getSessionData']);
@@ -57,8 +59,12 @@
         Route::get('/ticketlist', [MastersController::class, 'getTicketList']);
         Route::get('/feecollection', [MastersController::class, 'feeCollection']);
         Route::get('/fee_collection_list', [MastersController::class, 'feeCollectionList']);
+        Route::get('/get_bank_accountName', [MastersController::class, 'getBankAccountName']);  
         //api for the acadenic year
         Route::get('/getAcademicYear', [MastersController::class, 'getAcademicYears']);
+        Route::get('/pending_collected_fee_data', [MastersController::class, 'pendingCollectedFeeData']);
+        Route::get('/pending_collected_fee_data_list', [MastersController::class, 'pendingCollectedFeeDatalist']);
+        Route::get('/collected_fee_list', [MastersController::class, 'collectedFeeList']);
 
 
         //Students Module Routes 
