@@ -17,16 +17,19 @@
     Route::middleware(['auth:sanctum', StartSession::class])->group(function () {
         Route::get('/getAuthUser', [MastersController::class, 'getAuthUser']);
 
-
+        
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
         Route::get('/session-data', [LoginController::class, 'getSessionData']);
         Route::get('/getAcademicyear', [LoginController::class, 'getAcademicyear']);
         Route::put('/updateAcademicYear', [LoginController::class, 'updateAcademicYear']);
+        Route::post('/clearData', [LoginController::class, 'clearData'])->name('clearData');
+        Route::put('/update_password', [LoginController::class, 'updatePassword']);
+
 
 
         //Master and its sub module routes  Module Routes 
         //Section model Routes 
-        Route::get('/sections', [MastersController::class, 'showSection']);
+        Route::get('/sections', [MastersController::class, 'listSections']);
         Route::post('/sections', [MastersController::class, 'storeSection']);
         Route::get('/sections/{id}/edit', [MastersController::class, 'editSection']);
         Route::put('/sections/{id}', [MastersController::class, 'updateSection']);
@@ -75,6 +78,7 @@
         Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
 
     });
+
 
 
 

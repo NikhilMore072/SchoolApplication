@@ -580,11 +580,56 @@ public function collectedFeeList(Request $request){
     return response()->json($formattedResults);
 }
 
+public function listSections(Request $request)
+{
+    $sessionData = session('sessionData');
+    if (!$sessionData) {
+        return response()->json(['message' => 'Session data not found', 'success' => false], 404);
+    }
 
+    $academicYr = $sessionData['academic_yr'] ?? null;
+    if (!$academicYr) {
+        return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+    }
 
+    $sections = Section::where('academic_yr', $academicYr)->get();
+    
+    return response()->json($sections);
+}
 
+public function storeSection(Request $request)
+{
+    $request->validate([
+        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+    ], [
+        'name.required' => 'The name field is required.',
+        'name.string' => 'The name field must be a string.',
+        'name.max' => 'The name field must not exceed 255 characters.',
+        'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+    ]);
 
- 
+    $sessionData = session('sessionData');
+    if (!$sessionData) {
+        return response()->json(['message' => 'Session data not found', 'success' => false], 404);
+    }
+
+    $academicYr = $sessionData['academic_yr'] ?? null;
+    if (!$academicYr) {
+        return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+    }
+
+    $section = new Section();
+    $section->name = $request->name;
+    $section->academic_yr = $academicYr;
+    $section->save();
+
+    // Return success response
+    return response()->json([
+        'status' => 201,
+        'message' => 'Section created successfully',
+        'data' => $section,
+    ]);
+}
 
 
 
@@ -620,7 +665,7 @@ public function updateSection(Request $request, $id)
         return response()->json(['message' => 'Section not found', 'success' => false], 404);
     }
 
-    $section->name = $request->name; // Set the section name
+    $section->name = $request->name;
     $section->academic_yr = $academicYr;
     $section->save();
 
@@ -629,9 +674,6 @@ public function updateSection(Request $request, $id)
         'message' => 'Section updated successfully',
     ]);
 }
-
-
-
 
 public function deleteSection($id)
 {
@@ -652,15 +694,33 @@ public function deleteSection($id)
 
 // Methods for the classes model
 
+// public function getClass(Request $request)
+// {   
+//     $academicYr = $request->header('X-Academic-Year');
+//     if (!$academicYr) {
+//         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+//     }
+//     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
+//     return response()->json($classes);
+// }
+
+
 public function getClass(Request $request)
-{   
-    $academicYr = $request->header('X-Academic-Year');
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+{
+    $sessionData = session('sessionData');
+    if (!$sessionData) {
+        return response()->json(['message' => 'Session data not found', 'success' => false], 404);
     }
+
+    $academicYr = $sessionData['academic_yr'] ?? null;
+    if (!$academicYr) {
+        return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+    }
+
     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
     return response()->json($classes);
 }
+
 
 public function storeClass(Request $request)
 {
