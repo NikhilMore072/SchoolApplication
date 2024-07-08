@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use App\Mail\TeacherBirthdayEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 
@@ -312,32 +313,11 @@ return response()->json($tickets);
     ";
 
     $results = DB::select($sql, [$academicYr, $academicYr, $academicYr]);
-    // $pendingFee = 118139200.00 ;
 
     $pendingFee = $results[0]->pending_fee;
 
     return response()->json($pendingFee);
 }
-
-// public function getHouseViseStudent(Request $request) {
-//     $className = $request->input('class_name');
-//     $academicYear = $request->header('X-Academic-Year');
-
-//     $results = DB::table('student')
-//         ->select(DB::raw('CONCAT(class.name, " ", section.name) AS class_section, student.house AS house_name, COUNT(student.student_id) AS student_counts'))
-//         ->join('class', 'student.class_id', '=', 'class.class_id')
-//         ->join('section', 'student.section_id', '=', 'section.section_id')
-//         ->where('student.IsDelete', 'N')
-//         ->where('class.name',$className )
-//         ->where('student.academic_yr',$academicYear)
-//         ->groupBy('class_section', 'house_name')
-//         ->orderBy('class_section')
-//         ->orderBy('house_name')
-//         ->get();
-
-
-//     return response()->json($results);
-// }
 
 public function getHouseViseStudent(Request $request) {
     $className = $request->input('class_name');
@@ -363,15 +343,24 @@ public function getHouseViseStudent(Request $request) {
 
 
 public function getAcademicYears(Request $request)
-{
-    $settings = Setting::all();
-    $academicYears = $settings->pluck('academic_yr');
+    {
+        $user = Auth::user();
+        $activeAcademicYear = Setting::where('active', 'Y')->first()->academic_yr;
 
-    return response()->json([
-        'academic_years' => $academicYears,
-        'settings' => $settings
+        $settings = Setting::all();
+
+        if ($user->role_id === 'P') {
+            $settings = $settings->filter(function ($setting) use ($activeAcademicYear) {
+                return $setting->academic_yr <= $activeAcademicYear;
+            });
+        }
+        $academicYears = $settings->pluck('academic_yr');
+
+        return response()->json([
+            'academic_years' => $academicYears,
+            'settings' => $settings
         ]);
-}
+    }
 
 public function getAuthUser()
 {
