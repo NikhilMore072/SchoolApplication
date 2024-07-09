@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
+use App\Models\User;
 use App\Models\Event;
 use App\Models\Notice;
 use App\Models\Classes;
@@ -21,8 +23,10 @@ use App\Mail\TeacherBirthdayEmail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 
 
 class MastersController extends Controller
@@ -319,27 +323,82 @@ return response()->json($tickets);
     return response()->json($pendingFee);
 }
 
+
+// public function getHouseViseStudent(Request $request) {
+//     $className = $request->input('class_name');
+//     // $academicYear = $request->header('X-Academic-Year');
+//     $sessionData = session('sessionData');
+//     if (!$sessionData) {
+//         return response()->json(['message' => 'Session data not found', 'success' => false], 404);
+//     }
+
+//     $academicYr = $sessionData['academic_yr'] ?? null;
+//     if (!$academicYr) {
+//         return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+//     }
+
+
+//     $results = DB::select("
+//         SELECT CONCAT(class.name, ' ', section.name) AS class_section,
+//                house.house_name AS house_name,
+//                house.color_code AS color_code,
+//                COUNT(student.student_id) AS student_counts
+//         FROM student
+//         JOIN class ON student.class_id = class.class_id
+//         JOIN section ON student.section_id = section.section_id
+//         JOIN house ON student.house = house.house_id
+//         WHERE student.IsDelete = 'N'
+//           AND class.name = ?
+//           AND student.academic_yr = ?
+//         GROUP BY class_section, house_name, house.color_code
+//         ORDER BY class_section, house_name
+//     ", [$className, $academicYr]);
+
+//     return response()->json($results);
+// }
+
 public function getHouseViseStudent(Request $request) {
     $className = $request->input('class_name');
-    $academicYear = $request->header('X-Academic-Year');
+    $sessionData = session('sessionData');
+    if (!$sessionData) {
+        return response()->json(['message' => 'Session data not found', 'success' => false], 404);
+    }
 
-    $results = DB::select("
+    $academicYr = $sessionData['academic_yr'] ?? null;
+    if (!$academicYr) {
+        return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+    }
+
+    $query = "
         SELECT CONCAT(class.name, ' ', section.name) AS class_section,
                house.house_name AS house_name,
+               house.color_code AS color_code,
                COUNT(student.student_id) AS student_counts
         FROM student
         JOIN class ON student.class_id = class.class_id
         JOIN section ON student.section_id = section.section_id
         JOIN house ON student.house = house.house_id
         WHERE student.IsDelete = 'N'
-          AND class.name = ?
           AND student.academic_yr = ?
-        GROUP BY class_section, house_name
+    ";
+
+    $params = [$academicYr];
+
+    if ($className) {
+        $query .= " AND class.name = ?";
+        $params[] = $className;
+    }
+
+    $query .= "
+        GROUP BY class_section, house_name, house.color_code
         ORDER BY class_section, house_name
-    ", [$className, $academicYear]);
+    ";
+
+    $results = DB::select($query, $params);
 
     return response()->json($results);
 }
+
 
 
 public function getAcademicYears(Request $request)
@@ -571,10 +630,17 @@ public function collectedFeeList(Request $request){
 
 public function listSections(Request $request)
 {
+    session(['sessionData' => [
+        'academic_yr' => '2023-2024',
+    ]]);
+
     $sessionData = session('sessionData');
     if (!$sessionData) {
-        return response()->json(['message' => 'Session data not found', 'success' => false], 404);
+        \Log::info('Session data not found');
+        return response()->json(['message' => 'Session data not found for this url', 'success' => false], 404);
     }
+
+    \Log::info('Session data:', $sessionData);
 
     $academicYr = $sessionData['academic_yr'] ?? null;
     if (!$academicYr) {
@@ -683,32 +749,81 @@ public function deleteSection($id)
 
 // Methods for the classes model
 
+public function getClass(Request $request)
+{   
+    $academicYr = $request->header('X-Academic-Year');
+    if (!$academicYr) {
+        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    }
+    $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
+    return response()->json($classes);
+}
+
+
 // public function getClass(Request $request)
-// {   
-//     $academicYr = $request->header('X-Academic-Year');
-//     if (!$academicYr) {
-//         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+// {
+//     $sessionData = session('sessionData');
+//     if (!$sessionData) {
+//         return response()->json(['message' => 'Session data not found for this url', 'success' => false], 404);
 //     }
+
+//     $academicYr = $sessionData['academic_yr'] ?? null;
+//     if (!$academicYr) {
+//         return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+//     }
+
 //     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
 //     return response()->json($classes);
 // }
 
 
-public function getClass(Request $request)
-{
-    $sessionData = session('sessionData');
-    if (!$sessionData) {
-        return response()->json(['message' => 'Session data not found', 'success' => false], 404);
-    }
+// public function getClass(Request $request)
+// {
+//     // For debugging purposes
+//     session(['sessionData' => [
+//         'academic_yr' => '2023-2024',
+//     ]]);
 
-    $academicYr = $sessionData['academic_yr'] ?? null;
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
-    }
+//     $sessionData = session('sessionData');
+//     if (!$sessionData) {
+//         \Log::info('Session data not found');
+//         return response()->json(['message' => 'Session data not found for this url', 'success' => false], 404);
+//     }
 
-    $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
-    return response()->json($classes);
-}
+//     \Log::info('Session data:', $sessionData);
+
+//     $academicYr = $sessionData['academic_yr'] ?? null;
+//     if (!$academicYr) {
+//         return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+//     }
+
+//     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
+//     return response()->json($classes);
+// }
+
+// public function getClass(Request $request)
+// {
+//     // Fetch session data
+//     $sessionData = session('sessionData');
+//     if (!$sessionData) {
+//         \Log::info('Session data not found');
+//         return response()->json(['message' => 'Session data not found for this URL', 'success' => false], 404);
+//     }
+
+//     \Log::info('Session data:', $sessionData);
+
+//     // Retrieve the academic year from the session data
+//     $academicYr = $sessionData['academic_yr'] ?? null;
+//     if (!$academicYr) {
+//         return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+//     }
+
+//     // Fetch classes based on the academic year
+//     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
+//     return response()->json($classes);
+// }
+
+
 
 
 public function storeClass(Request $request)
@@ -880,8 +995,196 @@ public function destroy($id)
     return response()->json(['message' => 'Division deleted successfully']);
 }
 
-   
+public function getStaffList(Request $request){
+    $stafflist =  UserMaster::where('IsDelete','N')
+     ->whereIn('role_id',['T'])
+     ->with('getTeacher')
+     ->get();
+    return response()->json($stafflist);
+    
+}
 
+
+public function storeStaff(Request $request)
+{
+    try {
+        Log::info('Received request to store staff data', $request->all());
+
+        $validatedData = $request->validate([
+            'employee_id' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'father_spouse_name' => 'nullable|string|max:255',
+            'birthday' => 'required|date',
+            'date_of_joining' => 'required|date',
+            'sex' => 'required|string|max:10',
+            'religion' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|string|max:10',
+            'address' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+            'email' => 'required|string|email|max:255|unique:teacher,email',
+            'designation' => 'required|string|max:255',
+            'academic_qual' => 'nullable|array',
+            'academic_qual.*' => 'nullable|string|max:255',
+            'professional_qual' => 'nullable|string|max:255',
+            'special_sub' => 'nullable|string|max:255',
+            'trained' => 'nullable|string|max:255',
+            'experience' => 'nullable|string|max:255',
+            'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+            'teacher_image_name' => 'nullable|string|max:255',
+            'class_id' => 'nullable|integer',
+            'section_id' => 'nullable|integer',
+            'isDelete' => 'nullable|string|in:Y,N',
+        ]);
+
+        if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+            $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+        }
+
+        $teacher = new Teacher();
+        $teacher->fill($validatedData);
+
+        if ($teacher->save()) {
+            $user = User::create([
+                'email' => $validatedData['email'],
+                'name' => $validatedData['name'],
+                'password' => Hash::make('arnolds'), 
+                'reg_id' => $teacher->teacher_id, 
+                'role_id' => 'T',
+                'IsDelete' => 'N',
+            ]);
+
+            return response()->json([
+                'message' => 'Teacher created successfully!',
+                'teacher' => $teacher,
+                'user' => $user,
+            ], 201);
+        } else {
+            return response()->json([
+                'message' => 'Failed to create teacher',
+            ], 500);
+        }
+    } catch (\Exception $e) {
+        Log::error('Error occurred while storing staff data: ' . $e->getMessage(), [
+            'request_data' => $request->all(),
+            'exception' => $e
+        ]);
+
+        return response()->json([
+            'message' => 'An error occurred while creating the teacher',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function editStaff($id)
+{
+    try {
+        $teacher = Teacher::findOrFail($id);
+
+        return response()->json([
+            'message' => 'Teacher retrieved successfully!',
+            'teacher' => $teacher,
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('Error occurred while retrieving teacher data: ' . $e->getMessage(), [
+            'teacher_id' => $id,
+            'exception' => $e
+        ]);
+
+        return response()->json([
+            'message' => 'An error occurred while retrieving the teacher',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function updateStaff(Request $request, $id)
+{
+    try {
+        Log::info('Received request to update staff data', $request->all());
+
+        $validatedData = $request->validate([
+            'employee_id' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'father_spouse_name' => 'nullable|string|max:255',
+            'birthday' => 'required|date',
+            'date_of_joining' => 'required|date',
+            'sex' => 'required|string|max:10',
+            'religion' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|string|max:10',
+            'address' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+            'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+            'designation' => 'required|string|max:255',
+            'academic_qual' => 'nullable|array',
+            'academic_qual.*' => 'nullable|string|max:255',
+            'professional_qual' => 'nullable|string|max:255',
+            'special_sub' => 'nullable|string|max:255',
+            'trained' => 'nullable|string|max:255',
+            'experience' => 'nullable|string|max:255',
+            'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
+            'teacher_image_name' => 'nullable|string|max:255',
+            'class_id' => 'nullable|integer',
+            'section_id' => 'nullable|integer',
+            'isDelete' => 'nullable|string|in:Y,N',
+        ]);
+
+        if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+            $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+        }
+
+        $teacher = Teacher::findOrFail($id);
+        $teacher->fill($validatedData);
+
+        if ($teacher->save()) {
+            return response()->json([
+                'message' => 'Teacher updated successfully!',
+                'teacher' => $teacher,
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 'Failed to update teacher',
+            ], 500);
+        }
+    } catch (\Exception $e) {
+        Log::error('Error occurred while updating staff data: ' . $e->getMessage(), [
+            'request_data' => $request->all(),
+            'exception' => $e
+        ]);
+
+        return response()->json([
+            'message' => 'An error occurred while updating the teacher',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+public function deleteStaff($id)
+{
+    try {
+        Log::info('Received request to delete teacher with ID: ' . $id);
+
+        $teacher = Teacher::findOrFail($id);
+
+        if ($teacher->delete()) {
+            return response()->json([
+                'message' => 'Teacher deleted successfully!',
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 'Failed to delete teacher',
+            ], 500);
+        }
+    } catch (\Exception $e) {
+        Log::error('Error occurred while deleting teacher with ID ' . $id . ': ' . $e->getMessage());
+
+        return response()->json([
+            'message' => 'An error occurred while deleting the teacher',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+} 
 
 
 

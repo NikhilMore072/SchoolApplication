@@ -11,6 +11,7 @@ class Teacher extends Model
     protected $table = 'teacher'; 
     
     protected $primaryKey = 'teacher_id'; 
+    public $timestamps = false;
     protected $fillable = [
         'employee_id',
         'name',

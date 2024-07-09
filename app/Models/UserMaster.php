@@ -17,4 +17,9 @@ class UserMaster extends Model
     public $incrementing = false; 
     protected $keyType = 'string'; 
     protected $fillable = ['user_id','name','password','reg_id','role_id','answer_one','answer_two','IsDelete'];
+
+    public function getTeacher()
+    {
+        return $this->belongsTo(Teacher::class, 'reg_id');  
+    }
 }

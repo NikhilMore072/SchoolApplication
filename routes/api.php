@@ -20,7 +20,7 @@
         
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
         Route::get('/session-data', [LoginController::class, 'getSessionData']);
-        Route::get('/getAcademicyear', [LoginController::class, 'getAcademicyear']);
+        // Route::get('/getAcademicyear', [LoginController::class, 'getAcademicyear']);
         Route::put('/updateAcademicYear', [LoginController::class, 'updateAcademicYear']);
         Route::post('/clearData', [LoginController::class, 'clearData'])->name('clearData');
         Route::put('/update_password', [LoginController::class, 'updatePassword']);
@@ -75,6 +75,14 @@
         Route::get('students/{id}/edit', [StudentController::class, 'show']); 
         Route::put('students/{id}/update', [StudentController::class, 'update']); 
         Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
+
+
+        // Staff Module API 
+        Route::get('/staff_list', [MastersController::class, 'getStaffList']);
+        Route::post('/store_staff', [MastersController::class, 'storeStaff']);
+        Route::get('/teachers/{id}', [MastersController::class, 'editStaff']);
+        Route::put('/teachers/{id}', [MastersController::class, 'updateStaff']);
+        Route::delete('/teachers/{id}', [MastersController::class, 'deleteStaff']);
 
     });
 
