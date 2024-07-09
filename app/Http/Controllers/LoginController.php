@@ -61,7 +61,8 @@ class LoginController extends Controller
             'institutename' => $institutename,
         ])->response()->setStatusCode(200);
     }
-    
+
+
 
     public function logout(Request $request)
     {
@@ -70,31 +71,6 @@ class LoginController extends Controller
         return response()->json(['message' => 'Logout successfully', 'success' => true], 200);
     }
 
-  
-
-    // public function updatePassword(Request $request)
-    // {
-    //     $data = $request->validate([
-    //         'answer_one' => 'required|string',
-    //         'current_password' => 'required|string',
-    //         'new_password' => 'required|string|confirmed|min:8',
-    //     ]);
-
-    //     $user = Auth::user();
-
-    //     if ($data['answer_one'] !== $user->answer_one) {
-    //         return response()->json(['message' => 'Security answer is incorrect', 'field' => 'answer_one', 'success' => false], 400);
-    //     }
-
-    //     if (!Hash::check($data['current_password'], $user->password)) {
-    //         return response()->json(['message' => 'Current password is incorrect', 'field' => 'current_password', 'success' => false], 400);
-    //     }
-
-    //     $user->password = Hash::make($data['new_password']);
-    //     $user->save();
-
-    //     return response()->json(['message' => 'Password updated successfully', 'success' => true], 200);
-    // }
     public function updatePassword(Request $request)
     {
         $data = $request->validate([
@@ -112,14 +88,14 @@ class LoginController extends Controller
 
         $user = Auth::user();
 
-        if ($data['answer_one'] !== $user->answer_one) {
-            return response()->json(['message' => 'Security answer is incorrect', 'field' => 'answer_one', 'success' => false], 400);
-        }
+        // if ($data['answer_one'] !== $user->answer_one) {
+        //     return response()->json(['message' => 'Security answer is incorrect', 'field' => 'answer_one', 'success' => false], 400);
+        // }
 
         if (!Hash::check($data['current_password'], $user->password)) {
             return response()->json(['message' => 'Current password is incorrect', 'field' => 'current_password', 'success' => false], 400);
         }
-
+        $user->answer_one =$data['answer_one'];
         $user->password = Hash::make($data['new_password']);
         $user->save();
 
