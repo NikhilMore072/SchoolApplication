@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
+use Tymon\JWTAuth\Facades\JWTAuth;
+// use Illuminate\Support\Facades\Auth;
 
 
 class MastersController extends Controller
@@ -70,16 +72,23 @@ public function sendTeacherBirthdayEmail()
 
     public function getStudentData(Request $request){
 
-        $academicYr = $request->header('X-Academic-Year');
+        $payload = getTokenPayload($request);
+        if (!$payload) {
+            return response()->json(['error' => 'Invalid or missing token'], 401);
+        }
+        $academicYr = $payload->get('academic_year');  
+
         if (!$academicYr) {
             return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
         }
-        $count = Students::where('IsDelete', 'N')->count();
+        $count = Students::where('IsDelete', 'N')
+                          ->where('academic_yr',$academicYr)
+                          ->count();
         $currentDate = Carbon::now()->toDateString();
         $present = Attendence::where('only_date', $currentDate)
                             ->where('attendance_status', '0')
-                            ->where('attendance_status', '0')
-                            ->count();
+                            ->where('academic_yr',$academicYr)
+                            ->count(); 
         return response()->json([
             'count'=>$count,
             'present'=>$present,
@@ -103,38 +112,50 @@ public function sendTeacherBirthdayEmail()
     }
 
 
-    public function getbirthday(Request $request)
+//     public function staffBirthdaycount(Request $request)
+// {
+//     $currentDate = Carbon::now();
+//     $count = Teacher::where('IsDelete', 'N')
+//                      ->whereMonth('birthday', $currentDate->month)
+//                      ->whereDay('birthday', $currentDate->day)
+//                      ->count();
+
+//     return response()->json([
+//         'count' => $count,       
+//     ]);
+// }
+
+public function staffBirthdayList(Request $request)
 {
-    $academicYr = $request->header('X-Academic-Year');
-    if (!$academicYr) {
+        $payload = getTokenPayload($request);
+        if (!$payload) {
+            return response()->json(['error' => 'Invalid or missing token'], 401);
+        }
+        $academicYr = $payload->get('academic_year'); 
+        if (!$academicYr) {
         return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
     }
 
     $currentDate = Carbon::now();
 
-    $count = Students::where('IsDelete', 'N')
-                     ->whereMonth('dob', $currentDate->month)
-                     ->whereDay('dob', $currentDate->day)
-                     ->where('academic_yr', $academicYr)
-                     ->count();
-
-    $list = Students::where('IsDelete', 'N')
-                    ->whereMonth('dob', $currentDate->month)
-                    ->whereDay('dob', $currentDate->day)
-                    ->where('academic_yr', $academicYr)
-                    ->get();
+    $staffBirthday = Teacher::where('IsDelete', 'N')
+        ->whereMonth('birthday', $currentDate->month)
+        ->whereDay('birthday', $currentDate->day)
+        ->get();
 
     return response()->json([
-        'count' => $count,
-        'list' => $list,
+        'staffBirthday' => $staffBirthday,
     ]);
 }
 
 
-   
     public function getEvents(Request $request): JsonResponse
     {
-        $academicYr = $request->header('X-Academic-Year');
+        $payload = getTokenPayload($request);
+        if (!$payload) {
+            return response()->json(['error' => 'Invalid or missing token'], 401);
+        }
+        $academicYr = $payload->get('academic_year'); 
         if (!$academicYr) {
             return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
         }
@@ -169,7 +190,12 @@ public function sendTeacherBirthdayEmail()
 
     public function getParentNotices(Request $request): JsonResponse
     {
-        $academicYr = $request->header('X-Academic-Year');
+        // $academicYr = $request->header('X-Academic-Year');
+        $payload = getTokenPayload($request);
+        if (!$payload) {
+            return response()->json(['error' => 'Invalid or missing token'], 401);
+        }
+        $academicYr = $payload->get('academic_year'); 
         if (!$academicYr) {
             return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
         }
@@ -194,10 +220,11 @@ public function sendTeacherBirthdayEmail()
 
     public function getNoticesForTeachers(Request $request): JsonResponse
     {
-        $academicYr = $request->header('X-Academic-Year');
-        if (!$academicYr) {
-            return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+        $payload = getTokenPayload($request);
+        if (!$payload) {
+            return response()->json(['error' => 'Invalid or missing token'], 401);
         }
+        $academicYr = $payload->get('academic_year'); 
         // Fetch notices with teacher names
         $notices = StaffNotice::select([
                 'staff_notice.subject',
@@ -236,12 +263,12 @@ public function getClassDivisionTotalStudents()
 }
 
  public function ticketCount(Request $request){
-    $academicYr = $request->header('X-Academic-Year');
-    $role_id = $request->header('role_id');
-
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+    $academicYr = $payload->get('academic_year'); 
+    $role_id = $payload->get('role_id');
 
     $count = DB::table('ticket')
            ->join('service_type', 'service_type.service_id', '=', 'ticket.service_id')
@@ -253,13 +280,12 @@ public function getClassDivisionTotalStudents()
            return response()->json(['count' => $count]);
  }
  public function getTicketList(Request $request){
-    $role_id = $request->header('role_id');
-
-    $academicYr = $request->header('X-Academic-Year');
-
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+    $academicYr = $payload->get('academic_year'); 
+    $role_id = $payload->get('role_id');
 
     $tickets = DB::table('ticket')
              ->join('service_type', 'service_type.service_id', '=', 'ticket.service_id')
@@ -282,11 +308,11 @@ return response()->json($tickets);
  }
 
  public function feeCollection(Request $request) {
-    $academicYr = $request->header('X-Academic-Year');
-
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+    $academicYr = $payload->get('academic_year'); 
 
     DB::statement("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
@@ -359,16 +385,20 @@ return response()->json($tickets);
 
 public function getHouseViseStudent(Request $request) {
     $className = $request->input('class_name');
-    $sessionData = session('sessionData');
-    if (!$sessionData) {
-        return response()->json(['message' => 'Session data not found', 'success' => false], 404);
-    }
+    // $sessionData = session('sessionData');
+    // if (!$sessionData) {
+    //     return response()->json(['message' => 'Session data not found', 'success' => false], 404);
+    // }
 
-    $academicYr = $sessionData['academic_yr'] ?? null;
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+    // $academicYr = $sessionData['academic_yr'] ?? null;
+    // if (!$academicYr) {
+    //     return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
+    // }
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
     }
-
+    $academicYr = $payload->get('academic_year'); 
     $query = "
         SELECT CONCAT(class.name, ' ', section.name) AS class_section,
                house.house_name AS house_name,
@@ -421,15 +451,29 @@ public function getAcademicYears(Request $request)
         ]);
     }
 
+
 public function getAuthUser()
 {
     $user = auth()->user();
+    $academic_yr = $user->academic_yr;
+
     return response()->json([
         'user' => $user,
-        'status' => 'success',
-        'message' => 'Authenticated user data retrieved successfully.'
+        'academic_yr' => $academic_yr,
     ]);
 }
+
+
+// public function updateAcademicYearForAuthUser(Request $request)
+// {
+//     $user = Auth::user();     
+//     if ($user) {
+//         session(['academic_yr' => $request->newAcademicYear]);
+//         Log::info('New academic year set:', ['user_id' => $user->id, 'academic_yr' => $request->newAcademicYear]);
+//     }
+// }
+
+
 public function getBankAccountName()
 {
     $bankAccountName = BankAccountName::all();
@@ -502,13 +546,13 @@ public function pendingCollectedFeeData(): JsonResponse
 
 public function pendingCollectedFeeDatalist(Request $request): JsonResponse
 {
-    // Fetch academic year from request header
-    $academicYear = $request->header('X-Academic-Year', '2023-2024');
-
-    // Disable ONLY_FULL_GROUP_BY mode
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year'); 
     DB::statement("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
-    // Subquery 1: Students with pending fees
     $subQuery1 = DB::table('view_student_fees_category as s')
         ->leftJoin('fee_concession_details as d', function ($join) {
             $join->on('s.student_id', '=', 'd.student_id')
@@ -531,7 +575,6 @@ public function pendingCollectedFeeDatalist(Request $request): JsonResponse
         })
         ->groupBy('s.student_id', 's.installment');
 
-    // Subquery 2: Students with pending fees based on payments
     $subQuery2 = DB::table('view_student_fees_payment as f')
         ->leftJoin('fee_concession_details as c', function ($join) {
             $join->on('f.student_id', '=', 'c.student_id')
@@ -553,10 +596,8 @@ public function pendingCollectedFeeDatalist(Request $request): JsonResponse
         ->groupBy('f.installment', 'c.installment')
         ->havingRaw('(b.installment_fees - COALESCE(SUM(c.amount), 0)) > SUM(f.fees_paid)');
 
-    // Union of both subqueries
     $unionQuery = $subQuery1->union($subQuery2);
 
-    // Final query to get pending fee amounts per installment
     $finalQuery = DB::table(DB::raw("({$unionQuery->toSql()}) as z"))
         ->select(
             'z.installment',
@@ -571,8 +612,11 @@ public function pendingCollectedFeeDatalist(Request $request): JsonResponse
 
 
 public function collectedFeeList(Request $request){
-    $academicYear = $request->header('X-Academic-Year');
-
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year'); 
     $bankAccountNames = DB::table('bank_account_name')
         ->whereIn('account_name', ['Nursery', 'KG', 'School'])
         ->pluck('account_name')
@@ -584,18 +628,18 @@ public function collectedFeeList(Request $request){
         ->join('class as c', 'b.class_id', '=', 'c.class_id')
         ->select(DB::raw("'Total' as account"), 'd.installment', DB::raw('SUM(d.amount) as amount'))
         ->where('a.isCancel', 'N')
-        ->where('a.academic_yr', $academicYear)
+        ->where('a.academic_yr', $academicYr)
         ->groupBy('d.installment');
 
     foreach ($bankAccountNames as $class) {
-        $query->union(function ($query) use ($class, $academicYear) {
+        $query->union(function ($query) use ($class, $academicYr) {
             $query->select(DB::raw("'{$class}' as account"), 'd.installment', DB::raw('SUM(d.amount) as amount'))
                 ->from('view_fees_payment_record as a')
                 ->join('view_fees_payment_detail as d', 'a.fees_payment_id', '=', 'd.fees_payment_id')
                 ->join('student as b', 'a.student_id', '=', 'b.student_id')
                 ->join('class as c', 'b.class_id', '=', 'c.class_id')
                 ->where('a.isCancel', 'N')
-                ->where('a.academic_yr', $academicYear);
+                ->where('a.academic_yr', $academicYr);
 
             if ($class === 'Nursery') {
                 $query->where('c.name', 'Nursery');
@@ -616,7 +660,6 @@ public function collectedFeeList(Request $request){
     foreach ($results as $result) {
         $account = $result->account;
 
-        // Skip 'Total' account
         if ($account !== 'Total') {
             $formattedResults[$account][] = [
                 'installment' => $result->installment,
@@ -628,29 +671,29 @@ public function collectedFeeList(Request $request){
     return response()->json($formattedResults);
 }
 
+// public function listSections(Request $request)
+// {    $token = $request->bearerToken();
+//     if (!$token) {
+//         return response()->json(['error' => 'Token not provided'], 401);
+//     }
+//     $payload = JWTAuth::setToken($token)->getPayload();
+//     $academicYr = $payload->get('academic_year');
+//     $sections = Section::where('academic_yr', $academicYr)->get();    
+//     return response()->json($sections);
+// }
+
 public function listSections(Request $request)
-{
-    session(['sessionData' => [
-        'academic_yr' => '2023-2024',
-    ]]);
+    {
+        $payload = getTokenPayload($request);
+        if (!$payload) {
+            return response()->json(['error' => 'Invalid or missing token'], 401);
+        }
+        $academicYr = $payload->get('academic_year');
 
-    $sessionData = session('sessionData');
-    if (!$sessionData) {
-        \Log::info('Session data not found');
-        return response()->json(['message' => 'Session data not found for this url', 'success' => false], 404);
+        $sections = Section::where('academic_yr', $academicYr)->get();
+        
+        return response()->json($sections);
     }
-
-    \Log::info('Session data:', $sessionData);
-
-    $academicYr = $sessionData['academic_yr'] ?? null;
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
-    }
-
-    $sections = Section::where('academic_yr', $academicYr)->get();
-    
-    return response()->json($sections);
-}
 
 public function storeSection(Request $request)
 {
@@ -662,17 +705,11 @@ public function storeSection(Request $request)
         'name.max' => 'The name field must not exceed 255 characters.',
         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
     ]);
-
-    $sessionData = session('sessionData');
-    if (!$sessionData) {
-        return response()->json(['message' => 'Session data not found', 'success' => false], 404);
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
     }
-
-    $academicYr = $sessionData['academic_yr'] ?? null;
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
-    }
-
+    $academicYr = $payload->get('academic_year');
     $section = new Section();
     $section->name = $request->name;
     $section->academic_yr = $academicYr;
@@ -685,8 +722,6 @@ public function storeSection(Request $request)
         'data' => $section,
     ]);
 }
-
-
 
 public function editSection($id)
 {
@@ -711,10 +746,12 @@ public function updateSection(Request $request, $id)
     ]);
 
     $section = Section::find($id);
-    $academicYr = $request->header('X-Academic-Year');
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
-    }
+    $payload = getTokenPayload($request);
+        if (!$payload) {
+            return response()->json(['error' => 'Invalid or missing token'], 401);
+        }
+
+        $academicYr = $payload->get('academic_year');
 
     if (!$section) {
         return response()->json(['message' => 'Section not found', 'success' => false], 404);
@@ -747,92 +784,26 @@ public function deleteSection($id)
 }
 
 
-// Methods for the classes model
+ // Methods for the classes model
 
 public function getClass(Request $request)
 {   
-    $academicYr = $request->header('X-Academic-Year');
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+    $academicYr = $payload->get('academic_year');
     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
     return response()->json($classes);
 }
 
-
-// public function getClass(Request $request)
-// {
-//     $sessionData = session('sessionData');
-//     if (!$sessionData) {
-//         return response()->json(['message' => 'Session data not found for this url', 'success' => false], 404);
-//     }
-
-//     $academicYr = $sessionData['academic_yr'] ?? null;
-//     if (!$academicYr) {
-//         return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
-//     }
-
-//     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
-//     return response()->json($classes);
-// }
-
-
-// public function getClass(Request $request)
-// {
-//     // For debugging purposes
-//     session(['sessionData' => [
-//         'academic_yr' => '2023-2024',
-//     ]]);
-
-//     $sessionData = session('sessionData');
-//     if (!$sessionData) {
-//         \Log::info('Session data not found');
-//         return response()->json(['message' => 'Session data not found for this url', 'success' => false], 404);
-//     }
-
-//     \Log::info('Session data:', $sessionData);
-
-//     $academicYr = $sessionData['academic_yr'] ?? null;
-//     if (!$academicYr) {
-//         return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
-//     }
-
-//     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
-//     return response()->json($classes);
-// }
-
-// public function getClass(Request $request)
-// {
-//     // Fetch session data
-//     $sessionData = session('sessionData');
-//     if (!$sessionData) {
-//         \Log::info('Session data not found');
-//         return response()->json(['message' => 'Session data not found for this URL', 'success' => false], 404);
-//     }
-
-//     \Log::info('Session data:', $sessionData);
-
-//     // Retrieve the academic year from the session data
-//     $academicYr = $sessionData['academic_yr'] ?? null;
-//     if (!$academicYr) {
-//         return response()->json(['message' => 'Academic year not found in session data', 'success' => false], 404);
-//     }
-
-//     // Fetch classes based on the academic year
-//     $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
-//     return response()->json($classes);
-// }
-
-
-
-
 public function storeClass(Request $request)
 {
-    $academicYr = $request->header('X-Academic-Year');
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
     }
-
+    $academicYr = $payload->get('academic_year');
     $request->validate([
         'name' => ['required', 'string', 'max:255'],
         'department_id' => ['required', 'integer'],
@@ -875,10 +846,11 @@ public function updateClass(Request $request, $id)
         return response()->json(['message' => 'Class not found', 'success' => false], 404);
     }
 
-    $academicYr = $request->header('X-Academic-Year');
-    if (!$academicYr) {
-        return response()->json(['message' => 'Academic year not found in request headers', 'success' => false], 404);
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+    $academicYr = $payload->get('academic_year');
 
     $class->name = $request->name;
     $class->department_id = $request->department_id;
@@ -896,10 +868,6 @@ public function getDepartments()
     $departments = Section::all();
     return response()->json($departments);
 }
-
-
-
-
 
 public function destroyClass($id)
 {
@@ -919,11 +887,13 @@ public function destroyClass($id)
 
 
 // Methods for the Divisons
-
 public function getDivision(Request $request)
 {
-    $academicYr = $request->header('X-Academic-Year');    
-    $divisions = Division::with('getClass.getDepartment')
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year');    $divisions = Division::with('getClass.getDepartment')
                          ->where('academic_yr', $academicYr)
                          ->get();    
     return response()->json($divisions);
@@ -931,8 +901,11 @@ public function getDivision(Request $request)
 
 public function store(Request $request)
 {
-    $academicYr = $request->header('X-Academic-Year');   
-
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year');
     $division = new Division();
     $division->name = $request->name;
     $division->class_id = $request->class_id;
@@ -960,8 +933,11 @@ public function show($id)
 
 public function updateDivision(Request $request, $id)
 {
-    $academicYr = $request->header('X-Academic-Year');   
-
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year');
     $division = Division::find($id);
     if (!$division) {
         return response()->json([
@@ -995,20 +971,21 @@ public function destroy($id)
     return response()->json(['message' => 'Division deleted successfully']);
 }
 
-public function getStaffList(Request $request){
-    $stafflist =  UserMaster::where('IsDelete','N')
-     ->whereIn('role_id',['T'])
-     ->with('getTeacher')
-     ->get();
-    return response()->json($stafflist);
-    
-}
+public function getStaffList(Request $request) {
+    $teacherIds = Teacher::where('designation', '!=', 'Caretaker')
+        ->pluck('teacher_id');
 
+    $stafflist = UserMaster::where('IsDelete', 'N')
+        ->whereIn('reg_id', $teacherIds)
+        ->with('getTeacher')
+        ->orderBy('reg_id','DESC')
+        ->get();
+    return response()->json($stafflist);
+}
 
 public function storeStaff(Request $request)
 {
     try {
-        Log::info('Received request to store staff data', $request->all());
 
         $validatedData = $request->validate([
             'employee_id' => 'required|string|max:255',
@@ -1098,11 +1075,68 @@ public function editStaff($id)
     }
 }
 
+// public function updateStaff(Request $request, $id)
+// {
+//     try {
+//         $validatedData = $request->validate([
+//             'employee_id' => 'required|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'father_spouse_name' => 'nullable|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+//             'designation' => 'required|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
+//             'teacher_image_name' => 'nullable|string|max:255',
+//             'class_id' => 'nullable|integer',
+//             'section_id' => 'nullable|integer',
+//             'isDelete' => 'nullable|string|in:Y,N',
+//         ]);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         $teacher = Teacher::findOrFail($id);
+//         $teacher->fill($validatedData);
+
+//         if ($teacher->save()) {
+//             return response()->json([
+//                 'message' => 'Teacher updated successfully!',
+//                 'teacher' => $teacher,
+//             ], 200);
+//         } else {
+//             return response()->json([
+//                 'message' => 'Failed to update teacher',
+//             ], 500);
+//         }
+//     } catch (\Exception $e) {
+//         Log::error('Error occurred while updating staff data: ' . $e->getMessage(), [
+//             'request_data' => $request->all(),
+//             'exception' => $e
+//         ]);
+
+//         return response()->json([
+//             'message' => 'An error occurred while updating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
 public function updateStaff(Request $request, $id)
 {
     try {
-        Log::info('Received request to update staff data', $request->all());
-
         $validatedData = $request->validate([
             'employee_id' => 'required|string|max:255',
             'name' => 'required|string|max:255',
@@ -1137,9 +1171,17 @@ public function updateStaff(Request $request, $id)
         $teacher->fill($validatedData);
 
         if ($teacher->save()) {
+            $user = User::where('reg_id', $id)->first();
+            if ($user) {
+                $user->name = $validatedData['name'];
+                $user->email = $validatedData['email'];
+                $user->save();
+            }
+
             return response()->json([
                 'message' => 'Teacher updated successfully!',
                 'teacher' => $teacher,
+                'user' => $user,
             ], 200);
         } else {
             return response()->json([
@@ -1158,6 +1200,7 @@ public function updateStaff(Request $request, $id)
         ], 500);
     }
 }
+
 
 
 public function deleteStaff($id)
@@ -1185,9 +1228,5 @@ public function deleteStaff($id)
         ], 500);
     }
 } 
-
-
-
-
 
 }
