@@ -8,7 +8,8 @@
         "php": "^8.2",
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "tymon/jwt-auth": "^2.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -26,7 +27,10 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
+        },
+        "files": [
+        "app/helpers.php"
+    ]
     },
     "autoload-dev": {
         "psr-4": {
@@ -50,6 +54,7 @@
             "@php artisan migrate --graceful --ansi"
         ]
     },
+    
     "extra": {
         "laravel": {
             "dont-discover": []
