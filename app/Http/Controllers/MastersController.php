@@ -112,18 +112,18 @@ public function sendTeacherBirthdayEmail()
     }
 
 
-//     public function staffBirthdaycount(Request $request)
-// {
-//     $currentDate = Carbon::now();
-//     $count = Teacher::where('IsDelete', 'N')
-//                      ->whereMonth('birthday', $currentDate->month)
-//                      ->whereDay('birthday', $currentDate->day)
-//                      ->count();
+    public function staffBirthdaycount(Request $request)
+{
+    $currentDate = Carbon::now();
+    $count = Teacher::where('IsDelete', 'N')
+                     ->whereMonth('birthday', $currentDate->month)
+                     ->whereDay('birthday', $currentDate->day)
+                     ->count();
 
-//     return response()->json([
-//         'count' => $count,       
-//     ]);
-// }
+    return response()->json([
+        'count' => $count,       
+    ]);
+}
 
 public function staffBirthdayList(Request $request)
 {
@@ -983,10 +983,10 @@ public function getStaffList(Request $request) {
     return response()->json($stafflist);
 }
 
+
 public function storeStaff(Request $request)
 {
     try {
-
         $validatedData = $request->validate([
             'employee_id' => 'required|string|max:255',
             'name' => 'required|string|max:255',
@@ -1041,11 +1041,6 @@ public function storeStaff(Request $request)
             ], 500);
         }
     } catch (\Exception $e) {
-        Log::error('Error occurred while storing staff data: ' . $e->getMessage(), [
-            'request_data' => $request->all(),
-            'exception' => $e
-        ]);
-
         return response()->json([
             'message' => 'An error occurred while creating the teacher',
             'error' => $e->getMessage()
@@ -1063,11 +1058,6 @@ public function editStaff($id)
             'teacher' => $teacher,
         ], 200);
     } catch (\Exception $e) {
-        Log::error('Error occurred while retrieving teacher data: ' . $e->getMessage(), [
-            'teacher_id' => $id,
-            'exception' => $e
-        ]);
-
         return response()->json([
             'message' => 'An error occurred while retrieving the teacher',
             'error' => $e->getMessage()
@@ -1075,6 +1065,281 @@ public function editStaff($id)
     }
 }
 
+public function updateStaff(Request $request, $id)
+{
+    try {
+        $validatedData = $request->validate([
+            'employee_id' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
+            'father_spouse_name' => 'nullable|string|max:255',
+            'birthday' => 'required|date',
+            'date_of_joining' => 'required|date',
+            'sex' => 'required|string|max:10',
+            'religion' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|string|max:10',
+            'address' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+            'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+            'designation' => 'required|string|max:255',
+            'academic_qual' => 'nullable|array',
+            'academic_qual.*' => 'nullable|string|max:255',
+            'professional_qual' => 'nullable|string|max:255',
+            'special_sub' => 'nullable|string|max:255',
+            'trained' => 'nullable|string|max:255',
+            'experience' => 'nullable|string|max:255',
+            'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
+            'teacher_image_name' => 'nullable|string|max:255',
+            'class_id' => 'nullable|integer',
+            'section_id' => 'nullable|integer',
+            'isDelete' => 'nullable|string|in:Y,N',
+        ]);
+
+        if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+            $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+        }
+
+        $teacher = Teacher::findOrFail($id);
+        $teacher->fill($validatedData);
+
+        if ($teacher->save()) {
+            $user = User::where('reg_id', $id)->first();
+            if ($user) {
+                $user->name = $validatedData['name'];
+                $user->email = $validatedData['email'];
+                $user->save();
+            }
+
+            return response()->json([
+                'message' => 'Teacher updated successfully!',
+                'teacher' => $teacher,
+                'user' => $user,
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 'Failed to update teacher',
+            ], 500);
+        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'An error occurred while updating the teacher',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function deleteStaff($id)
+{
+    try {
+        $teacher = Teacher::findOrFail($id);
+
+        if ($teacher->delete()) {
+            return response()->json([
+                'message' => 'Teacher deleted successfully!',
+            ], 200);
+        } else {
+            return response()->json([
+                'message' => 'Failed to delete teacher',
+            ], 500);
+        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'An error occurred while deleting the teacher',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+// public function storeStaff(Request $request)
+// {
+//     try {
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'required|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'father_spouse_name' => 'nullable|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:255|unique:teacher,email',
+//             'designation' => 'required|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+//             'teacher_image_name' => 'nullable|string|max:255',
+//             'class_id' => 'nullable|integer',
+//             'section_id' => 'nullable|integer',
+//             'isDelete' => 'nullable|string|in:Y,N',
+//         ]);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         $teacher = new Teacher();
+//         $teacher->fill($validatedData);
+
+//         if ($teacher->save()) {
+//             $user = User::create([
+//                 'email' => $validatedData['email'],
+//                 'name' => $validatedData['name'],
+//                 'password' => Hash::make('arnolds'), 
+//                 'reg_id' => $teacher->teacher_id, 
+//                 'role_id' => 'T',
+//                 'IsDelete' => 'N',
+//             ]);
+
+//             return response()->json([
+//                 'message' => 'Teacher created successfully!',
+//                 'teacher' => $teacher,
+//                 'user' => $user,
+//             ], 201);
+//         } else {
+//             return response()->json([
+//                 'message' => 'Failed to create teacher',
+//             ], 500);
+//         }
+//     } catch (\Exception $e) {
+//         Log::error('Error occurred while storing staff data: ' . $e->getMessage(), [
+//             'request_data' => $request->all(),
+//             'exception' => $e
+//         ]);
+
+//         return response()->json([
+//             'message' => 'An error occurred while creating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+// public function editStaff($id)
+// {
+//     try {
+//         $teacher = Teacher::findOrFail($id);
+
+//         return response()->json([
+//             'message' => 'Teacher retrieved successfully!',
+//             'teacher' => $teacher,
+//         ], 200);
+//     } catch (\Exception $e) {
+//         Log::error('Error occurred while retrieving teacher data: ' . $e->getMessage(), [
+//             'teacher_id' => $id,
+//             'exception' => $e
+//         ]);
+
+//         return response()->json([
+//             'message' => 'An error occurred while retrieving the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
+
+// public function updateStaff(Request $request, $id)
+// {
+//     try {
+//         $validatedData = $request->validate([
+//             'employee_id' => 'required|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'father_spouse_name' => 'nullable|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+//             'designation' => 'required|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
+//             'teacher_image_name' => 'nullable|string|max:255',
+//             'class_id' => 'nullable|integer',
+//             'section_id' => 'nullable|integer',
+//             'isDelete' => 'nullable|string|in:Y,N',
+//         ]);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         $teacher = Teacher::findOrFail($id);
+//         $teacher->fill($validatedData);
+
+//         if ($teacher->save()) {
+//             $user = User::where('reg_id', $id)->first();
+//             if ($user) {
+//                 $user->name = $validatedData['name'];
+//                 $user->email = $validatedData['email'];
+//                 $user->save();
+//             }
+
+//             return response()->json([
+//                 'message' => 'Teacher updated successfully!',
+//                 'teacher' => $teacher,
+//                 'user' => $user,
+//             ], 200);
+//         } else {
+//             return response()->json([
+//                 'message' => 'Failed to update teacher',
+//             ], 500);
+//         }
+//     } catch (\Exception $e) {
+//         Log::error('Error occurred while updating staff data: ' . $e->getMessage(), [
+//             'request_data' => $request->all(),
+//             'exception' => $e
+//         ]);
+
+//         return response()->json([
+//             'message' => 'An error occurred while updating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
+
+// public function deleteStaff($id)
+// {
+//     try {
+//         Log::info('Received request to delete teacher with ID: ' . $id);
+
+//         $teacher = Teacher::findOrFail($id);
+
+//         if ($teacher->delete()) {
+//             return response()->json([
+//                 'message' => 'Teacher deleted successfully!',
+//             ], 200);
+//         } else {
+//             return response()->json([
+//                 'message' => 'Failed to delete teacher',
+//             ], 500);
+//         }
+//     } catch (\Exception $e) {
+//         Log::error('Error occurred while deleting teacher with ID ' . $id . ': ' . $e->getMessage());
+
+//         return response()->json([
+//             'message' => 'An error occurred while deleting the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// } 
+
+}
 // public function updateStaff(Request $request, $id)
 // {
 //     try {
@@ -1133,100 +1398,3 @@ public function editStaff($id)
 //         ], 500);
 //     }
 // }
-
-public function updateStaff(Request $request, $id)
-{
-    try {
-        $validatedData = $request->validate([
-            'employee_id' => 'required|string|max:255',
-            'name' => 'required|string|max:255',
-            'father_spouse_name' => 'nullable|string|max:255',
-            'birthday' => 'required|date',
-            'date_of_joining' => 'required|date',
-            'sex' => 'required|string|max:10',
-            'religion' => 'nullable|string|max:255',
-            'blood_group' => 'nullable|string|max:10',
-            'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:15',
-            'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
-            'designation' => 'required|string|max:255',
-            'academic_qual' => 'nullable|array',
-            'academic_qual.*' => 'nullable|string|max:255',
-            'professional_qual' => 'nullable|string|max:255',
-            'special_sub' => 'nullable|string|max:255',
-            'trained' => 'nullable|string|max:255',
-            'experience' => 'nullable|string|max:255',
-            'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
-            'teacher_image_name' => 'nullable|string|max:255',
-            'class_id' => 'nullable|integer',
-            'section_id' => 'nullable|integer',
-            'isDelete' => 'nullable|string|in:Y,N',
-        ]);
-
-        if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
-            $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
-        }
-
-        $teacher = Teacher::findOrFail($id);
-        $teacher->fill($validatedData);
-
-        if ($teacher->save()) {
-            $user = User::where('reg_id', $id)->first();
-            if ($user) {
-                $user->name = $validatedData['name'];
-                $user->email = $validatedData['email'];
-                $user->save();
-            }
-
-            return response()->json([
-                'message' => 'Teacher updated successfully!',
-                'teacher' => $teacher,
-                'user' => $user,
-            ], 200);
-        } else {
-            return response()->json([
-                'message' => 'Failed to update teacher',
-            ], 500);
-        }
-    } catch (\Exception $e) {
-        Log::error('Error occurred while updating staff data: ' . $e->getMessage(), [
-            'request_data' => $request->all(),
-            'exception' => $e
-        ]);
-
-        return response()->json([
-            'message' => 'An error occurred while updating the teacher',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
-
-
-public function deleteStaff($id)
-{
-    try {
-        Log::info('Received request to delete teacher with ID: ' . $id);
-
-        $teacher = Teacher::findOrFail($id);
-
-        if ($teacher->delete()) {
-            return response()->json([
-                'message' => 'Teacher deleted successfully!',
-            ], 200);
-        } else {
-            return response()->json([
-                'message' => 'Failed to delete teacher',
-            ], 500);
-        }
-    } catch (\Exception $e) {
-        Log::error('Error occurred while deleting teacher with ID ' . $id . ': ' . $e->getMessage());
-
-        return response()->json([
-            'message' => 'An error occurred while deleting the teacher',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-} 
-
-}
