@@ -104,20 +104,18 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\MastersController;
 
 // Public routes
 Route::post('login', [AuthController::class, 'login']);
 Route::post('register', [AuthController::class, 'register']);
-// Route::middleware('jwt.auth')->get('sessionData', [AuthController::class, 'getUserDetails']);
-
 
 // Protected routes
 Route::middleware(['jwt.auth'])->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('sessionData', [AuthController::class, 'getUserDetails']);
     Route::post('update_academic_year', [AuthController::class, 'updateAcademicYear']);
-    // Route::get('sections', [AuthController::class, 'listSections']);
 
 
         // Route::get('/getAuthUser', [MastersController::class, 'getAuthUser']);
@@ -189,6 +187,14 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::get('/teachers/{id}', [MastersController::class, 'editStaff']);
         Route::put('/teachers/{id}', [MastersController::class, 'updateStaff']);
         Route::delete('/teachers/{id}', [MastersController::class, 'deleteStaff']);
+
+
+
+        // Roles Routes 
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
+        Route::get('/roles/{id}', [RoleController::class, 'edit'])->name('roles.edit');
+        Route::put('/roles/{id}', [RoleController::class, 'update'])->name('roles.update');
 });
 
 

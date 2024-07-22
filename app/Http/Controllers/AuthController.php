@@ -7,34 +7,71 @@ use App\Models\Section;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+//     public function login(Request $request)
+// {
+//     $credentials = $request->only('email', 'password');
+
+//     if (!$token = JWTAuth::attempt($credentials)) {
+//         return response()->json(['error' => 'Invalid credentials'], 401);
+//     }
+
+//     $user = auth()->user();
+//     $academic_yr = Setting::where('active', 'Y')->first()->academic_yr;
+//     $customClaims = [
+//         'role_id' => $user->role_id,
+//         'reg_id' =>$user->reg_id,
+//         'academic_year' => $academic_yr,
+//     ];
+
+//     $token = JWTAuth::claims($customClaims)->fromUser($user);
+
+//     return response()->json([
+//         'token' => $token,
+//         // 'user' => $user,
+//     ]);
+// }
+
+
+public function login(Request $request)
 {
     $credentials = $request->only('email', 'password');
 
-    if (!$token = JWTAuth::attempt($credentials)) {
-        return response()->json(['error' => 'Invalid credentials'], 401);
+    Log::info('Login attempt with credentials:', $credentials);
+
+    try {
+        if (!$token = JWTAuth::attempt($credentials)) {
+            Log::warning('Invalid credentials for user:', $credentials);
+            return response()->json(['error' => 'Invalid credentials'], 401);
+        }
+
+        $user = JWTAuth::setToken($token)->toUser();
+        $academic_yr = Setting::where('active', 'Y')->first()->academic_yr;
+
+        Log::info('Authenticated user:', ['user_id' => $user->id, 'academic_year' => $academic_yr]);
+
+        $customClaims = [
+            'role_id' => $user->role_id,
+            'reg_id' => $user->reg_id,
+            'academic_year' => $academic_yr,
+        ];
+
+        $token = JWTAuth::claims($customClaims)->fromUser($user);
+
+        Log::info('Token created successfully:', ['token' => $token]);
+
+        return response()->json(['token' => $token]);
+
+    } catch (JWTException $e) {
+        Log::error('JWTException occurred:', ['message' => $e->getMessage()]);
+        return response()->json(['error' => 'Could not create token'], 500);
     }
-
-    $user = auth()->user();
-    $academic_yr = Setting::where('active', 'Y')->first()->academic_yr;
-    $customClaims = [
-        'role_id' => $user->role_id,
-        'reg_id' =>$user->reg_id,
-        'academic_year' => $academic_yr,
-    ];
-
-    $token = JWTAuth::claims($customClaims)->fromUser($user);
-
-    return response()->json([
-        'token' => $token,
-        // 'user' => $user,
-    ]);
 }
 
 
