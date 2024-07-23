@@ -53,7 +53,7 @@ class RoleController extends Controller
     public function update(Request $request, $id){
         $validatedData = $request->validate([
             'rolename' => 'required|string|max:255',
-            'status' => 'required|string|max:255',
+            'status' => '|string|max:255',
         ]);
 
         $role = Role::find($id);
@@ -72,4 +72,26 @@ class RoleController extends Controller
             'message' => 'Role not found.'
         ], 404); 
     }
+
+    public function delete($id)
+{
+    $role = Role::find($id);
+
+    if ($role) {
+        $role->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Role deleted successfully.'
+        ]);
+    }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'Role not found.'
+    ], 404);
+}
+
+
+ 
 }
