@@ -1181,7 +1181,7 @@ public function updateStaff(Request $request, $id)
             'class_id' => 'nullable|integer',
             'section_id' => 'nullable|integer',
             'isDelete' => 'nullable|string|in:Y,N',
-            'role_id' => 'nullable|string|in:Y,N',
+            // 'role_id' => 'nullable|string|in:Y,N',
         ]);
 
         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
@@ -1196,7 +1196,7 @@ public function updateStaff(Request $request, $id)
             if ($user) {
                 $user->name = $validatedData['name'];
                 $user->email = $validatedData['email'];
-                $user->role_id = $validatedData['role_id'];
+                // $user->role_id = $validatedData['role_id'];
                 $user->save();
             }
 
