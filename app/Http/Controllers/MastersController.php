@@ -1095,6 +1095,7 @@ public function storeStaff(Request $request)
             'experience' => 'nullable|string|max:255', //16
             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no', //17
             'teacher_image_name' => 'nullable|string|max:255', //18
+            'role' => 'required|string|max:255',
             
         ]);
 
@@ -1112,7 +1113,7 @@ public function storeStaff(Request $request)
                 'name' => $validatedData['name'],
                 'password' => Hash::make('arnolds'), 
                 'reg_id' => $teacher->teacher_id, 
-                'role_id' => $validatedData['designation'], 
+                'role_id' => $validatedData['role'], 
                 'IsDelete' => 'N', 
             ]);
 
@@ -1157,7 +1158,7 @@ public function updateStaff(Request $request, $id)
 {
     try {
         $validatedData = $request->validate([
-            'employee_id' => 'required|string|max:255',
+            'employee_id' => 'nullable|string|max:255',
             'name' => 'required|string|max:255',
             'father_spouse_name' => 'nullable|string|max:255',
             'birthday' => 'required|date',
@@ -1180,6 +1181,7 @@ public function updateStaff(Request $request, $id)
             'class_id' => 'nullable|integer',
             'section_id' => 'nullable|integer',
             'isDelete' => 'nullable|string|in:Y,N',
+            'role_id' => 'nullable|string|in:Y,N',
         ]);
 
         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
@@ -1194,6 +1196,7 @@ public function updateStaff(Request $request, $id)
             if ($user) {
                 $user->name = $validatedData['name'];
                 $user->email = $validatedData['email'];
+                $user->role_id = $validatedData['role_id'];
                 $user->save();
             }
 

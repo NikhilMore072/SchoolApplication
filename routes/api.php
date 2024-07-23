@@ -195,6 +195,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::post('/roles', [RoleController::class, 'store'])->name('roles.store');
         Route::get('/roles/{id}', [RoleController::class, 'edit'])->name('roles.edit');
         Route::put('/roles/{id}', [RoleController::class, 'update'])->name('roles.update');
+        Route::delete('/roles/{id}', [RoleController::class, 'delete'])->name('roles.delete');
 });
 
 
