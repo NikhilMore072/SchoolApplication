@@ -7,13 +7,7 @@ use Illuminate\Database\Seeder;
 
 class AccessUrlSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    // public function run(): void
-    // {
-    //     //
-    // }
+
 
 
     public function run(): void
@@ -26,28 +20,96 @@ class AccessUrlSeeder extends Seeder
             ['name' => 'Manage Students', 'parent_id' => 2, 'super_id' => null],
             ['name' => 'LC Students', 'parent_id' => 2, 'super_id' => null],
             ['name' => 'Deleted Students Lists', 'parent_id' => 2, 'super_id' => null],
-            ['name' => 'Promote Students', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Send User Id to Parents', 'parent_id' => 8, 'super_id' => null],
-           
             ['name' => 'Sibling Mapping', 'parent_id' => 0, 'super_id' => null],
+              
+            ['name' => 'Certificate', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Bonafide Certificate', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Caste Certificate', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Character Certificate', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Percentage Certificate', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Simple Bonafide  Certificate', 'parent_id' => 0, 'super_id' => null],        
+            
+            
+            ['name' => 'Staff', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Manage Staff', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Manage Caretaker', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Substitute Teacher', 'parent_id' => 0, 'super_id' => null], 
+
+
             ['name' => 'Leaving Certificate', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Generate LC', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Manage LC', 'parent_id' => 0, 'super_id' => null],
+
+
             ['name' => 'Leave', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Leave Allocation', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Leave Allocation to All Staff', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Leave Application', 'parent_id' => 0, 'super_id' => null],
+
             ['name' => 'Notice/SMS', 'parent_id' => 0, 'super_id' => null],
-            ['name' => 'Event', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Holiday List', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Allot Class teachers', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Allot Department Coordinator', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Allot GR Numbers', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Update Category and religion', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Update Student ID and other details', 'parent_id' => 0, 'super_id' => null],
+
+
+
+
+
+
+
+
+            ['name' => 'Allot Roll Numbers', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Promote Students', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Remark', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Time Table', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'View Attendance', 'parent_id' => 0, 'super_id' => null],
+
+          
+            
+            ['name' => 'Leaving Certificate', 'parent_id' => 0, 'super_id' => null],
+
+
+
+
+            ['name' => 'Curriculum', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Chapters', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Lesson Plan Heading', 'parent_id' => 0, 'super_id' => null],
+
+            
+            ['name' => 'Library', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Book Availability', 'parent_id' => 0, 'super_id' => null],
+
+            ['name' => 'View', 'parent_id' => 0, 'super_id' => null],
+            ['name' => 'Teachers Timetable', 'parent_id' => 0, 'super_id' => null],
+            ['name' => '', 'parent_id' => 0, 'super_id' => null],
+            ['name' => '', 'parent_id' => 0, 'super_id' => null],
+            ['name' => '', 'parent_id' => 0, 'super_id' => null],
+            ['name' => '', 'parent_id' => 0, 'super_id' => null],
+            ['name' => '', 'parent_id' => 0, 'super_id' => null],
+            ['name' => '', 'parent_id' => 0, 'super_id' => null],
+            ['name' => '', 'parent_id' => 0, 'super_id' => null],
+
+
+
+
+
+
+
+
+
+
+
+
+
+           
+            ['name' => 'Manage Caretaker', 'parent_id' => 0, 'super_id' => null],
+           
+            ['name' => 'Event', 'parent_id' => 0, 'super_id' => null],
+
             ['name' => 'News', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Important links', 'parent_id' => 0, 'super_id' => null],
             ['name' => 'Book Requisition', 'parent_id' => 0, 'super_id' => null],
