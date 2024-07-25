@@ -104,6 +104,11 @@ class User extends Authenticatable implements JWTSubject // Implement JWTSubject
     //     'password',
     // ];
 
+        public function getTeacher()
+    {
+        return $this->belongsTo(Teacher::class, 'reg_id');  
+    }
+
     /**
      * The attributes that should be hidden for arrays.
      *

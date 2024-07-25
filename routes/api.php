@@ -129,8 +129,8 @@ Route::middleware(['jwt.auth'])->group(function () {
         // Route::put('/updateAcademicYear', [LoginController::class, 'updateAcademicYear']);
         Route::post('/clearData', [LoginController::class, 'clearData'])->name('clearData');
         Route::put('/update_password', [LoginController::class, 'updatePassword']);
-        Route::get('/editprofile', [LoginController::class, 'editUser']);
-        Route::put('/update_profile', [LoginController::class, 'updateUser']);
+        Route::get('/editprofile', [AuthController::class, 'editUser']);
+        Route::put('/update_profile', [AuthController::class, 'updateUser']);
 
         //Master and its sub module routes  Module Routes 
         //Section model Routes 
@@ -196,6 +196,12 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::get('/roles/{id}', [RoleController::class, 'edit'])->name('roles.edit');
         Route::put('/roles/{id}', [RoleController::class, 'update'])->name('roles.update');
         Route::delete('/roles/{id}', [RoleController::class, 'delete'])->name('roles.delete');
+
+        //Showing Roles with the Permissions   showRoles
+        Route::get('/show_roles', [RoleController::class, 'showRoles'])->name('roles.showRoles');
+        Route::get('/show_access/{roleId}', [RoleController::class, 'showAccess']);
+        Route::post('/update_access/{roleId}', [RoleController::class, 'updateAccess'])->name('roles.updateAccess');
+
 });
 
 
