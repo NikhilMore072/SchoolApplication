@@ -165,20 +165,20 @@ public function getSessionData(Request $request)
     }
 
     
-    public function editUser(Request $request)
-    {
-        $user = Auth::user();
-        $teacher = $user->getTeacher;
-        if ($teacher) {
-            return response()->json([
-                'user' => $user,                
-            ]);
-        } else {
-            return response()->json([
-                'message' => 'Teacher information not found.',
-            ], 404);
-        }
-    }
+    // public function editUser(Request $request)
+    // {
+    //     $user = Auth::user();
+    //     $teacher = $user->getTeacher;
+    //     if ($teacher) {
+    //         return response()->json([
+    //             'user' => $user,                
+    //         ]);
+    //     } else {
+    //         return response()->json([
+    //             'message' => 'Teacher information not found.',
+    //         ], 404);
+    //     }
+    // }
     
 
 

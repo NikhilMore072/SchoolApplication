@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Menu;
 use App\Models\Role;
+use App\Models\RolesAndMenu;
 use Illuminate\Http\Request;
 
 class RoleController extends Controller
@@ -93,5 +95,47 @@ class RoleController extends Controller
 }
 
 
+    public function showRoles(){
+        $data = Role::all();
+        return response()->json($data);
+    }
+
+public function showAccess($roleId) {
+    $role = Role::find($roleId);
+    $menuList = Menu::all(); 
+
+    $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
+                                  ->pluck('menu_id')
+                                  ->toArray();
+
+    return response()->json([
+        'role' => $role,
+        'menuList' => $menuList,
+        'assignedMenuIds' => $assignedMenuIds, 
+    ]);
+}
+
+
+public function updateAccess(Request $request, $roleId)
+{
+    $request->validate([
+        'menu_ids' => 'required|array',
+        'menu_ids.*' => 'exists:menus,menu_id', // Ensure all menu_ids exist in the menus table
+    ]);
+
+    // Clear existing permissions for the role
+    RolesAndMenu::where('role_id', $roleId)->delete();
+
+    // Insert new permissions
+    $menuIds = $request->input('menu_ids');
+    foreach ($menuIds as $menuId) {
+        RolesAndMenu::create([
+            'role_id' => $roleId,
+            'menu_id' => $menuId,
+        ]);
+    }
+
+    return response()->json(['message' => 'Access updated successfully']);
+}
  
 }

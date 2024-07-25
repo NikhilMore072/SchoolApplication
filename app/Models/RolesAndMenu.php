@@ -5,10 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AccessUrl extends Model
+class RolesAndMenu extends Model
 {
     use HasFactory;
-
-    protected $table = 'access_urls';
-    protected $fillable = ['name','parent_id','super_id'];
+    protected $table = 'roles_and_menus';
+    protected  $fillable = ['role_id','menu_id'];
 }
