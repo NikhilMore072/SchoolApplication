@@ -146,7 +146,7 @@ public function navMenulist(Request $request)
     // Get the parent menu names and their IDs where parent_id is 0
     $parentMenus = Menu::where('parent_id', 0)
         ->whereIn('menu_id', $assignedMenuIds)
-        ->get(['menu_id', 'name']);
+        ->get(['menu_id', 'name','url']);
 
     // Prepare the final response structure
     $menuList = [];
@@ -161,10 +161,12 @@ public function navMenulist(Request $request)
         $menuList[] = [
             'parent_menu_id' => $parentMenu->menu_id,
             'parent_menu_name' => $parentMenu->name,
+            'parent_menu_url' => $parentMenu->url,
             'child_menus' => $childMenus->map(function ($childMenu) {
                 return [
                     'child_menu_id' => $childMenu->menu_id,
                     'child_menu_name' => $childMenu->name,
+                    'child_menu_url' => $childMenu->url,
                 ];
             })
         ];
