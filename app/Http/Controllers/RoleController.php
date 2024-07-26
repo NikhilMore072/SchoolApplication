@@ -55,7 +55,7 @@ class RoleController extends Controller
     public function update(Request $request, $id){
         $validatedData = $request->validate([
             'rolename' => 'required|string|max:255',
-            'status' => '|string|max:255',
+            'is_active' => '|string|max:255',
         ]);
 
         $role = Role::find($id);
@@ -120,13 +120,9 @@ public function updateAccess(Request $request, $roleId)
 {
     $request->validate([
         'menu_ids' => 'required|array',
-        'menu_ids.*' => 'exists:menus,menu_id', // Ensure all menu_ids exist in the menus table
+        'menu_ids.*' => 'exists:menus,menu_id',
     ]);
-
-    // Clear existing permissions for the role
     RolesAndMenu::where('role_id', $roleId)->delete();
-
-    // Insert new permissions
     $menuIds = $request->input('menu_ids');
     foreach ($menuIds as $menuId) {
         RolesAndMenu::create([
@@ -137,5 +133,48 @@ public function updateAccess(Request $request, $roleId)
 
     return response()->json(['message' => 'Access updated successfully']);
 }
+
+public function navMenulist(Request $request)
+{
+    $roleId = 3;
+
+    // Get the menu IDs from RolesAndMenu where role_id is the specified value
+    $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
+        ->pluck('menu_id')
+        ->toArray();
+
+    // Get the parent menu names and their IDs where parent_id is 0
+    $parentMenus = Menu::where('parent_id', 0)
+        ->whereIn('menu_id', $assignedMenuIds)
+        ->get(['menu_id', 'name']);
+
+    // Prepare the final response structure
+    $menuList = [];
+
+    foreach ($parentMenus as $parentMenu) {
+        // Get the child menu names and their IDs where parent_id is the current parent menu ID
+        $childMenus = Menu::where('parent_id', $parentMenu->menu_id)
+            ->whereIn('menu_id', $assignedMenuIds)
+            ->get(['menu_id', 'name']);
+
+        // Add the parent menu and its children to the response structure
+        $menuList[] = [
+            'parent_menu_id' => $parentMenu->menu_id,
+            'parent_menu_name' => $parentMenu->name,
+            'child_menus' => $childMenus->map(function ($childMenu) {
+                return [
+                    'child_menu_id' => $childMenu->menu_id,
+                    'child_menu_name' => $childMenu->name,
+                ];
+            })
+        ];
+    }
+
+    return response()->json($menuList);
+}
+
+
+
+
  
 }

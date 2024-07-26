@@ -198,9 +198,11 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/roles/{id}', [RoleController::class, 'delete'])->name('roles.delete');
 
         //Showing Roles with the Permissions   showRoles
-        Route::get('/show_roles', [RoleController::class, 'showRoles'])->name('roles.showRoles');
+        Route::get('/show_roles', [RoleController::class, 'showRoles']);
         Route::get('/show_access/{roleId}', [RoleController::class, 'showAccess']);
-        Route::post('/update_access/{roleId}', [RoleController::class, 'updateAccess'])->name('roles.updateAccess');
+        Route::post('/update_access/{roleId}', [RoleController::class, 'updateAccess']);
+        Route::get('/navmenulist', [RoleController::class, 'navMenulist']);
+
 
 });
 
