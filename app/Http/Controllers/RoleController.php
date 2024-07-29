@@ -220,6 +220,65 @@ public function updateAccess(Request $request, $roleId)
 // }
 
 
+// public function navMenulist(Request $request)
+// {
+//     $roleId = 3;
+
+//     // Get the menu IDs from RolesAndMenu where role_id is the specified value
+//     $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
+//         ->pluck('menu_id')
+//         ->toArray();
+
+//     // Get the parent menu names and their IDs where parent_id is 0
+//     $parentMenus = Menu::where('parent_id', 0)
+//         ->whereIn('menu_id', $assignedMenuIds)
+//         ->get(['menu_id', 'name', 'url']);
+
+//     // Prepare the final response structure
+//     $menuList = [];
+
+//     foreach ($parentMenus as $parentMenu) {
+//         // Get the child menus where parent_id is the current parent menu ID
+//         $childMenus = Menu::where('parent_id', $parentMenu->menu_id)
+//             ->whereIn('menu_id', $assignedMenuIds)
+//             ->get(['menu_id', 'name', 'url']);
+
+//         // Prepare child menu list with their submenus
+//         $childMenuList = [];
+
+//         foreach ($childMenus as $childMenu) {
+//             // Get the submenus where parent_id is the current child menu ID
+//             $subMenus = Menu::where('parent_id', $childMenu->menu_id)
+//                 ->whereIn('menu_id', $assignedMenuIds)
+//                 ->get(['menu_id', 'name', 'url']);
+
+//             // Add the child menu and its submenus to the child menu list
+//             $childMenuList[] = [
+//                 'child_menu_id' => $childMenu->menu_id,
+//                 'child_menu_name' => $childMenu->name,
+//                 'child_menu_url' => $childMenu->url,
+//                 'sub_menus' => $subMenus->map(function ($subMenu) {
+//                     return [
+//                         'sub_menu_id' => $subMenu->menu_id,
+//                         'sub_menu_name' => $subMenu->name,
+//                         'sub_menu_url' => $subMenu->url,
+//                     ];
+//                 })
+//             ];
+//         }
+
+//         // Add the parent menu and its children to the response structure
+//         $menuList[] = [
+//             'parent_menu_id' => $parentMenu->menu_id,
+//             'parent_menu_name' => $parentMenu->name,
+//             'parent_menu_url' => $parentMenu->url,
+//             'child_menus' => $childMenuList
+//         ];
+//     }    
+//     return response()->json($menuList);
+// }
+
+
 public function navMenulist(Request $request)
 {
     $roleId = 3;
@@ -229,55 +288,42 @@ public function navMenulist(Request $request)
         ->pluck('menu_id')
         ->toArray();
 
-    // Get the parent menu names and their IDs where parent_id is 0
+    // Get the parent menus where parent_id is 0
     $parentMenus = Menu::where('parent_id', 0)
         ->whereIn('menu_id', $assignedMenuIds)
         ->get(['menu_id', 'name', 'url']);
 
     // Prepare the final response structure
-    $menuList = [];
-
-    foreach ($parentMenus as $parentMenu) {
-        // Get the child menus where parent_id is the current parent menu ID
-        $childMenus = Menu::where('parent_id', $parentMenu->menu_id)
-            ->whereIn('menu_id', $assignedMenuIds)
-            ->get(['menu_id', 'name', 'url']);
-
-        // Prepare child menu list with their submenus
-        $childMenuList = [];
-
-        foreach ($childMenus as $childMenu) {
-            // Get the submenus where parent_id is the current child menu ID
-            $subMenus = Menu::where('parent_id', $childMenu->menu_id)
-                ->whereIn('menu_id', $assignedMenuIds)
-                ->get(['menu_id', 'name', 'url']);
-
-            // Add the child menu and its submenus to the child menu list
-            $childMenuList[] = [
-                'child_menu_id' => $childMenu->menu_id,
-                'child_menu_name' => $childMenu->name,
-                'child_menu_url' => $childMenu->url,
-                'sub_menus' => $subMenus->map(function ($subMenu) {
-                    return [
-                        'sub_menu_id' => $subMenu->menu_id,
-                        'sub_menu_name' => $subMenu->name,
-                        'sub_menu_url' => $subMenu->url,
-                    ];
-                })
-            ];
-        }
-
-        // Add the parent menu and its children to the response structure
-        $menuList[] = [
-            'parent_menu_id' => $parentMenu->menu_id,
-            'parent_menu_name' => $parentMenu->name,
-            'parent_menu_url' => $parentMenu->url,
-            'child_menus' => $childMenuList
+    $menuList = $parentMenus->map(function ($parentMenu) use ($assignedMenuIds) {
+        return [
+            'menu_id' => $parentMenu->menu_id,
+            'name' => $parentMenu->name,
+            'url' => $parentMenu->url,
+            'sub_menus' => $this->getSubMenus($parentMenu->menu_id, $assignedMenuIds)
         ];
-    }
+    });
 
     return response()->json($menuList);
 }
+
+public  function getSubMenus($parentId, $assignedMenuIds)
+{
+    // Get the submenus where parent_id is the given parent ID
+    $subMenus = Menu::where('parent_id', $parentId)
+        ->whereIn('menu_id', $assignedMenuIds)
+        ->get(['menu_id', 'name', 'url']);
+
+    // Recursively get each submenu's submenus   using the recursion function.  
+    return $subMenus->map(function ($subMenu) use ($assignedMenuIds) {
+        return [
+            'menu_id' => $subMenu->menu_id,
+            'name' => $subMenu->name,
+            'url' => $subMenu->url,
+            'sub_menus' => $this->getSubMenus($subMenu->menu_id, $assignedMenuIds)
+        ];
+    });
+}
+
 
 
 
