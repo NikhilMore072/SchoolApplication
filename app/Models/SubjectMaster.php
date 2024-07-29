@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Menu extends Model
+class SubjectMaster extends Model
 {
     use HasFactory;
-
-    protected $table = 'menus';
-    protected $primaryKey = 'menu_id'; 
+     
+    protected $table = 'subject_masters';
+    protected $primaryKey = 'sm_id'; 
     public $incrementing = true; 
-    protected $fillable = ['name', 'url', 'parent_id','sequence'];
+    protected $fillable = ['name','subject_type'];
+
 }
