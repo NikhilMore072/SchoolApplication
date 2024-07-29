@@ -16,18 +16,19 @@ use App\Models\Attendence;
 use App\Models\UserMaster;
 use App\Models\StaffNotice;
 use Illuminate\Http\Request;
+use App\Models\SubjectMaster;
 use Illuminate\Support\Carbon;
 use App\Models\BankAccountName;
 use Illuminate\Http\JsonResponse;
 use App\Mail\TeacherBirthdayEmail;
 use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
-use Tymon\JWTAuth\Facades\JWTAuth;
 // use Illuminate\Support\Facades\Auth;
 
 
@@ -1246,4 +1247,95 @@ public function deleteStaff($id)
         ], 500);
     }
 }
+
+// Methods for  Subject Master  API 
+public function getSubjects(Request $request)
+{
+    $subjects = SubjectMaster::all();
+    return response()->json($subjects);
+}
+
+// Store a new subject
+public function storeSubject(Request $request)
+{
+    $request->validate([
+        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+        'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+    ]);
+
+    $subject = new SubjectMaster();
+    $subject->name = $request->name;
+    $subject->subject_type = $request->subject_type;
+    $subject->save();
+
+    return response()->json([
+        'status' => 201,
+        'message' => 'Subject created successfully',
+    ]);
+}
+
+// Edit a subject (show a specific subject)
+public function editSubject($id)
+{
+    $subject = SubjectMaster::find($id);
+
+    if (!$subject) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Subject not found',
+        ]);
+    }
+
+    return response()->json($subject);
+}
+
+// Update a subject
+public function updateSubject(Request $request, $id)
+{
+    $request->validate([
+        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+        'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+    ]);
+
+    $subject = SubjectMaster::find($id);
+
+    if (!$subject) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Subject not found',
+        ]);
+    }
+
+    $subject->name = $request->name;
+    $subject->subject_type = $request->subject_type;
+    $subject->save();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'Subject updated successfully',
+    ]);
+}
+
+// Delete a subject
+public function deleteSubject($id)
+{
+    $subject = SubjectMaster::find($id);
+
+    if (!$subject) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Subject not found',
+        ]);
+    }
+
+    $subject->delete();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'Subject deleted successfully',
+    ]);
+}
+
+
+
 }

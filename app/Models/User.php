@@ -82,6 +82,10 @@
 namespace App\Models;
 
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Teacher;
+
+use App\Models\Role;
+
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -98,15 +102,14 @@ class User extends Authenticatable implements JWTSubject // Implement JWTSubject
      */
     protected $fillable = ['email','user_id','name','password','reg_id','role_id','answer_one','answer_two','IsDelete'];
 
-    // protected $fillable = [
-    //     'name',
-    //     'email',
-    //     'password',
-    // ];
-
         public function getTeacher()
     {
         return $this->belongsTo(Teacher::class, 'reg_id');  
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     /**
@@ -140,5 +143,7 @@ class User extends Authenticatable implements JWTSubject // Implement JWTSubject
            'academic_yr' =>  Setting::where('active', 'Y')->first()->academic_yr,
         ];
     }
+
+   
 }
 
