@@ -7,7 +7,11 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\RolesAndMenu;
 use Illuminate\Http\Request;
-
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Tymon\JWTAuth\Exceptions\JWTException;
 class RoleController extends Controller
 {
     public function index()
@@ -22,6 +26,7 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
+            'role_id' => 'required|string|max:255|unique:roles,role_id',
             'rolename' => 'required|string|max:255',
         ]);
 
@@ -34,10 +39,9 @@ class RoleController extends Controller
         ], 201); 
     }
 
-
-    public function edit($id)
+    public function edit($role_id)
     {
-        $role = Role::find($id);
+        $role = Role::find($role_id);
 
         if ($role) {
             return response()->json([
@@ -52,282 +56,227 @@ class RoleController extends Controller
         ], 404);
     }
 
+    public function update(Request $request, $role_id)
+    {
+        $validatedData = $request->validate([
+            'rolename' => 'required|string|max:255',
+            'is_active' => 'required|string|max:255',
+        ]);
 
-    // public function update(Request $request, $id){
-    //     $validatedData = $request->validate([
-    //         'rolename' => 'required|string|max:255',
-    //         'is_active' => '|string|max:255',
-    //     ]);
+        $role = Role::find($role_id);
 
-    //     $role = Role::find($id);
+        if ($role) {
+            // Check if the role is being used before deactivating it
+            if ($validatedData['is_active'] === 'N') {
+                $isRoleInUse = User::where('role_id', $role_id)->exists();
 
-    //     if ($role) {
-    //         $role->update($validatedData);
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Role updated successfully.',
-    //             'data' => $role
-    //         ]);
-    //     }
-
-    //     return response()->json([
-    //         'success' => false,
-    //         'message' => 'Role not found.'
-    //     ], 404); 
-    // }
-
-    public function update(Request $request, $id)
-{
-    $validatedData = $request->validate([
-        'rolename' => 'required|string|max:255',
-        'is_active' => 'string|max:255',
-    ]);
-
-    $role = Role::find($id);
-
-    if ($role) {
-        if ($validatedData['is_active'] === 'N') {
-            $isRoleInUse = User::where('role_id', $id)->exists();
-
-            if ($isRoleInUse) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Role cannot be deactivated as it is being used in another table.'
-                ], 400);
+                if ($isRoleInUse) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Role cannot be deactivated as it is being used in another table.'
+                    ], 400);
+                }
             }
+
+            // Update the role
+            $role->update($validatedData);
+            return response()->json([
+                'success' => true,
+                'message' => 'Role updated successfully.',
+                'data' => $role
+            ]);
         }
 
-        // Update the role
-        $role->update($validatedData);
         return response()->json([
-            'success' => true,
-            'message' => 'Role updated successfully.',
-            'data' => $role
-        ]);
+            'success' => false,
+            'message' => 'Role not found.'
+        ], 404);
     }
 
-    return response()->json([
-        'success' => false,
-        'message' => 'Role not found.'
-    ], 404);
-}
+    public function delete($role_id)
+    {
+        $role = Role::find($role_id);
 
+        if ($role) {
+            $role->delete();
 
-    public function delete($id)
-{
-    $role = Role::find($id);
-
-    if ($role) {
-        $role->delete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Role deleted successfully.'
+            ]);
+        }
 
         return response()->json([
-            'success' => true,
-            'message' => 'Role deleted successfully.'
-        ]);
+            'success' => false,
+            'message' => 'Role not found.'
+        ], 404);
     }
 
-    return response()->json([
-        'success' => false,
-        'message' => 'Role not found.'
-    ], 404);
-}
-
-
-    public function showRoles(){
+    public function showRoles()
+    {
         $data = Role::all();
         return response()->json($data);
     }
 
-public function showAccess($roleId) {
-    $role = Role::find($roleId);
-    $menuList = Menu::all(); 
+    public function showAccess($role_id) {
+        $role = Role::find($role_id);
+        $menuList = Menu::all(); 
 
-    $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
-                                  ->pluck('menu_id')
-                                  ->toArray();
+        $assignedMenuIds = RolesAndMenu::where('role_id', $role_id)
+                                      ->pluck('menu_id')
+                                      ->toArray();
 
-    return response()->json([
-        'role' => $role,
-        'menuList' => $menuList,
-        'assignedMenuIds' => $assignedMenuIds, 
-    ]);
-}
-
-
-public function updateAccess(Request $request, $roleId)
-{
-    $request->validate([
-        'menu_ids' => 'required|array',
-        'menu_ids.*' => 'exists:menus,menu_id',
-    ]);
-    RolesAndMenu::where('role_id', $roleId)->delete();
-    $menuIds = $request->input('menu_ids');
-    foreach ($menuIds as $menuId) {
-        RolesAndMenu::create([
-            'role_id' => $roleId,
-            'menu_id' => $menuId,
+        return response()->json([
+            'role' => $role,
+            'menuList' => $menuList,
+            'assignedMenuIds' => $assignedMenuIds, 
         ]);
     }
 
-    return response()->json(['message' => 'Access updated successfully']);
-}
+    public function updateAccess(Request $request, $role_id)
+    {
+        $request->validate([
+            'menu_ids' => 'required|array',
+            'menu_ids.*' => 'exists:menus,menu_id',
+        ]);
+
+        RolesAndMenu::where('role_id', $role_id)->delete();
+        $menuIds = $request->input('menu_ids');
+        foreach ($menuIds as $menuId) {
+            RolesAndMenu::create([
+                'role_id' => $role_id,
+                'menu_id' => $menuId,
+            ]);
+        }
+
+        return response()->json(['message' => 'Access updated successfully']);
+    }
+    private function authenticateUser()
+    {
+        try {
+            return JWTAuth::parseToken()->authenticate();
+        } catch (JWTException $e) {
+            return null;
+        }
+    }
+    public function navMenulist(Request $request)
+    {
+        // $roleId = 3;
+        $user = $this->authenticateUser();
+        $roleId = $user->role_id;
+
+        // Get the menu IDs from RolesAndMenu where role_id is the specified value
+        $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
+            ->pluck('menu_id')
+            ->toArray();
+
+        // Get the parent menus where parent_id is 0
+        $parentMenus = Menu::where('parent_id', 0)
+            ->whereIn('menu_id', $assignedMenuIds)
+            ->get(['menu_id', 'name', 'url']);
+
+        // Prepare the final response structure
+        $menuList = $parentMenus->map(function ($parentMenu) use ($assignedMenuIds) {
+            return [
+                'menu_id' => $parentMenu->menu_id,
+                'name' => $parentMenu->name,
+                'url' => $parentMenu->url,
+                'sub_menus' => $this->getSubMenus($parentMenu->menu_id, $assignedMenuIds)
+            ];
+        });
+
+        return response()->json($menuList);
+    }
+
+    public function getSubMenus($parentId, $assignedMenuIds)
+    {
+        // Get the submenus where parent_id is the given parent ID
+        $subMenus = Menu::where('parent_id', $parentId)
+            ->whereIn('menu_id', $assignedMenuIds)
+            ->get(['menu_id', 'name', 'url']);
+
+        // Recursively get each submenu's submenus
+        return $subMenus->map(function ($subMenu) use ($assignedMenuIds) {
+            return [
+                'menu_id' => $subMenu->menu_id,
+                'name' => $subMenu->name,
+                'url' => $subMenu->url,
+                'sub_menus' => $this->getSubMenus($subMenu->menu_id, $assignedMenuIds)
+            ];
+        });
+    }
+
+    //Menu Methods 
+     public function getMenus()
+    {
+        return response()->json(Menu::all());
+    }
+
+    public function storeMenus(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'url' => 'required|string|max:255',
+            'parent_id' => 'nullable|integer|exists:menus,menu_id',
+            'sequence' => 'required|integer|unique:menus',
+        ]);
+
+        $validated['parent_id'] = $validated['parent_id'] ?? 0;
 
 
+        $menu = Menu::create($validated);
+        return response()->json($menu, 201);
+    }
+
+    public function showMenus($id)
+    {
+        return response()->json(Menu::findOrFail($id));
+    }
+
+    public function updateMenus(Request $request, $id)
+    {
+        $menu = Menu::findOrFail($id);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'url' => 'required|string|max:255',
+            'parent_id' => 'nullable|integer|exists:menus,menu_id',
+            'sequence' => 'required|integer|unique:menus',
+        ]);
+        
+        $validated['parent_id'] = $validated['parent_id'] ?? 0;
 
 
+        $menu->update($validated);
+        return response()->json($menu, 200);
+    }
 
-
-
-// public function navMenulist(Request $request)
+//     public function updateMenus(Request $request, $id)
 // {
-//     $roleId = 3;
+//     $menu = Menu::findOrFail($id);
 
-//     // Get the menu IDs from RolesAndMenu where role_id is the specified value
-//     $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
-//         ->pluck('menu_id')
-//         ->toArray();
+//     $validated = $request->validate([
+//         'name' => 'required|string|max:255',
+//         'url' => 'required|string|max:255',
+//         'parent_id' => 'nullable|string|exists:menus,menu_id', // Accept string and check existence
+//         'sequence' => 'required|integer|unique:menus,sequence,' . $id, // Exclude current menu ID from unique check
+//     ]);
 
-//     // Get the parent menu names and their IDs where parent_id is 0
-//     $parentMenus = Menu::where('parent_id', 0)
-//         ->whereIn('menu_id', $assignedMenuIds)
-//         ->get(['menu_id', 'name','url']);
+//     // Set parent_id to null if it's an empty string
+//     $validated['parent_id'] = $validated['parent_id'] === "" ? "0" : $validated['parent_id'];
 
-//     // Prepare the final response structure
-//     $menuList = [];
+//     $menu->update($validated);
 
-//     foreach ($parentMenus as $parentMenu) {
-//         // Get the child menu names and their IDs where parent_id is the current parent menu ID
-//         $childMenus = Menu::where('parent_id', $parentMenu->menu_id)
-//             ->whereIn('menu_id', $assignedMenuIds)
-//             ->get(['menu_id', 'name']);
-
-//         // Add the parent menu and its children to the response structure
-//         $menuList[] = [
-//             'parent_menu_id' => $parentMenu->menu_id,
-//             'parent_menu_name' => $parentMenu->name,
-//             'parent_menu_url' => $parentMenu->url,
-//             'child_menus' => $childMenus->map(function ($childMenu) {
-//                 return [
-//                     'child_menu_id' => $childMenu->menu_id,
-//                     'child_menu_name' => $childMenu->name,
-//                     'child_menu_url' => $childMenu->url,
-//                 ];
-//             })
-//         ];
-//     }
-
-//     return response()->json($menuList);
+//     return response()->json($menu, 200);
 // }
 
 
-// public function navMenulist(Request $request)
-// {
-//     $roleId = 3;
+    public function destroy($id)
+    {
+        $menu = Menu::findOrFail($id);
+        $menu->delete();
+        return response()->json(null, 204);
+    }
 
-//     // Get the menu IDs from RolesAndMenu where role_id is the specified value
-//     $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
-//         ->pluck('menu_id')
-//         ->toArray();
+   
 
-//     // Get the parent menu names and their IDs where parent_id is 0
-//     $parentMenus = Menu::where('parent_id', 0)
-//         ->whereIn('menu_id', $assignedMenuIds)
-//         ->get(['menu_id', 'name', 'url']);
-
-//     // Prepare the final response structure
-//     $menuList = [];
-
-//     foreach ($parentMenus as $parentMenu) {
-//         // Get the child menus where parent_id is the current parent menu ID
-//         $childMenus = Menu::where('parent_id', $parentMenu->menu_id)
-//             ->whereIn('menu_id', $assignedMenuIds)
-//             ->get(['menu_id', 'name', 'url']);
-
-//         // Prepare child menu list with their submenus
-//         $childMenuList = [];
-
-//         foreach ($childMenus as $childMenu) {
-//             // Get the submenus where parent_id is the current child menu ID
-//             $subMenus = Menu::where('parent_id', $childMenu->menu_id)
-//                 ->whereIn('menu_id', $assignedMenuIds)
-//                 ->get(['menu_id', 'name', 'url']);
-
-//             // Add the child menu and its submenus to the child menu list
-//             $childMenuList[] = [
-//                 'child_menu_id' => $childMenu->menu_id,
-//                 'child_menu_name' => $childMenu->name,
-//                 'child_menu_url' => $childMenu->url,
-//                 'sub_menus' => $subMenus->map(function ($subMenu) {
-//                     return [
-//                         'sub_menu_id' => $subMenu->menu_id,
-//                         'sub_menu_name' => $subMenu->name,
-//                         'sub_menu_url' => $subMenu->url,
-//                     ];
-//                 })
-//             ];
-//         }
-
-//         // Add the parent menu and its children to the response structure
-//         $menuList[] = [
-//             'parent_menu_id' => $parentMenu->menu_id,
-//             'parent_menu_name' => $parentMenu->name,
-//             'parent_menu_url' => $parentMenu->url,
-//             'child_menus' => $childMenuList
-//         ];
-//     }    
-//     return response()->json($menuList);
-// }
-
-
-public function navMenulist(Request $request)
-{
-    $roleId = 3;
-
-    // Get the menu IDs from RolesAndMenu where role_id is the specified value
-    $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
-        ->pluck('menu_id')
-        ->toArray();
-
-    // Get the parent menus where parent_id is 0
-    $parentMenus = Menu::where('parent_id', 0)
-        ->whereIn('menu_id', $assignedMenuIds)
-        ->get(['menu_id', 'name', 'url']);
-
-    // Prepare the final response structure
-    $menuList = $parentMenus->map(function ($parentMenu) use ($assignedMenuIds) {
-        return [
-            'menu_id' => $parentMenu->menu_id,
-            'name' => $parentMenu->name,
-            'url' => $parentMenu->url,
-            'sub_menus' => $this->getSubMenus($parentMenu->menu_id, $assignedMenuIds)
-        ];
-    });
-
-    return response()->json($menuList);
-}
-
-public  function getSubMenus($parentId, $assignedMenuIds)
-{
-    // Get the submenus where parent_id is the given parent ID
-    $subMenus = Menu::where('parent_id', $parentId)
-        ->whereIn('menu_id', $assignedMenuIds)
-        ->get(['menu_id', 'name', 'url']);
-
-    // Recursively get each submenu's submenus   using the recursion function.  
-    return $subMenus->map(function ($subMenu) use ($assignedMenuIds) {
-        return [
-            'menu_id' => $subMenu->menu_id,
-            'name' => $subMenu->name,
-            'url' => $subMenu->url,
-            'sub_menus' => $this->getSubMenus($subMenu->menu_id, $assignedMenuIds)
-        ];
-    });
-}
-
-
-
-
-
-
- 
 }

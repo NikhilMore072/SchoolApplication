@@ -141,6 +141,7 @@ class User extends Authenticatable implements JWTSubject // Implement JWTSubject
     {
         return [
            'academic_yr' =>  Setting::where('active', 'Y')->first()->academic_yr,
+           'institute_name' =>  Setting::where('active', 'Y')->first()->institute_name,          
         ];
     }
 

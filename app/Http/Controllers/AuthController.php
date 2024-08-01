@@ -39,22 +39,67 @@ class AuthController extends Controller
 // }
 
 
+// public function login(Request $request)
+// {
+//     $credentials = $request->only('email', 'password');
+
+//     Log::info('Login attempt with credentials:', $credentials);
+
+//     try {
+//         if (!$token = JWTAuth::attempt($credentials)) {
+//             Log::warning('Invalid credentials for user:', $credentials);
+//             return response()->json(['error' => 'Invalid credentials'], 401);
+//         }
+
+//         $user = JWTAuth::setToken($token)->toUser();
+//         $academic_yr = Setting::where('active', 'Y')->first()->academic_yr;
+
+//         Log::info('Authenticated user:', ['user_id' => $user->id, 'academic_year' => $academic_yr]);
+
+//         $customClaims = [
+//             'role_id' => $user->role_id,
+//             'reg_id' => $user->reg_id,
+//             'academic_year' => $academic_yr,
+//         ];
+
+//         $token = JWTAuth::claims($customClaims)->fromUser($user);
+
+//         Log::info('Token created successfully:', ['token' => $token]);
+
+//         return response()->json(['token' => $token]);
+
+//     } catch (JWTException $e) {
+//         Log::error('JWTException occurred:', ['message' => $e->getMessage()]);
+//         return response()->json(['error' => 'Could not create token'], 500);
+//     }
+// }
+
+
 public function login(Request $request)
 {
     $credentials = $request->only('email', 'password');
 
-    Log::info('Login attempt with credentials:', $credentials);
+    // Log::info('Login attempt with credentials:', $credentials);
 
     try {
-        if (!$token = JWTAuth::attempt($credentials)) {
-            Log::warning('Invalid credentials for user:', $credentials);
-            return response()->json(['error' => 'Invalid credentials'], 401);
+        // Check if the email exists in the database
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (!$user) {
+            Log::warning('Username is not valid:', $credentials);
+            return response()->json(['error' => 'Username is not valid'], 401);
         }
 
-        $user = JWTAuth::setToken($token)->toUser();
+        // Attempt to authenticate using the password
+        if (!$token = JWTAuth::attempt($credentials)) {
+            Log::warning('Invalid password for user:', $credentials);
+            return response()->json(['error' => 'Invalid password'], 401);
+        }
+
+        // If authentication is successful
         $academic_yr = Setting::where('active', 'Y')->first()->academic_yr;
 
-        Log::info('Authenticated user:', ['user_id' => $user->id, 'academic_year' => $academic_yr]);
+        // Log::info('Authenticated user:', ['user_id' => $user->id, 'academic_year' => $academic_yr]);
 
         $customClaims = [
             'role_id' => $user->role_id,
@@ -66,7 +111,8 @@ public function login(Request $request)
 
         Log::info('Token created successfully:', ['token' => $token]);
 
-        return response()->json(['token' => $token]);
+        return response()->json(['token' => $token
+                               ,'user' => $user]);
 
     } catch (JWTException $e) {
         Log::error('JWTException occurred:', ['message' => $e->getMessage()]);
