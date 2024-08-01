@@ -203,13 +203,18 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::post('/update_access/{roleId}', [RoleController::class, 'updateAccess']);
         Route::get('/navmenulist', [RoleController::class, 'navMenulist']);
 
+        Route::get('/menus', [RoleController::class, 'getMenus']);
+        Route::post('/menus', [RoleController::class, 'storeMenus']);
+        Route::get('/menus/{id}', [RoleController::class, 'showMenus']);
+        Route::put('/menus/{id}', [RoleController::class, 'updateMenus']);
+        Route::delete('/menus/{id}', [RoleController::class, 'destroy']);
+
         // API for the subject master.
         Route::get('/subject', [MastersController::class, 'getSubjects']);
         Route::post('/subject', [MastersController::class, 'storeSubject']);
         Route::get('/subject/{id}', [MastersController::class, 'editSubject']);
         Route::put('/subject/{id}', [MastersController::class, 'updateSubject']);
         Route::delete('/subject/{id}', [MastersController::class, 'deleteSubject']);
-
 
 });
 

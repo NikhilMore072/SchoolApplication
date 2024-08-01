@@ -7,10 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
+
+    
+   
     use HasFactory;
-    use HasFactory;
+    protected $primaryKey = 'role_id'; 
+    public $incrementing = false;
     protected $table ='roles';
-    protected  $fillable = ['rolename','is_active']; 
+    protected  $fillable = ['role_id','rolename','is_active']; 
    
 
     public function users()
