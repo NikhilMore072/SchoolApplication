@@ -87,7 +87,7 @@ public function login(Request $request)
 
         if (!$user) {
             Log::warning('Username is not valid:', $credentials);
-            return response()->json(['error' => 'Username is not valid'], 401);
+            return response()->json(['error' => 'Username is not valid'], 404);
         }
 
         // Attempt to authenticate using the password
