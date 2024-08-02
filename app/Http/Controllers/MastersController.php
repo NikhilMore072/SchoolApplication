@@ -700,9 +700,38 @@ public function listSections(Request $request)
         return response()->json($sections);
     }
 
+// public function storeSection(Request $request)
+// {
+//     $request->validate([
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ], [
+//         'name.required' => 'The name field is required.',
+//         'name.string' => 'The name field must be a string.',
+//         'name.max' => 'The name field must not exceed 255 characters.',
+//         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+//     ]);
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+//     $section = new Section();
+//     $section->name = $request->name;
+//     $section->academic_yr = $academicYr;
+//     $section->save();
+
+//     // Return success response
+//     return response()->json([
+//         'status' => 201,
+//         'message' => 'Section created successfully',
+//         'data' => $section,
+//     ]);
+// }
+
+
 public function storeSection(Request $request)
 {
-    $request->validate([
+    $validator = \Validator::make($request->all(), [
         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
     ], [
         'name.required' => 'The name field is required.',
@@ -710,11 +739,23 @@ public function storeSection(Request $request)
         'name.max' => 'The name field must not exceed 255 characters.',
         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
     ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    // Get token payload
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+
     $academicYr = $payload->get('academic_year');
+
+    // Create and save the section
     $section = new Section();
     $section->name = $request->name;
     $section->academic_yr = $academicYr;
@@ -728,6 +769,7 @@ public function storeSection(Request $request)
     ]);
 }
 
+
 public function editSection($id)
 {
     $section = Section::find($id);
@@ -739,9 +781,43 @@ public function editSection($id)
     return response()->json($section);
 }
 
+// public function updateSection(Request $request, $id)
+// {
+//     $request->validate([
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ], [
+//         'name.required' => 'The name field is required.',
+//         'name.string' => 'The name field must be a string.',
+//         'name.max' => 'The name field must not exceed 255 characters.',
+//         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+//     ]);
+
+//     $section = Section::find($id);
+//     $payload = getTokenPayload($request);
+//         if (!$payload) {
+//             return response()->json(['error' => 'Invalid or missing token'], 401);
+//         }
+
+//         $academicYr = $payload->get('academic_year');
+
+//     if (!$section) {
+//         return response()->json(['message' => 'Section not found', 'success' => false], 404);
+//     }
+
+//     $section->name = $request->name;
+//     $section->academic_yr = $academicYr;
+//     $section->save();
+
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Section updated successfully',
+//     ]);
+// }
+
 public function updateSection(Request $request, $id)
 {
-    $request->validate([
+    // Validate the request
+    $validator = \Validator::make($request->all(), [
         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
     ], [
         'name.required' => 'The name field is required.',
@@ -750,32 +826,44 @@ public function updateSection(Request $request, $id)
         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
     ]);
 
+    // Check if validation fails
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    // Find the section by ID
     $section = Section::find($id);
-    $payload = getTokenPayload($request);
-        if (!$payload) {
-            return response()->json(['error' => 'Invalid or missing token'], 401);
-        }
-
-        $academicYr = $payload->get('academic_year');
-
     if (!$section) {
         return response()->json(['message' => 'Section not found', 'success' => false], 404);
     }
 
+    // Get token payload
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+
+    $academicYr = $payload->get('academic_year');
+
+    // Update the section
     $section->name = $request->name;
     $section->academic_yr = $academicYr;
     $section->save();
 
+    // Return success response
     return response()->json([
         'status' => 200,
         'message' => 'Section updated successfully',
     ]);
 }
 
+
 public function deleteSection($id)
 {
     $section = Section::find($id);
-
     if (!$section) {
         return response()->json(['message' => 'Section not found', 'success' => false], 404);
     }
@@ -802,14 +890,84 @@ public function getClass(Request $request)
     return response()->json($classes);
 }
 
+// public function storeClass(Request $request)
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+//     $request->validate([
+//         'name' => ['required', 'string', 'max:255'],
+//         'department_id' => ['required', 'integer'],
+//     ], [
+//         'name.required' => 'The name field is required.',
+//         'name.string' => 'The name field must be a string.',
+//         'name.max' => 'The name field must not exceed 255 characters.',
+//         'department_id.required' => 'The department ID is required.',
+//         'department_id.integer' => 'The department ID must be an integer.',
+//     ]);
+
+//     $class = new Classes();
+//     $class->name = $request->name;
+//     $class->department_id = $request->department_id;
+//     $class->academic_yr = $academicYr;
+
+//     $class->save();
+
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Class created successfully',
+//     ]);
+// }
+// public function updateClass(Request $request, $id)
+// {
+//     $request->validate([
+//         'name' => ['required', 'string', 'max:255'],
+//         'department_id' => ['required', 'integer'],
+//     ], [
+//         'name.required' => 'The name field is required.',
+//         'name.string' => 'The name field must be a string.',
+//         'name.max' => 'The name field must not exceed 255 characters.',
+//         'department_id.required' => 'The department ID is required.',
+//         'department_id.integer' => 'The department ID must be an integer.',
+//     ]);
+
+//     $class = Classes::find($id);
+
+//     if (!$class) {
+//         return response()->json(['message' => 'Class not found', 'success' => false], 404);
+//     }
+
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     $class->name = $request->name;
+//     $class->department_id = $request->department_id;
+//     $class->academic_yr = $academicYr;
+
+//     $class->save();
+
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Class updated successfully',
+//     ]);
+// }
+
 public function storeClass(Request $request)
 {
+    // Get token payload
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
     $academicYr = $payload->get('academic_year');
-    $request->validate([
+
+    // Validate the request
+    $validator = \Validator::make($request->all(), [
         'name' => ['required', 'string', 'max:255'],
         'department_id' => ['required', 'integer'],
     ], [
@@ -820,21 +978,49 @@ public function storeClass(Request $request)
         'department_id.integer' => 'The department ID must be an integer.',
     ]);
 
+    // Check if validation fails
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    // Create and save the class
     $class = new Classes();
     $class->name = $request->name;
     $class->department_id = $request->department_id;
     $class->academic_yr = $academicYr;
-
     $class->save();
 
+    // Return success response
     return response()->json([
-        'status' => 200,
+        'status' => 201,
         'message' => 'Class created successfully',
+        'data' => $class,
     ]);
 }
+
+public function showClass($id)
+{
+    $class = Classes::find($id);
+    if (!$class) {
+        return response()->json(['message' => 'Class not found', 'success' => false], 404);
+    }
+
+    // Return the class data
+    return response()->json([
+        'status' => 200,
+        'message' => 'Class retrieved successfully',
+        'data' => $class,
+    ]);
+}
+
+
 public function updateClass(Request $request, $id)
 {
-    $request->validate([
+    // Validate the request
+    $validator = \Validator::make($request->all(), [
         'name' => ['required', 'string', 'max:255'],
         'department_id' => ['required', 'integer'],
     ], [
@@ -845,29 +1031,41 @@ public function updateClass(Request $request, $id)
         'department_id.integer' => 'The department ID must be an integer.',
     ]);
 
-    $class = Classes::find($id);
+    // Check if validation fails
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
 
+    // Find the class by ID
+    $class = Classes::find($id);
     if (!$class) {
         return response()->json(['message' => 'Class not found', 'success' => false], 404);
     }
 
+    // Get token payload
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
     $academicYr = $payload->get('academic_year');
 
+    // Update the class
     $class->name = $request->name;
     $class->department_id = $request->department_id;
     $class->academic_yr = $academicYr;
-
     $class->save();
 
+    // Return success response
     return response()->json([
         'status' => 200,
         'message' => 'Class updated successfully',
+        'data' => $class,
     ]);
 }
+
 public function getDepartments()
 {
     $departments = Section::all();
@@ -921,21 +1119,6 @@ public function store(Request $request)
         'message' => 'Class created successfully',
     ]);
 }
-
-
-
-public function show($id)
-{
-       $division = Division::with('getClass')->find($id);
-
-    if (is_null($division)) {
-        return response()->json(['message' => 'Division not found'], 404);
-    }
-
-    return response()->json($division);
-}
-
-
 public function updateDivision(Request $request, $id)
 {
     $payload = getTokenPayload($request);
@@ -961,6 +1144,21 @@ public function updateDivision(Request $request, $id)
         'message' => 'Division updated successfully',
     ]);
 }
+
+
+public function show($id)
+{
+       $division = Division::with('getClass')->find($id);
+
+    if (is_null($division)) {
+        return response()->json(['message' => 'Division not found'], 404);
+    }
+
+    return response()->json($division);
+}
+
+
+
 
 
 public function destroy($id)
@@ -1073,32 +1271,186 @@ public function getStaffList(Request $request) {
 //     }
 // }
 
+
+public function editStaff($id)
+{
+    try {
+        $teacher = Teacher::findOrFail($id);
+
+        return response()->json([
+            'message' => 'Teacher retrieved successfully!',
+            'teacher' => $teacher,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'An error occurred while retrieving the teacher',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+// public function storeStaff(Request $request)
+// {
+//     try {
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255', //1
+//             'name' => 'required|string|max:255', //2
+//             'birthday' => 'required|date', //3
+//             'date_of_joining' => 'required|date', //4
+//             'sex' => 'required|string|max:10', //5
+//             'religion' => 'nullable|string|max:255', //6
+//             'blood_group' => 'nullable|string|max:10', //7
+//             'address' => 'required|string|max:255', //8
+//             'phone' => 'required|string|max:15', //9
+//             'email' => 'required|string|email|max:255|unique:teacher,email', //10
+//             'designation' => 'required|string|max:255', //11
+//             'academic_qual' => 'nullable|array', //12
+//             'academic_qual.*' => 'nullable|string|max:255', //12
+//             'professional_qual' => 'nullable|string|max:255', //13
+//             'special_sub' => 'nullable|string|max:255', //14
+//             'trained' => 'nullable|string|max:255', //15
+//             'experience' => 'nullable|string|max:255', //16
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no', //17
+//             'teacher_image_name' => 'nullable|string|max:255', //18
+//             'role' => 'required|string|max:255',
+            
+//         ]);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         $teacher = new Teacher();
+//         $teacher->fill($validatedData);
+//         $teacher->IsDelete = 'N'; 
+
+//         if ($teacher->save()) {
+//             $user = User::create([
+//                 'email' => $validatedData['email'],
+//                 'name' => $validatedData['name'],
+//                 'password' => Hash::make('arnolds'), 
+//                 'reg_id' => $teacher->teacher_id, 
+//                 'role_id' => $validatedData['role'], 
+//                 'IsDelete' => 'N', 
+//             ]);
+
+//             return response()->json([
+//                 'message' => 'Teacher created successfully!',
+//                 'teacher' => $teacher,
+//                 'user' => $user,
+//             ], 201);
+//         } else {
+//             return response()->json([
+//                 'message' => 'Failed to create teacher',
+//             ], 500);
+//         }
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'message' => 'An error occurred while creating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+// public function updateStaff(Request $request, $id)
+// {
+//     try {
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'father_spouse_name' => 'nullable|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+//             'designation' => 'required|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
+//             'teacher_image_name' => 'nullable|string|max:255',
+//             'class_id' => 'nullable|integer',
+//             'section_id' => 'nullable|integer',
+//             'isDelete' => 'nullable|string|in:Y,N',
+//             // 'role_id' => 'nullable|string|in:Y,N',
+//         ]);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         $teacher = Teacher::findOrFail($id);
+//         $teacher->fill($validatedData);
+
+//         if ($teacher->save()) {
+//             $user = User::where('reg_id', $id)->first();
+//             if ($user) {
+//                 $user->name = $validatedData['name'];
+//                 $user->email = $validatedData['email'];
+//                 // $user->role_id = $validatedData['role_id'];
+//                 $user->save();
+//             }
+
+//             return response()->json([
+//                 'message' => 'Teacher updated successfully!',
+//                 'teacher' => $teacher,
+//                 'user' => $user,
+//             ], 200);
+//         } else {
+//             return response()->json([
+//                 'message' => 'Failed to update teacher',
+//             ], 500);
+//         }
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'message' => 'An error occurred while updating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
 public function storeStaff(Request $request)
 {
     try {
+        $messages = [
+            'name.required' => 'The name field is mandatory.',
+            'birthday.required' => 'The birthday field is required.',
+            'date_of_joining.required' => 'The date of joining is required.',
+            'email.required' => 'The email field is required.',
+            'email.email' => 'The email must be a valid email address.',
+            'email.unique' => 'The email has already been taken.',
+            'phone.required' => 'The phone number is required.',
+            'phone.max' => 'The phone number cannot exceed 15 characters.',
+            'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+        ];
+
         $validatedData = $request->validate([
-            'employee_id' => 'nullable|string|max:255', //1
-            'name' => 'required|string|max:255', //2
-            'birthday' => 'required|date', //3
-            'date_of_joining' => 'required|date', //4
-            'sex' => 'required|string|max:10', //5
-            'religion' => 'nullable|string|max:255', //6
-            'blood_group' => 'nullable|string|max:10', //7
-            'address' => 'required|string|max:255', //8
-            'phone' => 'required|string|max:15', //9
-            'email' => 'required|string|email|max:255|unique:teacher,email', //10
-            'designation' => 'required|string|max:255', //11
-            'academic_qual' => 'nullable|array', //12
-            'academic_qual.*' => 'nullable|string|max:255', //12
-            'professional_qual' => 'nullable|string|max:255', //13
-            'special_sub' => 'nullable|string|max:255', //14
-            'trained' => 'nullable|string|max:255', //15
-            'experience' => 'nullable|string|max:255', //16
-            'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no', //17
-            'teacher_image_name' => 'nullable|string|max:255', //18
+            'employee_id' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255',
+            'birthday' => 'required|date',
+            'date_of_joining' => 'required|date',
+            'sex' => 'required|string|max:10',
+            'religion' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|string|max:10',
+            'address' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+            'email' => 'required|string|email|max:255|unique:teacher,email',
+            'designation' => 'required|string|max:255',
+            'academic_qual' => 'nullable|array',
+            'academic_qual.*' => 'nullable|string|max:255',
+            'professional_qual' => 'nullable|string|max:255',
+            'special_sub' => 'nullable|string|max:255',
+            'trained' => 'nullable|string|max:255',
+            'experience' => 'nullable|string|max:255',
+            'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+            'teacher_image_name' => 'nullable|string|max:255',
             'role' => 'required|string|max:255',
-            
-        ]);
+        ], $messages);
 
         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
@@ -1128,6 +1480,11 @@ public function storeStaff(Request $request)
                 'message' => 'Failed to create teacher',
             ], 500);
         }
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'message' => 'Validation failed',
+            'errors' => $e->errors(),
+        ], 422);
     } catch (\Exception $e) {
         return response()->json([
             'message' => 'An error occurred while creating the teacher',
@@ -1136,28 +1493,21 @@ public function storeStaff(Request $request)
     }
 }
 
-
-
-public function editStaff($id)
-{
-    try {
-        $teacher = Teacher::findOrFail($id);
-
-        return response()->json([
-            'message' => 'Teacher retrieved successfully!',
-            'teacher' => $teacher,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'An error occurred while retrieving the teacher',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
 public function updateStaff(Request $request, $id)
 {
     try {
+        $messages = [
+            'name.required' => 'The name field is mandatory.',
+            'birthday.required' => 'The birthday field is required.',
+            'date_of_joining.required' => 'The date of joining is required.',
+            'email.required' => 'The email field is required.',
+            'email.email' => 'The email must be a valid email address.',
+            'email.unique' => 'The email has already been taken.',
+            'phone.required' => 'The phone number is required.',
+            'phone.max' => 'The phone number cannot exceed 15 characters.',
+            'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+        ];
+
         $validatedData = $request->validate([
             'employee_id' => 'nullable|string|max:255',
             'name' => 'required|string|max:255',
@@ -1182,8 +1532,7 @@ public function updateStaff(Request $request, $id)
             'class_id' => 'nullable|integer',
             'section_id' => 'nullable|integer',
             'isDelete' => 'nullable|string|in:Y,N',
-            // 'role_id' => 'nullable|string|in:Y,N',
-        ]);
+        ], $messages);
 
         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
@@ -1197,7 +1546,6 @@ public function updateStaff(Request $request, $id)
             if ($user) {
                 $user->name = $validatedData['name'];
                 $user->email = $validatedData['email'];
-                // $user->role_id = $validatedData['role_id'];
                 $user->save();
             }
 
@@ -1211,6 +1559,11 @@ public function updateStaff(Request $request, $id)
                 'message' => 'Failed to update teacher',
             ], 500);
         }
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'message' => 'Validation failed',
+            'errors' => $e->errors(),
+        ], 422);
     } catch (\Exception $e) {
         return response()->json([
             'message' => 'An error occurred while updating the teacher',
@@ -1256,22 +1609,75 @@ public function getSubjects(Request $request)
 }
 
 // Store a new subject
+// public function storeSubject(Request $request)
+// {
+//     $request->validate([
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ]);
+
+//     $subject = new SubjectMaster();
+//     $subject->name = $request->name;
+//     $subject->subject_type = $request->subject_type;
+//     $subject->save();
+
+//     return response()->json([
+//         'status' => 201,
+//         'message' => 'Subject created successfully',
+//     ]);
+// }
+
+
+// public function updateSubject(Request $request, $id)
+// {
+//     $request->validate([
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ]);
+
+//     $subject = SubjectMaster::find($id);
+
+//     if (!$subject) {
+//         return response()->json([
+//             'status' => 404,
+//             'message' => 'Subject not found',
+//         ]);
+//     }
+
+//     $subject->name = $request->name;
+//     $subject->subject_type = $request->subject_type;
+//     $subject->save();
+
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Subject updated successfully',
+//     ]);
+// }
+
+
 public function storeSubject(Request $request)
 {
-    $request->validate([
+    $messages = [
+        'name.required' => 'The name field is required.',
+        'name.regex' => 'The name may only contain letters.',
+        'subject_type.required' => 'The subject type field is required.',
+        'subject_type.regex' => 'The subject type may only contain letters.',
+    ];
+
+    $validatedData = $request->validate([
         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-    ]);
+    ], $messages);
 
     $subject = new SubjectMaster();
-    $subject->name = $request->name;
-    $subject->subject_type = $request->subject_type;
+    $subject->name = $validatedData['name'];
+    $subject->subject_type = $validatedData['subject_type'];
     $subject->save();
 
     return response()->json([
         'status' => 201,
         'message' => 'Subject created successfully',
-    ]);
+    ], 201);
 }
 
 // Edit a subject (show a specific subject)
@@ -1292,10 +1698,17 @@ public function editSubject($id)
 // Update a subject
 public function updateSubject(Request $request, $id)
 {
-    $request->validate([
+    $messages = [
+        'name.required' => 'The name field is required.',
+        'name.regex' => 'The name may only contain letters.',
+        'subject_type.required' => 'The subject type field is required.',
+        'subject_type.regex' => 'The subject type may only contain letters.',
+    ];
+
+    $validatedData = $request->validate([
         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-    ]);
+    ], $messages);
 
     $subject = SubjectMaster::find($id);
 
@@ -1303,18 +1716,19 @@ public function updateSubject(Request $request, $id)
         return response()->json([
             'status' => 404,
             'message' => 'Subject not found',
-        ]);
+        ], 404);
     }
 
-    $subject->name = $request->name;
-    $subject->subject_type = $request->subject_type;
+    $subject->name = $validatedData['name'];
+    $subject->subject_type = $validatedData['subject_type'];
     $subject->save();
 
     return response()->json([
         'status' => 200,
         'message' => 'Subject updated successfully',
-    ]);
+    ], 200);
 }
+
 
 // Delete a subject
 public function deleteSubject($id)
