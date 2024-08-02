@@ -1696,6 +1696,38 @@ public function editSubject($id)
 }
 
 // Update a subject
+public function updateSubject(Request $request, $id)
+{
+    $messages = [
+        'name.required' => 'The name field is required.',
+        'name.regex' => 'The name may only contain letters.',
+        'subject_type.required' => 'The subject type field is required.',
+        'subject_type.regex' => 'The subject type may only contain letters.',
+    ];
+
+    $validatedData = $request->validate([
+        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+        'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+    ], $messages);
+
+    $subject = SubjectMaster::find($id);
+
+    if (!$subject) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Subject not found',
+        ], 404);
+    }
+
+    $subject->name = $validatedData['name'];
+    $subject->subject_type = $validatedData['subject_type'];
+    $subject->save();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'Subject updated successfully',
+    ], 200);
+}
 
 
 // Delete a subject
