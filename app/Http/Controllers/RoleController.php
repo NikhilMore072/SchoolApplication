@@ -283,6 +283,8 @@ public function getSubMenus($parentId, $assignedMenuIds)
         return response()->json(Menu::findOrFail($id));
     }
 
+ 
+
     public function updateMenus(Request $request, $id)
     {
         $menu = Menu::findOrFail($id);
@@ -290,34 +292,15 @@ public function getSubMenus($parentId, $assignedMenuIds)
             'name' => 'required|string|max:255',
             'url' => 'required|string|max:255',
             'parent_id' => 'nullable|integer|exists:menus,menu_id',
-            'sequence' => 'required|integer|unique:menus,menu_id',
+            'sequence' => 'nullable|integer|unique:menus,sequence,' . $id . ',menu_id', // Unique except for the current menu
         ]);
         
         $validated['parent_id'] = $validated['parent_id'] ?? 0;
-
-
+    
         $menu->update($validated);
         return response()->json($menu, 200);
     }
-
-//     public function updateMenus(Request $request, $id)
-// {
-//     $menu = Menu::findOrFail($id);
-
-//     $validated = $request->validate([
-//         'name' => 'required|string|max:255',
-//         'url' => 'required|string|max:255',
-//         'parent_id' => 'nullable|string|exists:menus,menu_id', // Accept string and check existence
-//         'sequence' => 'required|integer|unique:menus,sequence,' . $id, // Exclude current menu ID from unique check
-//     ]);
-
-//     // Set parent_id to null if it's an empty string
-//     $validated['parent_id'] = $validated['parent_id'] === "" ? "0" : $validated['parent_id'];
-
-//     $menu->update($validated);
-
-//     return response()->json($menu, 200);
-// }
+    
 
 
     public function destroy($id)
@@ -330,3 +313,19 @@ public function getSubMenus($parentId, $assignedMenuIds)
    
 
 }
+   // public function updateMenus(Request $request, $id)
+    // {
+    //     $menu = Menu::findOrFail($id);
+    //     $validated = $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'url' => 'required|string|max:255',
+    //         'parent_id' => 'nullable|integer|exists:menus,menu_id',
+    //         'sequence' => 'required|integer|unique:menus,menu_id',
+    //     ]);
+        
+    //     $validated['parent_id'] = $validated['parent_id'] ?? 0;
+
+
+    //     $menu->update($validated);
+    //     return response()->json($menu, 200);
+    // }
