@@ -861,11 +861,33 @@ public function updateSection(Request $request, $id)
 }
 
 
+// public function deleteSection($id)
+// {
+//     $section = Section::find($id);
+//     if (!$section) {
+//         return response()->json(['message' => 'Section not found', 'success' => false], 404);
+//     }
+
+//     $section->delete();
+
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Section deleted successfully',
+//     ]);
+// }
+
+
 public function deleteSection($id)
 {
     $section = Section::find($id);
+    
     if (!$section) {
         return response()->json(['message' => 'Section not found', 'success' => false], 404);
+    }
+
+    // Check if the section is associated with any classes
+    if ($section->classes()->exists()) {
+        return response()->json(['message' => 'This section is in use and cannot be deleted.', 'success' => false], 400);
     }
 
     $section->delete();
@@ -873,6 +895,7 @@ public function deleteSection($id)
     return response()->json([
         'status' => 200,
         'message' => 'Section deleted successfully',
+        'success' => true
     ]);
 }
 
@@ -881,14 +904,26 @@ public function deleteSection($id)
 
 public function getClass(Request $request)
 {   
+    // Extract the token payload
     $payload = getTokenPayload($request);
+    
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+
+    // Retrieve the academic year from the payload
     $academicYr = $payload->get('academic_year');
-    $classes = Classes::with('getDepartment')->where('academic_yr', $academicYr)->get();
+
+    // Fetch classes with their departments and student count
+    $classes = Classes::with('getDepartment')
+        ->withCount('students') // Count the number of students for each class
+        ->where('academic_yr', $academicYr)
+        ->get();
+
+    // Return the response with the classes and student counts
     return response()->json($classes);
 }
+
 
 // public function storeClass(Request $request)
 // {
@@ -1157,10 +1192,6 @@ public function show($id)
     return response()->json($division);
 }
 
-
-
-
-
 public function destroy($id)
 {
     $division = Division::find($id);
@@ -1175,13 +1206,7 @@ public function destroy($id)
 }
 
 public function getStaffList(Request $request) {
-    $teacherIds = Teacher::where('designation', '!=', 'Caretaker')
-        ->pluck('teacher_id');
-
-    $stafflist = UserMaster::where('IsDelete', 'N')
-        ->whereIn('reg_id', $teacherIds)
-        ->with('getTeacher')
-        ->orderBy('reg_id','DESC')
+     $stafflist =Teacher::with('getTeacher')
         ->get();
     return response()->json($stafflist);
 }
@@ -1440,7 +1465,7 @@ public function storeStaff(Request $request)
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
             'email' => 'required|string|email|max:255|unique:teacher,email',
-            'designation' => 'required|string|max:255',
+            'designation' => 'nullable|string|max:255',
             'academic_qual' => 'nullable|array',
             'academic_qual.*' => 'nullable|string|max:255',
             'professional_qual' => 'nullable|string|max:255',
@@ -1520,7 +1545,7 @@ public function updateStaff(Request $request, $id)
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
             'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
-            'designation' => 'required|string|max:255',
+            'designation' => 'nullable|string|max:255',
             'academic_qual' => 'nullable|array',
             'academic_qual.*' => 'nullable|string|max:255',
             'professional_qual' => 'nullable|string|max:255',

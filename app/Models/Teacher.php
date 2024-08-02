@@ -35,6 +35,11 @@ class Teacher extends Model
         'class_id',
         'section_id',
         'isDelete',
-    ];
+    ];  //getTeacher
+
+    public function getTeacher()
+    {
+        return $this->belongsTo(User::class, 'teacher_id');  
+    }
 
 }

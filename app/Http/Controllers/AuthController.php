@@ -230,7 +230,6 @@ public function login(Request $request)
     public function updateUser(Request $request)
     {
         try {
-            // Validate the incoming request data
             $validatedData = $request->validate([
                 'employee_id' => 'required|string|max:255',
                 'name' => 'required|string|max:255',
@@ -243,7 +242,7 @@ public function login(Request $request)
                 'address' => 'required|string|max:255',
                 'phone' => 'required|string|max:15',
                 'email' => 'required|string|email|max:255|unique:teacher,email,' . auth()->user()->reg_id . ',teacher_id',
-                'designation' => 'required|string|max:255',
+                'designation' => 'nullable|string|max:255',
                 'academic_qual' => 'nullable|array',
                 'academic_qual.*' => 'nullable|string|max:255',
                 'professional_qual' => 'nullable|string|max:255',
