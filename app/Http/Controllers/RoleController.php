@@ -278,10 +278,15 @@ public function getSubMenus($parentId, $assignedMenuIds)
         return response()->json($menu, 201);
     }
 
+ 
+
     public function showMenus($id)
-    {
-        return response()->json(Menu::findOrFail($id));
-    }
+{  
+    $menu = Menu::findOrFail($id);
+    $menu->parent_id_display = $menu->parent_id == 0 ? 'None' : $menu->parent_id;
+    return response()->json($menu);
+}
+
 
  
 
@@ -328,4 +333,11 @@ public function getSubMenus($parentId, $assignedMenuIds)
 
     //     $menu->update($validated);
     //     return response()->json($menu, 200);
+    // }
+
+       // public function showMenus($id)
+    // {  
+    //    $menu =  Menu::findOrFail($id);    
+    //     return response()->json();
+
     // }
