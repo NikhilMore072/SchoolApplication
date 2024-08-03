@@ -1210,25 +1210,7 @@ public function getStaffList(Request $request) {
         ->get();
     return response()->json($stafflist);
 }
-    // name: "",->name
-//     dateOfBirth: "",->birthday
-//     dateOfJoining: "",->date_of_joining
-//     designation: "",->designation
-//     academicQualification: [],->academic_qual
-//     professionalQualification: "",->professional_qual
-//     trainingStatus: "",->trained
-//     experience: "",->experience
-//     gender: "",->sex
-//     bloodGroup: "",->blood_group
-//     religion: "",->religion
-//     address: "",->address
-//     phone: "",->phone
-//     email: "",->email
-//     aadhaarCardNo: "",->aadhar_card_no
-//     role: "",->designation
-//     employeeId: "",->employee_id
-//     photo: null,->this field is repeaded 
-//     specialSubject: "",->special_sub
+
 
 // public function storeStaff(Request $request)
 // {
