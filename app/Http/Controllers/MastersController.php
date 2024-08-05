@@ -570,13 +570,13 @@ public function pendingCollectedFeeDatalist(Request $request): JsonResponse
             DB::raw('COALESCE(SUM(d.amount), 0) as concession'),
             DB::raw('0 as paid_amount')
         )
-        ->where('s.academic_yr', $academicYear)
+        ->where('s.academic_yr', $academicYr)
         ->where('s.installment', '<>', 4)
         ->where('s.due_date', '<', DB::raw('CURDATE()'))
-        ->whereNotIn('s.student_installment', function ($query) use ($academicYear) {
+        ->whereNotIn('s.student_installment', function ($query) use ($academicYr) {
             $query->select('a.student_installment')
                   ->from('view_student_fees_payment as a')
-                  ->where('a.academic_yr', $academicYear);
+                  ->where('a.academic_yr', $academicYr);
         })
         ->groupBy('s.student_id', 's.installment');
 
@@ -597,7 +597,7 @@ public function pendingCollectedFeeDatalist(Request $request): JsonResponse
             DB::raw('SUM(f.fees_paid) as paid_amount')
         )
         ->where('b.installment', '<>', 4)
-        ->where('f.academic_yr', $academicYear)
+        ->where('f.academic_yr', $academicYr)
         ->groupBy('f.installment', 'c.installment')
         ->havingRaw('(b.installment_fees - COALESCE(SUM(c.amount), 0)) > SUM(f.fees_paid)');
 
