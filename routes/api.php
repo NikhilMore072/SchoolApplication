@@ -165,11 +165,11 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::get('/ticketcount', [MastersController::class, 'ticketCount']);
         Route::get('/ticketlist', [MastersController::class, 'getTicketList']);
         Route::get('/feecollection', [MastersController::class, 'feeCollection']);
-        Route::get('/fee_collection_list', [MastersController::class, 'feeCollectionList']);
+        // Route::get('/fee_collection_list', [MastersController::class, 'feeCollectionList']);
         Route::get('/get_bank_accountName', [MastersController::class, 'getBankAccountName']);  
         Route::get('/getAcademicYear', [MastersController::class, 'getAcademicYears']);
-        Route::get('/pending_collected_fee_data', [MastersController::class, 'pendingCollectedFeeData']);
-        Route::get('/pending_collected_fee_data_list', [MastersController::class, 'pendingCollectedFeeDatalist']);
+        Route::get('/fee_collection_list', [MastersController::class, 'pendingCollectedFeeData']);
+        // Route::get('/pending_collected_fee_data_list', [MastersController::class, 'pendingCollectedFeeDatalist']);
         Route::get('/collected_fee_list', [MastersController::class, 'collectedFeeList']);
 
 
