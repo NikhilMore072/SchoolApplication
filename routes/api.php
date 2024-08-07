@@ -149,6 +149,10 @@ Route::middleware(['jwt.auth'])->group(function () {
 
         // Division Module Routes 
         Route::get('/getDivision', [MastersController::class, 'getDivision']);
+        Route::post('/store_division', [MastersController::class, 'storeDivision']);
+        Route::get('/getDivision/{id}', [MastersController::class, 'showDivision']);
+        Route::put('/getDivision/{id}', [MastersController::class, 'updateDivision']);
+        Route::delete('/getDivision/{id}', [MastersController::class, 'destroyDivision']);
 
         // Dashboard API   
         Route::get('/studentss', [MastersController::class, 'getStudentData']);
@@ -214,7 +218,19 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::post('/subject', [MastersController::class, 'storeSubject']);
         Route::get('/subject/{id}', [MastersController::class, 'editSubject']);
         Route::put('/subject/{id}', [MastersController::class, 'updateSubject']);
-        Route::delete('/subject/{id}', [MastersController::class, 'deleteSubject']);
+        Route::delete('/subject/{id}', [MastersController::class, 'deleteSubject']);     //
+       
+
+
+        Route::get('/get_subject_Alloted', [MastersController::class, 'getSubjectAlloted']);
+        Route::get('/class/{classId}/subjects-sections', [MastersController::class, 'getSubjectsAndSectionsByClass']);
+        Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']);
+        Route::get('/get_all_class', [MastersController::class, 'getallClass']);
+        Route::post('/allocate-teacher-for-class', [MastersController::class, 'allocateTeacherForClass']);
+        Route::get('/subject-allotment/{subjectId}/edit', [MastersController::class, 'editallocateTeacherForClass']);
+        Route::put('/subject-allotment/{subjectId}', [MastersController::class, 'updateallocateTeacherForClass']);
+        Route::delete('/subject-allotment/{subjectId}', [MastersController::class, 'deleteSubjectAlloted']);
+
 
 });
 

@@ -267,7 +267,7 @@ public function login(Request $request)
                 $teacher->fill($validatedData);
                 $teacher->save();
 
-                $user->update($request->only('email', 'name'));
+                $user->update($request->only('name'));
 
                 return response()->json([
                     'message' => 'Profile updated successfully!',
