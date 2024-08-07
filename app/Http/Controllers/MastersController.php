@@ -1022,6 +1022,17 @@ public function getDivision(Request $request)
     return response()->json($divisions);
 }
 
+public function  getClassforDivision(Request $request){
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year');
+   $classList = Classes::where('academic_yr',$academicYr)->get();
+   return response()->json($classList);
+}
+
+
 public function storeDivision(Request $request)
 {
     $payload = getTokenPayload($request);

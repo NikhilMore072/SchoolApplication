@@ -149,6 +149,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 
         // Division Module Routes 
         Route::get('/getDivision', [MastersController::class, 'getDivision']);
+        Route::get('/get_class_for_division', [MastersController::class, 'getClassforDivision']);
         Route::post('/store_division', [MastersController::class, 'storeDivision']);
         Route::get('/getDivision/{id}', [MastersController::class, 'showDivision']);
         Route::put('/getDivision/{id}', [MastersController::class, 'updateDivision']);
