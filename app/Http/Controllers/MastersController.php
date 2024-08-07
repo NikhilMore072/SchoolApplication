@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use App\Models\SubjectMaster;
 use Illuminate\Support\Carbon;
 use App\Models\BankAccountName;
+use App\Models\SubjectAllotment;
 use Illuminate\Http\JsonResponse;
 use App\Mail\TeacherBirthdayEmail;
 use Illuminate\Support\Facades\DB;
@@ -248,11 +249,47 @@ public function staffBirthdayList(Request $request)
         return response()->json(['notices' => $notices, 'success' => true]);
     }
 
-public function getClassDivisionTotalStudents()
+// public function getClassDivisionTotalStudents()
+// {
+//     $results = DB::table('class as c')
+//         ->leftJoin('section as s', 'c.class_id', '=', 's.class_id')
+//         ->leftJoin(DB::raw('(SELECT section_id, COUNT(student_id) AS students_count FROM student GROUP BY section_id) as st'), 's.section_id', '=', 'st.section_id')
+//         ->select(
+//             DB::raw("CONCAT(c.name, ' ', COALESCE(s.name, 'No division assigned')) AS class_division"),
+//             DB::raw("SUM(st.students_count) AS total_students"),
+//             'c.name as class_name',
+//             's.name as section_name'
+//         )
+//         ->groupBy('c.name', 's.name')
+//         ->orderBy('c.name')
+//         ->orderBy('s.name')
+//         ->get();
+
+//     return response()->json($results);
+// }
+
+public function getClassDivisionTotalStudents(Request $request)
 {
+    // Get the academic year from the token payload
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year');
+
+    // Validate academic year
+    if (!$academicYr) {
+        return response()->json(['error' => 'Academic year is missing'], 400);
+    }
+
     $results = DB::table('class as c')
         ->leftJoin('section as s', 'c.class_id', '=', 's.class_id')
-        ->leftJoin(DB::raw('(SELECT section_id, COUNT(student_id) AS students_count FROM student GROUP BY section_id) as st'), 's.section_id', '=', 'st.section_id')
+        ->leftJoin(DB::raw("
+            (SELECT section_id, COUNT(student_id) AS students_count
+             FROM student
+             WHERE academic_yr = '{$academicYr}'  -- Filter by academic year
+             GROUP BY section_id) as st
+        "), 's.section_id', '=', 'st.section_id')
         ->select(
             DB::raw("CONCAT(c.name, ' ', COALESCE(s.name, 'No division assigned')) AS class_division"),
             DB::raw("SUM(st.students_count) AS total_students"),
@@ -266,6 +303,7 @@ public function getClassDivisionTotalStudents()
 
     return response()->json($results);
 }
+
 
  public function ticketCount(Request $request){
     $payload = getTokenPayload($request);
@@ -984,7 +1022,7 @@ public function getDivision(Request $request)
     return response()->json($divisions);
 }
 
-public function store(Request $request)
+public function storeDivision(Request $request)
 {
     $payload = getTokenPayload($request);
     if (!$payload) {
@@ -1028,7 +1066,7 @@ public function updateDivision(Request $request, $id)
 }
 
 
-public function show($id)
+public function showDivision($id)
 {
        $division = Division::with('getClass')->find($id);
 
@@ -1039,7 +1077,7 @@ public function show($id)
     return response()->json($division);
 }
 
-public function destroy($id)
+public function destroyDivision($id)
 {
     $division = Division::find($id);
 
@@ -1077,6 +1115,101 @@ public function editStaff($id)
     }
 }
 
+// public function storeStaff(Request $request)
+// {
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:255|unique:teacher,email',
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+//             'teacher_image_name' => 'nullable|string|max:255',
+//             'role' => 'required|string|max:255',
+//         ], $messages);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         // Create Teacher record
+//         $teacher = new Teacher();
+//         $teacher->fill($validatedData);
+//         $teacher->IsDelete = 'N';
+        
+//         if (!$teacher->save()) {
+//             return response()->json([
+//                 'message' => 'Failed to create teacher',
+//             ], 500);
+//         }
+
+//         // Create User record
+//         $user = User::create([
+//             'email' => $validatedData['email'],
+//             'name' => $validatedData['name'],
+//             'password' => Hash::make('arnolds'),
+//             'reg_id' => $teacher->teacher_id,
+//             'role_id' => $validatedData['role'],
+//             'IsDelete' => 'N',
+//         ]);
+
+//         if (!$user) {
+//             // Rollback by deleting the teacher record if user creation fails
+//             $teacher->delete();
+//             return response()->json([
+//                 'message' => 'Failed to create user',
+//             ], 500);
+//         }
+
+//         return response()->json([
+//             'message' => 'Teacher and user created successfully!',
+//             'teacher' => $teacher,
+//             'user' => $user,
+//         ], 201);
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         // Handle unexpected errors
+//         if (isset($teacher) && $teacher->exists) {
+//             // Rollback by deleting the teacher record if an unexpected error occurs
+//             $teacher->delete();
+//         }
+//         return response()->json([
+//             'message' => 'An error occurred while creating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
 public function storeStaff(Request $request)
 {
     try {
@@ -1090,6 +1223,8 @@ public function storeStaff(Request $request)
             'phone.required' => 'The phone number is required.',
             'phone.max' => 'The phone number cannot exceed 15 characters.',
             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+            'teacher_image_name.string' => 'The file must be an image.',
+            'role.required' => 'The role field is required.',
         ];
 
         $validatedData = $request->validate([
@@ -1111,7 +1246,7 @@ public function storeStaff(Request $request)
             'trained' => 'nullable|string|max:255',
             'experience' => 'nullable|string|max:255',
             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
-            'teacher_image_name' => 'nullable|string|max:255',
+            'teacher_image_name' => 'nullable|string', // Base64 string
             'role' => 'required|string|max:255',
         ], $messages);
 
@@ -1119,11 +1254,33 @@ public function storeStaff(Request $request)
             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
         }
 
+        // Handle base64 image
+        if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+            $imageData = $request->input('teacher_image_name');
+            if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+                $imageData = substr($imageData, strpos($imageData, ',') + 1);
+                $type = strtolower($type[1]); // jpg, png, gif
+                if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+                    throw new \Exception('Invalid image type');
+                }
+                $imageData = base64_decode($imageData);
+                if ($imageData === false) {
+                    throw new \Exception('Base64 decode failed');
+                }
+                $filename = 'teacher_' . time() . '.' . $type;
+                $filePath = storage_path('app/public/teacher_images/'.$filename);
+                file_put_contents($filePath, $imageData);
+                $validatedData['teacher_image_name'] = $filename;
+            } else {
+                throw new \Exception('Invalid image data');
+            }
+        }
+
         // Create Teacher record
         $teacher = new Teacher();
         $teacher->fill($validatedData);
         $teacher->IsDelete = 'N';
-        
+
         if (!$teacher->save()) {
             return response()->json([
                 'message' => 'Failed to create teacher',
@@ -1170,6 +1327,7 @@ public function storeStaff(Request $request)
         ], 500);
     }
 }
+
 
 
 public function updateStaff(Request $request, $id)
@@ -1228,18 +1386,18 @@ public function updateStaff(Request $request, $id)
 
         $user = User::where('reg_id', $id)->first();
         if ($user) {
-            $existingUserWithEmail = User::where('email', $validatedData['email'])
-                ->where('id', '!=', $user->id)
-                ->first();
+            // $existingUserWithEmail = User::where('email', $validatedData['email'])
+            //     ->where('id', '!=', $user->id)
+            //     ->first();
 
-            if ($existingUserWithEmail) {
-                return response()->json([
-                    'message' => 'The email address is already taken.',
-                ], 400);
-            }
+            // if ($existingUserWithEmail) {
+            //     return response()->json([
+            //         'message' => 'The email address is already taken.',
+            //     ], 400);
+            // }
 
             $user->name = $validatedData['name'];
-            $user->email = $validatedData['email'];
+            // $user->email = $validatedData['email'];
 
             if (!$user->save()) {
                 // Rollback by reverting the teacher record if user update fails
@@ -1393,7 +1551,13 @@ public function deleteSubject($id)
             'message' => 'Subject not found',
         ]);
     }
-
+    $subjectAllotmentExists = SubjectAllotment::where('sm_id', $id)->exists();
+    if ($subjectAllotmentExists) {
+        return response()->json([
+            'status' => 400,
+            'message' => 'Subject cannot be deleted because it is associated with other records.',
+        ]);
+    }
     $subject->delete();
 
     return response()->json([
@@ -1403,5 +1567,551 @@ public function deleteSubject($id)
 }
 
 
+// Subject Allotment Methods
+public function getSubjectsAndSectionsByClass(Request $request, $classId)
+{
+    $class = Classes::find($classId);
+    if (!$class) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Class not found',
+        ], 404);
+    }
+    $subjectsAndSections = SubjectAllotment::with('getSubject', 'getDivision')
+        ->where('class_id', $classId)
+        ->get()
+        ->groupBy('section_id');
+
+    return response()->json([
+        'status' => 200,
+        'data' => $subjectsAndSections,
+    ]);
+}
+
+
+public function getallClass(Request $request){
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+
+    $academicYr = $payload->get('academic_year');
+    $classes = Division::with('getClass')
+    ->where('academic_yr',$academicYr) 
+    ->get();
+
+    return response()->json($classes);
+}
+
+
+public function storeSubjectAllotment(Request $request)
+{
+    // Log the incoming request data
+    Log::info('Store Subject Allotment Request Data:', $request->all());
+    // Validate incoming request
+    try {
+        $request->validate([
+            'class_id' => 'required|exists:class,class_id',
+            'divisions' => 'required|array',
+            'subjects' => 'required|array',
+            'teacher_id' => 'required|exists:teacher,teacher_id',
+            'divisions.*' => 'exists:section,section_id',
+            'subjects.*' => 'exists:subject_master,sm_id',
+        ]);
+        Log::info('Request validation passed.');
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        Log::error('Validation failed:', ['errors' => $e->errors()]);
+        return response()->json(['error' => 'Validation failed', 'details' => $e->errors()], 422);
+    }
+
+    // Retrieve academic year from token payload
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        Log::warning('Invalid or missing token.');
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year');
+    Log::info('Retrieved Academic Year from Token:', ['academic_year' => $academicYr]);
+
+    // Extract data from the request
+    $classId = $request->input('class_id');
+    $divisions = $request->input('divisions');
+    $subjects = $request->input('subjects');
+    $teacherId = $request->input('teacher_id');
+
+    Log::info('Processing Data:', [
+        'class_id' => $classId,
+        'divisions' => $divisions,
+        'subjects' => $subjects,
+        'teacher_id' => $teacherId
+    ]);
+
+    $createdAllotments = [];
+    $errors = [];
+
+    foreach ($divisions as $division) {
+        foreach ($subjects as $subjectId) {
+            // Log the data for each subject allotment creation attempt
+            Log::info('Creating Subject Allotment:', [
+                'class_id' => $classId,
+                'section_id' => $division,
+                'sm_id' => $subjectId,
+                'teacher_id' => $teacherId,
+                'academic_yr' => $academicYr,
+            ]);
+
+            // Create the new subject allotment
+            try {
+                $subjectAllotment = SubjectAllotment::create([
+                    'sm_id' => $subjectId,
+                    'class_id' => $classId,
+                    'section_id' => $division,
+                    'teacher_id' => $teacherId,
+                    'academic_yr' => $academicYr,
+                ]);
+
+                if ($subjectAllotment) {
+                    Log::info('Subject Allotment Created Successfully:', [
+                        'subject_allotment' => $subjectAllotment->toArray()
+                    ]);
+                    $createdAllotments[] = $subjectAllotment;
+                } else {
+                    Log::error('Failed to Create Subject Allotment:', [
+                        'subject_id' => $subjectId,
+                        'section_id' => $division,
+                        'error' => 'Failed to create subject allotment'
+                    ]);
+                    $errors[] = [
+                        'subject_id' => $subjectId,
+                        'section_id' => $division,
+                        'error' => 'Failed to create subject allotment'
+                    ];
+                }
+            } catch (\Exception $e) {
+                Log::error('Exception while creating Subject Allotment:', [
+                    'exception' => $e->getMessage(),
+                    'subject_id' => $subjectId,
+                    'section_id' => $division
+                ]);
+            }
+        }
+    }
+
+    // Return errors if any occurred
+    if (count($errors) > 0) {
+        Log::warning('Some subject allotments could not be processed:', ['errors' => $errors]);
+        return response()->json([
+            'status' => 400,
+            'message' => 'Some subject allotments could not be processed',
+            'errors' => $errors,
+        ], 400);
+    }
+
+    // Return success response
+    Log::info('Subject Allotments Processed Successfully:', ['created' => $createdAllotments]);
+    return response()->json([
+        'status' => 201,
+        'message' => 'Subject allotments processed successfully',
+        'data' => [
+            'created' => $createdAllotments,
+        ],
+    ], 201);
+}
+
+
+// public function getSubjectAlloted(Request $request)
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+
+//     $academicYr = $payload->get('academic_year');    
+//     $section_id = $request->query('section_id');
+//     $query = SubjectAllotment::with('getClass', 'getDivision', 'getTeacher', 'getSubject')
+//         ->where('academic_yr', $academicYr);
+
+//     if ($section_id) {
+//         $query->where('section_id', $section_id);
+//     }
+
+//     $subjectAllotmentList = $query->orderBy('subject_id', 'DESC')->get();
+//     return response()->json($subjectAllotmentList);
+// }
+
+// public function getSubjectAlloted(Request $request)
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+
+//     $academicYr = $payload->get('academic_year');
+    
+//     // Retrieve the 'section' query parameter
+//     $section = $request->query('section');
+
+//     // Log the value of the section parameter for debugging
+//     \Log::info('Section query parameter:', ['section' => $section]);
+
+//     // Initialize the query
+//     $query = SubjectAllotment::with('getClass', 'getDivision', 'getTeacher', 'getSubject')
+//         ->where('academic_yr', $academicYr);
+
+//     // If 'section' is provided and is not empty or null, add it to the query
+//     if (!empty($section)) {
+//         $query->where('section_id', $section);
+//     }
+
+//     // Fetch and return the results
+//     $subjectAllotmentList = $query->orderBy('subject_id', 'DESC')->get();
+
+//     // Log the results for debugging
+//     \Log::info('Subject Allotment List:', ['results' => $subjectAllotmentList]);
+
+//     return response()->json($subjectAllotmentList);
+// }
+
+public function getSubjectAlloted(Request $request)
+{
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+
+    $academicYr = $payload->get('academic_year');    
+    $section = $request->query('section');
+    $query = SubjectAllotment::with('getClass', 'getDivision', 'getTeacher', 'getSubject')
+        ->where('academic_yr', $academicYr);
+
+    if (!empty($section)) {
+        $query->where('section_id', $section);
+    } else {
+        return response()->json([]);
+    }
+
+    $subjectAllotmentList = $query->orderBy('subject_id', 'DESC')->get();
+    return response()->json($subjectAllotmentList);
+}
+
+// public function allocateTeacherForClass(Request $request)
+// {
+//     // Validate the request data
+//     $validatedData = $request->validate([
+//         'teacher_id' => 'required|integer|exists:teacher,teacher_id', // Ensure teacher_id exists in the teachers table
+//         'subject_ids' => 'required|array', // Ensure subject_ids is an array
+//         'subject_ids.*' => 'integer|exists:subject,subject_id', // Ensure each subject_id exists in the subjects table
+//         'academic_yr' => 'required|string', // Ensure academic_yr is present
+//     ]);
+
+//     // Extract validated data
+//     $teacherId = $validatedData['teacher_id'];
+//     $subjectIds = $validatedData['subject_ids'];
+//     $academicYr = $validatedData['academic_yr'];
+
+//     // Update records
+//     $affectedRows = SubjectAllotment::whereIn('subject_id', $subjectIds)
+//         ->where('academic_yr', $academicYr)
+//         ->update(['teacher_id' => $teacherId]);
+
+//     // Check if any records were updated
+//     if ($affectedRows > 0) {
+//         // Return success response
+//         return response()->json(['message' => 'Teacher assigned successfully to subjects'], 200);
+//     } else {
+//         // Return failure response
+//         return response()->json(['message' => 'No records updated. Please check your inputs.'], 404);
+//     }
+// }
+
+
+// public function allocateTeacherForClass(Request $request)
+// {
+
+//     $validatedData = $request->validate([
+//         'teacher_assignments' => 'required|array', // Ensure teacher_assignments is an array
+//         'teacher_assignments.*.subject_id' => 'required|integer|exists:subject,subject_id', // Ensure each subject_id exists
+//         'teacher_assignments.*.teacher_id' => 'required|integer|exists:teacher,teacher_id', // Ensure each teacher_id exists
+//         'academic_yr' => 'required|string', // Ensure academic_yr is present
+//     ]);
+
+//     // Extract validated data
+//     $teacherAssignments = $validatedData['teacher_assignments'];
+//     $academicYr = $validatedData['academic_yr'];
+
+//     // Log validated data
+//     Log::info('Validated Data:', [
+//         'teacher_assignments' => $teacherAssignments,
+//         'academic_yr' => $academicYr
+//     ]);
+
+//     $affectedRows = 0;
+
+//     foreach ($teacherAssignments as $assignment) {
+//         $subjectId = $assignment['subject_id'];
+//         $teacherId = $assignment['teacher_id'];
+
+//         $updated = SubjectAllotment::where('subject_id', $subjectId)
+//             ->where('academic_yr', $academicYr)
+//             ->update(['teacher_id' => $teacherId]);
+
+//         if ($updated) {
+//             $affectedRows++;
+//         }
+//     }
+
+//     if ($affectedRows > 0) {
+//         return response()->json(['message' => 'Teacher assigned successfully to subjects'], 200);
+//     } else {
+//         return response()->json(['message' => 'No records updated. Please check your inputs.'], 404);
+//     }
+// }
+
+
+public function allocateTeacherForClass(Request $request)
+{
+    $validatedData = $request->validate([
+        'teacher_assignments' => 'required|array', 
+        'teacher_assignments.*.subject_id' => 'required|integer|exists:subject,subject_id',
+        'teacher_assignments.*.teacher_id' => 'required|integer|exists:teacher,teacher_id',
+        'academic_yr' => 'required|string', // Ensure academic_yr is present
+    ]);
+
+    $teacherAssignments = $validatedData['teacher_assignments'];
+    $academicYr = $validatedData['academic_yr'];
+
+    $updateErrors = [];
+    
+    foreach ($teacherAssignments as $assignment) {
+        $subjectId = $assignment['subject_id'];
+        $teacherId = $assignment['teacher_id'];
+
+        $updated = SubjectAllotment::where('subject_id', $subjectId)
+            ->where('academic_yr', $academicYr)
+            ->update(['teacher_id' => $teacherId]);
+
+        if ($updated === 0) {
+            $updateErrors[] = [
+                'subject_id' => $subjectId,
+                'error' => 'Failed to update teacher_id. Record may not exist or already have the same teacher_id.'
+            ];
+        }
+    }
+
+    if (count($updateErrors) > 0) {
+        return response()->json(['errors' => $updateErrors], 400);
+    }
+    return response()->json(['message' => 'Teacher assigned successfully to subjects'], 200);
+}
+
+public function editallocateTeacherForClass($subjectId)
+{
+    $subjectAllotment = SubjectAllotment::with('getClass', 'getDivision', 'getTeacher', 'getSubject')
+        ->find($subjectId);
+    if ($subjectAllotment) {
+        return response()->json($subjectAllotment, 200);
+    }
+
+    return response()->json(['error' => 'Subject Allotment not found.'], 404);
+}
+
+public function updateallocateTeacherForClass(Request $request, $subjectId)
+{
+    $request->validate([
+        'teacher_id' => 'required|integer|exists:teacher,teacher_id',
+    ]);
+
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+
+    $academicYr = $payload->get('academic_year');       
+    $teacherId = $request->input('teacher_id');
+
+    $subjectAllotment = SubjectAllotment::where('subject_id', $subjectId)
+        ->where('academic_yr', $academicYr)
+        ->first();
+
+    if ($subjectAllotment) {
+        $subjectAllotment->teacher_id = $teacherId;
+        $subjectAllotment->save();
+
+        return response()->json(['message' => 'Teacher ID updated successfully.'], 200);
+    }
+
+    return response()->json(['error' => 'Subject Allotment not found.'], 404);
+}
+
+public function deleteSubjectAlloted($subjectId)
+{
+    $subjectAllotment = SubjectAllotment::find($subjectId);
+    if ($subjectAllotment) {
+        $subjectAllotment->delete();
+        return response()->json([
+            'status' => 200,
+            'message' => "Subject Allotment Deleted Successfully"
+        ]);
+    } else {
+        return response()->json([
+            'status' => 404,
+            'message' => "Subject Allotment Not Found"
+        ]);
+    }
+}
+
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// public function getSubjectAlloted(Request $request){
+
+//     {
+//         $payload = getTokenPayload($request);
+//         if (!$payload) {
+//             return response()->json(['error' => 'Invalid or missing token'], 401);
+//         }
+//         $academicYr = $payload->get('academic_year');
+
+//       $subjectAllotmentList = SubjectAllotment::with('getClass','getDivision','getTeacher','getSubject')
+//                            ->where('academic_yr',$academicYr)
+//                            ->orderBy('subject_id','DESC')
+//                            ->get(); 
+//       return response()->json($subjectAllotmentList);
+
+// }
+
+
+
+
+// public function storeSubjectAllotment(Request $request)
+// {
+//     $request->validate([
+//         'class_id' => 'required|exists:class,class_id',
+//         'divisions' => 'required|array',
+//         'subjects' => 'required|array',
+//         'teacher_id' => 'required|exists:teacher,teacher_id',
+//         'divisions.*' => 'exists:section,section_id',
+//         'subjects.*' => 'exists:subject_master,sm_id',
+//     ]);
+
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     $classId = $request->input('class_id');
+//     $divisions = $request->input('divisions');
+//     $subjects = $request->input('subjects');
+//     $teacherId = $request->input('teacher_id');
+
+//     $createdAllotments = [];
+//     $existingAllotments = [];
+//     $errors = [];
+
+//     foreach ($divisions as $division) {
+//         foreach ($subjects as $subjectId) {
+//             $existingAllotment = SubjectAllotment::where('sm_id', $subjectId)
+//                 ->where('class_id', $classId)
+//                 ->where('section_id', $division)
+//                 ->where('academic_yr', $academicYr)
+//                 ->first();
+
+//             if ($existingAllotment) {
+//                 $existingAllotments[] = [
+//                     'subject_id' => $subjectId,
+//                     'section_id' => $division,
+//                 ];
+//                 continue; 
+//             }
+
+//             $subjectAllotment = SubjectAllotment::create([
+//                 'sm_id' => $subjectId,
+//                 'class_id' => $classId,
+//                 'section_id' => $division,
+//                 'teacher_id' => $teacherId,
+//                 'academic_yr' => $academicYr,
+//             ]);
+
+//             if ($subjectAllotment) {
+//                 $createdAllotments[] = $subjectAllotment;
+//             } else {
+//                 $errors[] = [
+//                     'subject_id' => $subjectId,
+//                     'section_id' => $division,
+//                     'error' => 'Failed to create subject allotment'
+//                 ];
+//             }
+//         }
+//     }
+
+//     if (count($errors) > 0) {
+//         return response()->json([
+//             'status' => 400,
+//             'message' => 'Some subject allotments could not be processed',
+//             'errors' => $errors,
+//         ], 400);
+//     }
+
+//     return response()->json([
+//         'status' => 201,
+//         'message' => 'Subject allotments processed successfully',
+//         'data' => [
+//             'created' => $createdAllotments,
+//             'existing' => $existingAllotments,
+//         ],
+//     ], 201);
+// }
