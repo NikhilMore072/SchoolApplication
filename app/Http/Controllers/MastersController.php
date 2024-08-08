@@ -810,7 +810,6 @@ public function listSections(Request $request)
 
 public function storeSection(Request $request)
 {
-    // Validate the request
     $validator = \Validator::make($request->all(), [
         'name' => [
             'required', 
@@ -833,7 +832,7 @@ public function storeSection(Request $request)
             'errors' => $validator->errors(),
         ], 422);
     }
-    
+
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
