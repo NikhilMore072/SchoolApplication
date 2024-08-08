@@ -219,7 +219,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::post('/subject', [MastersController::class, 'storeSubject']);
         Route::get('/subject/{id}', [MastersController::class, 'editSubject']);
         Route::put('/subject/{id}', [MastersController::class, 'updateSubject']);
-        Route::delete('/subject/{id}', [MastersController::class, 'deleteSubject']);     //
+        Route::delete('/subject/{id}', [MastersController::class, 'deleteSubject']);     
        
 
 

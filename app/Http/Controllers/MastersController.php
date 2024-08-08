@@ -728,15 +728,103 @@ public function listSections(Request $request)
     }
 
 
+// public function storeSection(Request $request)
+// {
+//     $validator = \Validator::make($request->all(), [
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ], [
+//         'name.required' => 'The name field is required.',
+//         'name.string' => 'The name field must be a string.',
+//         'name.max' => 'The name field must not exceed 255 characters.',
+//         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status' => 422,
+//             'errors' => $validator->errors(),
+//         ], 422);
+//     }
+
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+
+//     $academicYr = $payload->get('academic_year');
+
+//     $section = new Section();
+//     $section->name = $request->name;
+//     $section->academic_yr = $academicYr;
+//     $section->save();
+
+//     return response()->json([
+//         'status' => 201,
+//         'message' => 'Section created successfully',
+//         'data' => $section,
+//     ]);
+// }
+// public function updateSection(Request $request, $id)
+// {
+//     // Validate the request
+//     $validator = \Validator::make($request->all(), [
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ], [
+//         'name.required' => 'The name field is required.',
+//         'name.string' => 'The name field must be a string.',
+//         'name.max' => 'The name field must not exceed 255 characters.',
+//         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status' => 422,
+//             'errors' => $validator->errors(),
+//         ], 422);
+//     }
+
+//     $section = Section::find($id);
+//     if (!$section) {
+//         return response()->json(['message' => 'Section not found', 'success' => false], 404);
+//     }
+
+//     // Get token payload
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+
+//     $academicYr = $payload->get('academic_year');
+
+//     // Update the section
+//     $section->name = $request->name;
+//     $section->academic_yr = $academicYr;
+//     $section->save();
+
+//     // Return success response
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Section updated successfully',
+//     ]);
+// }
+
 public function storeSection(Request $request)
 {
+    // Validate the request
     $validator = \Validator::make($request->all(), [
-        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+        'name' => [
+            'required', 
+            'string', 
+            'max:255', 
+            'regex:/^[a-zA-Z]+$/', 
+            'unique:sections,name'
+        ],
     ], [
         'name.required' => 'The name field is required.',
         'name.string' => 'The name field must be a string.',
         'name.max' => 'The name field must not exceed 255 characters.',
         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+        'name.unique' => 'The name has already been taken.',
     ]);
 
     if ($validator->fails()) {
@@ -754,17 +842,63 @@ public function storeSection(Request $request)
 
     $academicYr = $payload->get('academic_year');
 
-    // Create and save the section
     $section = new Section();
     $section->name = $request->name;
     $section->academic_yr = $academicYr;
     $section->save();
 
-    // Return success response
     return response()->json([
         'status' => 201,
         'message' => 'Section created successfully',
         'data' => $section,
+    ]);
+}
+
+public function updateSection(Request $request, $id)
+{
+    // Validate the request
+    $validator = \Validator::make($request->all(), [
+        'name' => [
+            'required', 
+            'string', 
+            'max:255', 
+            'regex:/^[a-zA-Z]+$/', 
+            \Illuminate\Validation\Rule::unique('sections', 'name')->ignore($id)
+        ],
+    ], [
+        'name.required' => 'The name field is required.',
+        'name.string' => 'The name field must be a string.',
+        'name.max' => 'The name field must not exceed 255 characters.',
+        'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+        'name.unique' => 'The name has already been taken.',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    $section = Section::find($id);
+    if (!$section) {
+        return response()->json(['message' => 'Section not found', 'success' => false], 404);
+    }
+
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+
+    $academicYr = $payload->get('academic_year');
+
+    $section->name = $request->name;
+    $section->academic_yr = $academicYr;
+    $section->save();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'Section updated successfully',
     ]);
 }
 
@@ -781,51 +915,7 @@ public function editSection($id)
 }
 
 
-public function updateSection(Request $request, $id)
-{
-    // Validate the request
-    $validator = \Validator::make($request->all(), [
-        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-    ], [
-        'name.required' => 'The name field is required.',
-        'name.string' => 'The name field must be a string.',
-        'name.max' => 'The name field must not exceed 255 characters.',
-        'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
-    ]);
 
-    // Check if validation fails
-    if ($validator->fails()) {
-        return response()->json([
-            'status' => 422,
-            'errors' => $validator->errors(),
-        ], 422);
-    }
-
-    // Find the section by ID
-    $section = Section::find($id);
-    if (!$section) {
-        return response()->json(['message' => 'Section not found', 'success' => false], 404);
-    }
-
-    // Get token payload
-    $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
-
-    $academicYr = $payload->get('academic_year');
-
-    // Update the section
-    $section->name = $request->name;
-    $section->academic_yr = $academicYr;
-    $section->save();
-
-    // Return success response
-    return response()->json([
-        'status' => 200,
-        'message' => 'Section updated successfully',
-    ]);
-}
 
 
 public function deleteSection($id)
@@ -836,7 +926,7 @@ public function deleteSection($id)
         return response()->json(['message' => 'Section not found', 'success' => false], 404);
     }
 
-    // Check if the section is associated with any classes
+    
     if ($section->classes()->exists()) {
         return response()->json(['message' => 'This section is in use and cannot be deleted.', 'success' => false], 400);
     }
@@ -855,23 +945,15 @@ public function deleteSection($id)
 
 public function getClass(Request $request)
 {   
-    // Extract the token payload
-    $payload = getTokenPayload($request);
-    
+    $payload = getTokenPayload($request);    
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
-
-    // Retrieve the academic year from the payload
     $academicYr = $payload->get('academic_year');
-
-    // Fetch classes with their departments and student count
     $classes = Classes::with('getDepartment')
-        ->withCount('students') // Count the number of students for each class
+        ->withCount('students')
         ->where('academic_yr', $academicYr)
         ->get();
-
-    // Return the response with the classes and student counts
     return response()->json($classes);
 }
 
@@ -884,7 +966,6 @@ public function storeClass(Request $request)
     }
     $academicYr = $payload->get('academic_year');
 
-    // Validate the request
     $validator = \Validator::make($request->all(), [
         'name' => ['required', 'string', 'max:255'],
         'department_id' => ['required', 'integer'],
@@ -895,16 +976,12 @@ public function storeClass(Request $request)
         'department_id.required' => 'The department ID is required.',
         'department_id.integer' => 'The department ID must be an integer.',
     ]);
-
-    // Check if validation fails
     if ($validator->fails()) {
         return response()->json([
             'status' => 422,
             'errors' => $validator->errors(),
         ], 422);
     }
-
-    // Create and save the class
     $class = new Classes();
     $class->name = $request->name;
     $class->department_id = $request->department_id;
@@ -915,6 +992,44 @@ public function storeClass(Request $request)
     return response()->json([
         'status' => 201,
         'message' => 'Class created successfully',
+        'data' => $class,
+    ]);
+}
+
+public function updateClass(Request $request, $id)
+{
+    $validator = \Validator::make($request->all(), [
+        'name' => ['required', 'string', 'max:255'],
+        'department_id' => ['required', 'integer'],
+    ], [
+        'name.required' => 'The name field is required.',
+        'name.string' => 'The name field must be a string.',
+        'name.max' => 'The name field must not exceed 255 characters.',
+        'department_id.required' => 'The department ID is required.',
+        'department_id.integer' => 'The department ID must be an integer.',
+    ]);
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+    $class = Classes::find($id);
+    if (!$class) {
+        return response()->json(['message' => 'Class not found', 'success' => false], 404);
+    }
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year');
+    $class->name = $request->name;
+    $class->department_id = $request->department_id;
+    $class->academic_yr = $academicYr;
+    $class->save();
+    return response()->json([
+        'status' => 200,
+        'message' => 'Class updated successfully',
         'data' => $class,
     ]);
 }
@@ -933,57 +1048,6 @@ public function showClass($id)
         'data' => $class,
     ]);
 }
-
-
-public function updateClass(Request $request, $id)
-{
-    // Validate the request
-    $validator = \Validator::make($request->all(), [
-        'name' => ['required', 'string', 'max:255'],
-        'department_id' => ['required', 'integer'],
-    ], [
-        'name.required' => 'The name field is required.',
-        'name.string' => 'The name field must be a string.',
-        'name.max' => 'The name field must not exceed 255 characters.',
-        'department_id.required' => 'The department ID is required.',
-        'department_id.integer' => 'The department ID must be an integer.',
-    ]);
-
-    // Check if validation fails
-    if ($validator->fails()) {
-        return response()->json([
-            'status' => 422,
-            'errors' => $validator->errors(),
-        ], 422);
-    }
-
-    // Find the class by ID
-    $class = Classes::find($id);
-    if (!$class) {
-        return response()->json(['message' => 'Class not found', 'success' => false], 404);
-    }
-
-    // Get token payload
-    $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
-    $academicYr = $payload->get('academic_year');
-
-    // Update the class
-    $class->name = $request->name;
-    $class->department_id = $request->department_id;
-    $class->academic_yr = $academicYr;
-    $class->save();
-
-    // Return success response
-    return response()->json([
-        'status' => 200,
-        'message' => 'Class updated successfully',
-        'data' => $class,
-    ]);
-}
-
 public function getDepartments()
 {
     $departments = Section::all();
@@ -993,13 +1057,10 @@ public function getDepartments()
 public function destroyClass($id)
 {
     $class = Classes::find($id);
-
     if (!$class) {
         return response()->json(['message' => 'Class not found', 'success' => false], 404);
     }
-
     $class->delete();
-
     return response()->json([
         'status' => 200,
         'message' => 'Class deleted successfully',
@@ -1100,6 +1161,8 @@ public function destroyDivision($id)
     $division->delete();
     return response()->json(['message' => 'Division deleted successfully'],200);
 }
+
+
 
 public function getStaffList(Request $request) {
      $stafflist =Teacher::with('getTeacher')
@@ -1478,18 +1541,85 @@ public function getSubjects(Request $request)
     return response()->json($subjects);
 }
 
+// public function storeSubject(Request $request)
+// {
+//     $messages = [
+//         'name.required' => 'The name field is required.',
+//         'name.regex' => 'The name may only contain letters.',
+//         'subject_type.required' => 'The subject type field is required.',
+//         'subject_type.regex' => 'The subject type may only contain letters.',
+//     ];
+
+//     $validatedData = $request->validate([
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ], $messages);
+
+//     $subject = new SubjectMaster();
+//     $subject->name = $validatedData['name'];
+//     $subject->subject_type = $validatedData['subject_type'];
+//     $subject->save();
+
+//     return response()->json([
+//         'status' => 201,
+//         'message' => 'Subject created successfully',
+//     ], 201);
+// }
+
+// public function updateSubject(Request $request, $id)
+// {
+//     $messages = [
+//         'name.required' => 'The name field is required.',
+//         'name.regex' => 'The name may only contain letters.',
+//         'subject_type.required' => 'The subject type field is required.',
+//         'subject_type.regex' => 'The subject type may only contain letters.',
+//     ];
+
+//     $validatedData = $request->validate([
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ], $messages);
+
+//     $subject = SubjectMaster::find($id);
+
+//     if (!$subject) {
+//         return response()->json([
+//             'status' => 404,
+//             'message' => 'Subject not found',
+//         ], 404);
+//     }
+
+//     $subject->name = $validatedData['name'];
+//     $subject->subject_type = $validatedData['subject_type'];
+//     $subject->save();
+
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Subject updated successfully',
+//     ], 200);
+// }
+
 public function storeSubject(Request $request)
 {
     $messages = [
         'name.required' => 'The name field is required.',
-        'name.regex' => 'The name may only contain letters.',
+        'name.unique' => 'The name has already been taken.',
         'subject_type.required' => 'The subject type field is required.',
-        'subject_type.regex' => 'The subject type may only contain letters.',
+        'subject_type.unique' => 'The subject type has already been taken.',
     ];
 
     $validatedData = $request->validate([
-        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-        'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+        'name' => [
+            'required',
+            'string',
+            'max:255',
+            Rule::unique('subject_master', 'name')
+        ],
+        'subject_type' => [
+            'required',
+            'string',
+            'max:255'
+        ],
     ], $messages);
 
     $subject = new SubjectMaster();
@@ -1503,32 +1633,27 @@ public function storeSubject(Request $request)
     ], 201);
 }
 
-public function editSubject($id)
-{
-    $subject = SubjectMaster::find($id);
-
-    if (!$subject) {
-        return response()->json([
-            'status' => 404,
-            'message' => 'Subject not found',
-        ]);
-    }
-
-    return response()->json($subject);
-}
-
 public function updateSubject(Request $request, $id)
 {
     $messages = [
         'name.required' => 'The name field is required.',
-        'name.regex' => 'The name may only contain letters.',
+        'name.unique' => 'The name has already been taken.',
         'subject_type.required' => 'The subject type field is required.',
-        'subject_type.regex' => 'The subject type may only contain letters.',
+        'subject_type.unique' => 'The subject type has already been taken.',
     ];
 
     $validatedData = $request->validate([
-        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-        'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+        'name' => [
+            'required',
+            'string',
+            'max:255',
+            Rule::unique('subject_master', 'name')->ignore($id)
+        ],
+        'subject_type' => [
+            'required',
+            'string',
+            'max:255'
+        ],
     ], $messages);
 
     $subject = SubjectMaster::find($id);
@@ -1549,6 +1674,23 @@ public function updateSubject(Request $request, $id)
         'message' => 'Subject updated successfully',
     ], 200);
 }
+
+
+public function editSubject($id)
+{
+    $subject = SubjectMaster::find($id);
+
+    if (!$subject) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Subject not found',
+        ]);
+    }
+
+    return response()->json($subject);
+}
+
+
 
 
 public function deleteSubject($id)
