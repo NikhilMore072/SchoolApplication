@@ -764,49 +764,49 @@ public function listSections(Request $request)
 //         'data' => $section,
 //     ]);
 // }
-// public function updateSection(Request $request, $id)
-// {
-//     // Validate the request
-//     $validator = \Validator::make($request->all(), [
-//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-//     ], [
-//         'name.required' => 'The name field is required.',
-//         'name.string' => 'The name field must be a string.',
-//         'name.max' => 'The name field must not exceed 255 characters.',
-//         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
-//     ]);
+public function updateSection(Request $request, $id)
+{
+    // Validate the request
+    $validator = \Validator::make($request->all(), [
+        'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+    ], [
+        'name.required' => 'The name field is required.',
+        'name.string' => 'The name field must be a string.',
+        'name.max' => 'The name field must not exceed 255 characters.',
+        'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+    ]);
 
-//     if ($validator->fails()) {
-//         return response()->json([
-//             'status' => 422,
-//             'errors' => $validator->errors(),
-//         ], 422);
-//     }
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
 
-//     $section = Section::find($id);
-//     if (!$section) {
-//         return response()->json(['message' => 'Section not found', 'success' => false], 404);
-//     }
+    $section = Section::find($id);
+    if (!$section) {
+        return response()->json(['message' => 'Section not found', 'success' => false], 404);
+    }
 
-//     // Get token payload
-//     $payload = getTokenPayload($request);
-//     if (!$payload) {
-//         return response()->json(['error' => 'Invalid or missing token'], 401);
-//     }
+    // Get token payload
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
 
-//     $academicYr = $payload->get('academic_year');
+    $academicYr = $payload->get('academic_year');
 
-//     // Update the section
-//     $section->name = $request->name;
-//     $section->academic_yr = $academicYr;
-//     $section->save();
+    // Update the section
+    $section->name = $request->name;
+    $section->academic_yr = $academicYr;
+    $section->save();
 
-//     // Return success response
-//     return response()->json([
-//         'status' => 200,
-//         'message' => 'Section updated successfully',
-//     ]);
-// }
+    // Return success response
+    return response()->json([
+        'status' => 200,
+        'message' => 'Section updated successfully',
+    ]);
+}
 
 public function storeSection(Request $request)
 {
@@ -852,53 +852,53 @@ public function storeSection(Request $request)
     ]);
 }
 
-public function updateSection(Request $request, $id)
-{
-    // Validate the request
-    $validator = \Validator::make($request->all(), [
-        'name' => [
-            'required', 
-            'string', 
-            'max:255', 
-            'regex:/^[a-zA-Z]+$/', 
-            \Illuminate\Validation\Rule::unique('section', 'name')->ignore($id)
-        ],
-    ], [
-        'name.required' => 'The name field is required.',
-        'name.string' => 'The name field must be a string.',
-        'name.max' => 'The name field must not exceed 255 characters.',
-        'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
-        'name.unique' => 'The name has already been taken.',
-    ]);
+// public function updateSection(Request $request, $id)
+// {
+//     // Validate the request
+//     $validator = \Validator::make($request->all(), [
+//         'name' => [
+//             'required', 
+//             'string', 
+//             'max:255', 
+//             'regex:/^[a-zA-Z]+$/', 
+//             \Illuminate\Validation\Rule::unique('section', 'name')->ignore($id)
+//         ],
+//     ], [
+//         'name.required' => 'The name field is required.',
+//         'name.string' => 'The name field must be a string.',
+//         'name.max' => 'The name field must not exceed 255 characters.',
+//         'name.regex' => 'The name field must contain only alphabetic characters without spaces.',
+//         'name.unique' => 'The name has already been taken.',
+//     ]);
 
-    if ($validator->fails()) {
-        return response()->json([
-            'status' => 422,
-            'errors' => $validator->errors(),
-        ], 422);
-    }
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status' => 422,
+//             'errors' => $validator->errors(),
+//         ], 422);
+//     }
 
-    $section = Section::find($id);
-    if (!$section) {
-        return response()->json(['message' => 'Section not found', 'success' => false], 404);
-    }
+//     $section = Section::find($id);
+//     if (!$section) {
+//         return response()->json(['message' => 'Section not found', 'success' => false], 404);
+//     }
 
-    $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
 
-    $academicYr = $payload->get('academic_year');
+//     $academicYr = $payload->get('academic_year');
 
-    $section->name = $request->name;
-    $section->academic_yr = $academicYr;
-    $section->save();
+//     $section->name = $request->name;
+//     $section->academic_yr = $academicYr;
+//     $section->save();
 
-    return response()->json([
-        'status' => 200,
-        'message' => 'Section updated successfully',
-    ]);
-}
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Section updated successfully',
+//     ]);
+// }
 
 
 public function editSection($id)
