@@ -179,11 +179,11 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 
         //Students Module Routes 
-        Route::get('students', [StudentController::class, 'index']); 
-        Route::post('students', [StudentController::class, 'store']); 
-        Route::get('students/{id}/edit', [StudentController::class, 'show']); 
-        Route::put('students/{id}/update', [StudentController::class, 'update']); 
-        Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
+        // Route::get('students', [StudentController::class, 'index']); 
+        // Route::post('students', [StudentController::class, 'store']); 
+        // Route::get('students/{id}/edit', [StudentController::class, 'show']); 
+        // Route::put('students/{id}/update', [StudentController::class, 'update']); 
+        // Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
 
 
         // Staff Module API 
@@ -233,6 +233,13 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/subject-allotment/{subjectId}', [MastersController::class, 'deleteSubjectAlloted']);
 
 
+        // Route::get('/student_base_on_class_id', [MastersController::class, 'getStudentListBaseonClass']);
+        Route::get('/getallClassWithStudentCount', [MastersController::class, 'getallSectionsWithStudentCount']);
+        Route::get('/getStudentListBySection', [MastersController::class, 'getStudentListBySection']);
+        Route::get('/students/{studentId}', [MastersController::class, 'getStudentById']);
+        Route::delete('/students/{studentId}', [MastersController::class, 'deleteStudent']);
+        Route::patch('/students/{studentId}/deactivate', [MastersController::class, 'inAvateStudent']);
+        Route::put('/students/{studentId}', [MastersController::class, 'updateStudentAndParent']);
 });
 
 

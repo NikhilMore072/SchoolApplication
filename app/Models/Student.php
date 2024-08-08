@@ -8,46 +8,85 @@ use Illuminate\Database\Eloquent\Model;
 class Student extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'student_id'; 
+    public $incrementing = true;     
+    protected $table ='student';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $table ='students';
     protected $fillable = [
+        'student_id',
+        'academic_yr',
+        'parent_id',
         'first_name',
-        'middle_name',
+        'mid_name',
         'last_name',
-        'house',
-        'admitted_in_class',
+        'student_name',
+        'dob',
         'gender',
-        'blood_group',
-        'nationality',
-        'birth_place',
+        'admission_date',
+        'stud_id_no',
         'mother_tongue',
+        'birth_place',
+        'admission_class',
+        'roll_no',
+        'class_id',
+        'section_id',
+        'fees_paid',
+        'blood_group',
+        'religion',
+        'caste',
+        'subcaste',
+        'transport_mode',
+        'vehicle_no',
+        'bus_id',
         'emergency_name',
-        'date_of_birth',
-        'date_of_admission',
-        'grn_no',
-        'student_id_no',
-        'student_aadhaar_no',
-        'class',
-        'division',
-        'address',
+        'emergency_contact',
+        'emergency_add',
+        'height',
+        'weight',
+        'has_specs',
+        'allergies',
+        'nationality',
+        'permant_add',
         'city',
         'state',
         'pincode',
-        'religion',
-        'caste',
-        'emergency_address',
-        'emergency_contact',
-        'transport_mode',
-        'vehicle_no',
-        'allergies',
-        'height',
-        'roll_no',
+        'IsDelete',
+        'prev_year_student_id',
+        'isPromoted',
+        'isNew',
+        'isModify',
+        'isActive',
+        'reg_no',
+        'house',
+        'stu_aadhaar_no',
         'category',
-        'weight',
-        'has_spectacles'];
+        'last_date',
+        'slc_no',
+        'slc_issue_date',
+        'leaving_remark',
+        'deleted_date',
+        'deleted_by',
+        'image_name',
+        'guardian_name',
+        'guardian_add',
+        'guardian_mobile',
+        'relation',
+        'guardian_image_name',
+        'udise_pen_no',
+        'added_bk_date',
+        'added_by'
+    ];
+
+    public function class()
+    {
+        return $this->belongsTo(Classes::class, 'class_id');
+    }
+
+    public function parents()
+    {
+        return $this->belongsTo(Parents::class, 'parent_id');
+    }
+
+
+
 }
