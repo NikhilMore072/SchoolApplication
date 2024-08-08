@@ -817,7 +817,7 @@ public function storeSection(Request $request)
             'string', 
             'max:255', 
             'regex:/^[a-zA-Z]+$/', 
-            'unique:sections,name'
+            'unique:section,name'
         ],
     ], [
         'name.required' => 'The name field is required.',
@@ -833,8 +833,7 @@ public function storeSection(Request $request)
             'errors' => $validator->errors(),
         ], 422);
     }
-
-    // Get token payload
+    
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
