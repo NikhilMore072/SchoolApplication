@@ -9,7 +9,7 @@ class SubjectMaster extends Model
 {
     use HasFactory;
      
-    protected $table = 'subject_masters';
+    protected $table = 'subject_master';
     protected $primaryKey = 'sm_id'; 
     public $incrementing = true; 
     protected $fillable = ['name','subject_type'];
