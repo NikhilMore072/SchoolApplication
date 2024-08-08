@@ -810,14 +810,13 @@ public function listSections(Request $request)
 
 public function storeSection(Request $request)
 {
-    // Validate the request
     $validator = \Validator::make($request->all(), [
         'name' => [
             'required', 
             'string', 
             'max:255', 
             'regex:/^[a-zA-Z]+$/', 
-            'unique:sections,name'
+            'unique:section,name'
         ],
     ], [
         'name.required' => 'The name field is required.',
@@ -834,7 +833,6 @@ public function storeSection(Request $request)
         ], 422);
     }
 
-    // Get token payload
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
