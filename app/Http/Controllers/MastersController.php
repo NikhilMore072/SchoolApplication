@@ -861,7 +861,7 @@ public function updateSection(Request $request, $id)
             'string', 
             'max:255', 
             'regex:/^[a-zA-Z]+$/', 
-            \Illuminate\Validation\Rule::unique('sections', 'name')->ignore($id)
+            \Illuminate\Validation\Rule::unique('section', 'name')->ignore($id)
         ],
     ], [
         'name.required' => 'The name field is required.',
