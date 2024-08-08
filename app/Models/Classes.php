@@ -39,7 +39,7 @@ class Classes extends Model
 
     public function students()
     {
-        return $this->hasMany(Students::class, 'class_id', 'class_id');
+        return $this->hasMany(Student::class, 'class_id', 'class_id');
     }
 
 }
