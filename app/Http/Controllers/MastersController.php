@@ -1510,19 +1510,26 @@ public function storeSubject(Request $request)
         'subject_type.unique' => 'The subject type has already been taken.',
     ];
 
-    $validatedData = $request->validate([
-        'name' => [
-            'required',
-            'string',
-            'max:255',
-            Rule::unique('subject_master', 'name')
-        ],
-        'subject_type' => [
-            'required',
-            'string',
-            'max:255'
-        ],
-    ], $messages);
+    try {
+        $validatedData = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('subject_master', 'name')
+            ],
+            'subject_type' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+        ], $messages);
+    } catch (ValidationException $e) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $e->errors(),
+        ], 422);
+    }
 
     $subject = new SubjectMaster();
     $subject->name = $validatedData['name'];
@@ -1534,7 +1541,6 @@ public function storeSubject(Request $request)
         'message' => 'Subject created successfully',
     ], 201);
 }
-
 public function updateSubject(Request $request, $id)
 {
     $messages = [
@@ -1544,19 +1550,26 @@ public function updateSubject(Request $request, $id)
         'subject_type.unique' => 'The subject type has already been taken.',
     ];
 
-    $validatedData = $request->validate([
-        'name' => [
-            'required',
-            'string',
-            'max:255',
-            Rule::unique('subject_master', 'name')->ignore($id)
-        ],
-        'subject_type' => [
-            'required',
-            'string',
-            'max:255'
-        ],
-    ], $messages);
+    try {
+        $validatedData = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('subject_master', 'name')->ignore($id)
+            ],
+            'subject_type' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+        ], $messages);
+    } catch (ValidationException $e) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $e->errors(),
+        ], 422);
+    }
 
     $subject = SubjectMaster::find($id);
 
@@ -1576,6 +1589,7 @@ public function updateSubject(Request $request, $id)
         'message' => 'Subject updated successfully',
     ], 200);
 }
+
 
 
 public function editSubject($id)
