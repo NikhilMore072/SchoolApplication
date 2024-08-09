@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 // use Illuminate\Support\Facades\Auth;
 
 
@@ -937,10 +938,7 @@ public function deleteSection($id)
         'success' => true
     ]);
 }
-
-
  // Methods for the classes model
-
 public function getClass(Request $request)
 {   
     $payload = getTokenPayload($request);    
@@ -954,8 +952,6 @@ public function getClass(Request $request)
         ->get();
     return response()->json($classes);
 }
-
-
 public function storeClass(Request $request)
 {
     $payload = getTokenPayload($request);
@@ -1187,99 +1183,7 @@ public function editStaff($id)
     }
 }
 
-// public function storeStaff(Request $request)
-// {
-//     try {
-//         $messages = [
-//             'name.required' => 'The name field is mandatory.',
-//             'birthday.required' => 'The birthday field is required.',
-//             'date_of_joining.required' => 'The date of joining is required.',
-//             'email.required' => 'The email field is required.',
-//             'email.email' => 'The email must be a valid email address.',
-//             'email.unique' => 'The email has already been taken.',
-//             'phone.required' => 'The phone number is required.',
-//             'phone.max' => 'The phone number cannot exceed 15 characters.',
-//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
-//         ];
 
-//         $validatedData = $request->validate([
-//             'employee_id' => 'nullable|string|max:255',
-//             'name' => 'required|string|max:255',
-//             'birthday' => 'required|date',
-//             'date_of_joining' => 'required|date',
-//             'sex' => 'required|string|max:10',
-//             'religion' => 'nullable|string|max:255',
-//             'blood_group' => 'nullable|string|max:10',
-//             'address' => 'required|string|max:255',
-//             'phone' => 'required|string|max:15',
-//             'email' => 'required|string|email|max:255|unique:teacher,email',
-//             'designation' => 'nullable|string|max:255',
-//             'academic_qual' => 'nullable|array',
-//             'academic_qual.*' => 'nullable|string|max:255',
-//             'professional_qual' => 'nullable|string|max:255',
-//             'special_sub' => 'nullable|string|max:255',
-//             'trained' => 'nullable|string|max:255',
-//             'experience' => 'nullable|string|max:255',
-//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
-//             'teacher_image_name' => 'nullable|string|max:255',
-//             'role' => 'required|string|max:255',
-//         ], $messages);
-
-//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
-//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
-//         }
-
-//         // Create Teacher record
-//         $teacher = new Teacher();
-//         $teacher->fill($validatedData);
-//         $teacher->IsDelete = 'N';
-        
-//         if (!$teacher->save()) {
-//             return response()->json([
-//                 'message' => 'Failed to create teacher',
-//             ], 500);
-//         }
-
-//         // Create User record
-//         $user = User::create([
-//             'email' => $validatedData['email'],
-//             'name' => $validatedData['name'],
-//             'password' => Hash::make('arnolds'),
-//             'reg_id' => $teacher->teacher_id,
-//             'role_id' => $validatedData['role'],
-//             'IsDelete' => 'N',
-//         ]);
-
-//         if (!$user) {
-//             // Rollback by deleting the teacher record if user creation fails
-//             $teacher->delete();
-//             return response()->json([
-//                 'message' => 'Failed to create user',
-//             ], 500);
-//         }
-
-//         return response()->json([
-//             'message' => 'Teacher and user created successfully!',
-//             'teacher' => $teacher,
-//             'user' => $user,
-//         ], 201);
-//     } catch (\Illuminate\Validation\ValidationException $e) {
-//         return response()->json([
-//             'message' => 'Validation failed',
-//             'errors' => $e->errors(),
-//         ], 422);
-//     } catch (\Exception $e) {
-//         // Handle unexpected errors
-//         if (isset($teacher) && $teacher->exists) {
-//             // Rollback by deleting the teacher record if an unexpected error occurs
-//             $teacher->delete();
-//         }
-//         return response()->json([
-//             'message' => 'An error occurred while creating the teacher',
-//             'error' => $e->getMessage()
-//         ], 500);
-//     }
-// }
 
 
 public function storeStaff(Request $request)
@@ -2608,4 +2512,99 @@ public function deleteStudent($studentId)
 //             'existing' => $existingAllotments,
 //         ],
 //     ], 201);
+// }
+
+
+// public function storeStaff(Request $request)
+// {
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:255|unique:teacher,email',
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+//             'teacher_image_name' => 'nullable|string|max:255',
+//             'role' => 'required|string|max:255',
+//         ], $messages);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         // Create Teacher record
+//         $teacher = new Teacher();
+//         $teacher->fill($validatedData);
+//         $teacher->IsDelete = 'N';
+        
+//         if (!$teacher->save()) {
+//             return response()->json([
+//                 'message' => 'Failed to create teacher',
+//             ], 500);
+//         }
+
+//         // Create User record
+//         $user = User::create([
+//             'email' => $validatedData['email'],
+//             'name' => $validatedData['name'],
+//             'password' => Hash::make('arnolds'),
+//             'reg_id' => $teacher->teacher_id,
+//             'role_id' => $validatedData['role'],
+//             'IsDelete' => 'N',
+//         ]);
+
+//         if (!$user) {
+//             // Rollback by deleting the teacher record if user creation fails
+//             $teacher->delete();
+//             return response()->json([
+//                 'message' => 'Failed to create user',
+//             ], 500);
+//         }
+
+//         return response()->json([
+//             'message' => 'Teacher and user created successfully!',
+//             'teacher' => $teacher,
+//             'user' => $user,
+//         ], 201);
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         // Handle unexpected errors
+//         if (isset($teacher) && $teacher->exists) {
+//             // Rollback by deleting the teacher record if an unexpected error occurs
+//             $teacher->delete();
+//         }
+//         return response()->json([
+//             'message' => 'An error occurred while creating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
 // }
