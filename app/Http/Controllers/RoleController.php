@@ -27,7 +27,7 @@ class RoleController extends Controller
     {
         $validatedData = $request->validate([
             'role_id' => 'required|string|max:255|unique:roles,role_id',
-            'rolename' => 'required|string|max:255',
+            'rolename' => 'required|string|max:255|unique:roles,rolename',
         ]);
 
         $role = Role::create($validatedData);
@@ -59,8 +59,8 @@ class RoleController extends Controller
     public function update(Request $request, $role_id)
     {
         $validatedData = $request->validate([
-            'rolename' => 'required|string|max:255',
-            'is_active' => 'required|string|max:255',
+            'rolename' => 'required|string|max:50',
+            'is_active' => 'required|string|max:1',
         ]);
 
         $role = Role::find($role_id);
@@ -159,52 +159,7 @@ class RoleController extends Controller
             return null;
         }
     }
-    // public function navMenulist(Request $request)
-    // {
-    //     // $roleId = 3;
-    //     $user = $this->authenticateUser();
-    //     $roleId = $user->role_id;
 
-    //     // Get the menu IDs from RolesAndMenu where role_id is the specified value
-    //     $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
-    //         ->pluck('menu_id')
-    //         ->toArray();
-
-    //     // Get the parent menus where parent_id is 0
-    //     $parentMenus = Menu::where('parent_id', 0)
-    //         ->whereIn('menu_id', $assignedMenuIds)
-    //         ->get(['menu_id', 'name', 'url']);
-
-    //     // Prepare the final response structure
-    //     $menuList = $parentMenus->map(function ($parentMenu) use ($assignedMenuIds) {
-    //         return [
-    //             'menu_id' => $parentMenu->menu_id,
-    //             'name' => $parentMenu->name,
-    //             'url' => $parentMenu->url,
-    //             'sub_menus' => $this->getSubMenus($parentMenu->menu_id, $assignedMenuIds)
-    //         ];
-    //     });
-
-    //     return response()->json($menuList);
-    // }
-
-    // public function getSubMenus($parentId, $assignedMenuIds)
-    // {
-    //     // Get the submenus where parent_id is the given parent ID
-    //     $subMenus = Menu::where('parent_id', $parentId)
-    //         ->whereIn('menu_id', $assignedMenuIds)
-    //         ->get(['menu_id', 'name', 'url']);
-
-    //     // Recursively get each submenu's submenus
-    //     return $subMenus->map(function ($subMenu) use ($assignedMenuIds) {
-    //         return [
-    //             'menu_id' => $subMenu->menu_id,
-    //             'name' => $subMenu->name,
-    //             'url' => $subMenu->url,
-    //             'sub_menus' => $this->getSubMenus($subMenu->menu_id, $assignedMenuIds)
-    //         ];
-    //     });
-    // }
 
     public function navMenulist(Request $request)
 {
@@ -340,4 +295,52 @@ public function getSubMenus($parentId, $assignedMenuIds)
     //    $menu =  Menu::findOrFail($id);    
     //     return response()->json();
 
+    // }
+
+
+        // public function navMenulist(Request $request)
+    // {
+    //     // $roleId = 3;
+    //     $user = $this->authenticateUser();
+    //     $roleId = $user->role_id;
+
+    //     // Get the menu IDs from RolesAndMenu where role_id is the specified value
+    //     $assignedMenuIds = RolesAndMenu::where('role_id', $roleId)
+    //         ->pluck('menu_id')
+    //         ->toArray();
+
+    //     // Get the parent menus where parent_id is 0
+    //     $parentMenus = Menu::where('parent_id', 0)
+    //         ->whereIn('menu_id', $assignedMenuIds)
+    //         ->get(['menu_id', 'name', 'url']);
+
+    //     // Prepare the final response structure
+    //     $menuList = $parentMenus->map(function ($parentMenu) use ($assignedMenuIds) {
+    //         return [
+    //             'menu_id' => $parentMenu->menu_id,
+    //             'name' => $parentMenu->name,
+    //             'url' => $parentMenu->url,
+    //             'sub_menus' => $this->getSubMenus($parentMenu->menu_id, $assignedMenuIds)
+    //         ];
+    //     });
+
+    //     return response()->json($menuList);
+    // }
+
+    // public function getSubMenus($parentId, $assignedMenuIds)
+    // {
+    //     // Get the submenus where parent_id is the given parent ID
+    //     $subMenus = Menu::where('parent_id', $parentId)
+    //         ->whereIn('menu_id', $assignedMenuIds)
+    //         ->get(['menu_id', 'name', 'url']);
+
+    //     // Recursively get each submenu's submenus
+    //     return $subMenus->map(function ($subMenu) use ($assignedMenuIds) {
+    //         return [
+    //             'menu_id' => $subMenu->menu_id,
+    //             'name' => $subMenu->name,
+    //             'url' => $subMenu->url,
+    //             'sub_menus' => $this->getSubMenus($subMenu->menu_id, $assignedMenuIds)
+    //         ];
+    //     });
     // }
