@@ -118,6 +118,11 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::post('update_academic_year', [AuthController::class, 'updateAcademicYear']);
 
 
+
+
+
+
+
         // Route::get('/getAuthUser', [MastersController::class, 'getAuthUser']);
         // Route::put('/updateauthacademicyear', [MastersController::class, 'updateAcademicYearForAuthUser']);
         // Route::get('/someControllerMethod', [LoginController::class, 'someControllerMethod']);
@@ -134,6 +139,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 
         //Master and its sub module routes  Module Routes 
         //Section model Routes 
+        Route::post('/check_section_name', [MastersController::class, 'checkSectionName']);
         Route::get('/sections', [MastersController::class, 'listSections']);
         Route::post('/sections', [MastersController::class, 'storeSection']);
         Route::get('/sections/{id}/edit', [MastersController::class, 'editSection']);
@@ -141,6 +147,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/sections/{id}', [MastersController::class, 'deleteSection']);
 
         //Classes Module Route  
+        Route::post('/check_class_name', [MastersController::class, 'checkClassName']);
         Route::get('/classes', [MastersController::class, 'getClass']);
         Route::post('/classes', [MastersController::class, 'storeClass']);
         Route::get('/classes/{id}', [MastersController::class, 'showClass']);
@@ -148,6 +155,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/classes/{id}', [MastersController::class, 'destroyClass']);
 
         // Division Module Routes 
+        Route::post('/check_division_name', [MastersController::class, 'checkDivisionName']);
         Route::get('/getDivision', [MastersController::class, 'getDivision']);
         Route::get('/get_class_for_division', [MastersController::class, 'getClassforDivision']);
         Route::post('/store_division', [MastersController::class, 'storeDivision']);
@@ -215,6 +223,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/menus/{id}', [RoleController::class, 'destroy']);
 
         // API for the subject master.
+        Route::post('/check_subject_name', [MastersController::class, 'checkSubjectName']);
         Route::get('/subject', [MastersController::class, 'getSubjects']);
         Route::post('/subject', [MastersController::class, 'storeSubject']);
         Route::get('/subject/{id}', [MastersController::class, 'editSubject']);
