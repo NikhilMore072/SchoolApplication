@@ -32,6 +32,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 // use Illuminate\Support\Facades\Auth;
 
@@ -1136,7 +1137,12 @@ public function getStaffList(Request $request) {
         ->where('designation', '!=', 'Admin')
         ->get()
         ->map(function ($staff) {
-            $staff->teacher_image_name = asset('storage/app/public/teacher_images/' . $staff->teacher_image_name);
+            // Generate the URL for the teacher image if it exists
+            if ($staff->teacher_image_name) {
+                $staff->teacher_image_name = Storage::url('teacher_images/' . $staff->teacher_image_name);
+            } else {
+                $staff->teacher_image_name = null; 
+            }
             return $staff;
         });
     return response()->json($stafflist);
@@ -1917,27 +1923,9 @@ public function deleteSubject($id)
 
 
 // Subject Allotment Methods
-public function getSubjectsAndSectionsByClass(Request $request, $classId)
-{
-    $class = Classes::find($classId);
-    if (!$class) {
-        return response()->json([
-            'status' => 404,
-            'message' => 'Class not found',
-        ], 404);
-    }
-    $subjectsAndSections = SubjectAllotment::with('getSubject', 'getDivision')
-        ->where('class_id', $classId)
-        ->get()
-        ->groupBy('section_id');
-
-    return response()->json([
-        'status' => 200,
-        'data' => $subjectsAndSections,
-    ]);
-}
 
 
+// get all the class and their associated Division.
 public function getallClass(Request $request){
     $payload = getTokenPayload($request);
     if (!$payload) {
@@ -1952,6 +1940,28 @@ public function getallClass(Request $request){
     return response()->json($classes);
 }
 
+//get all the subject allotment data base on the selected class and section 
+public function getSubjectAlloted(Request $request)
+{
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+
+    $academicYr = $payload->get('academic_year');    
+    $section = $request->query('section_id');
+    $query = SubjectAllotment::with('getClass', 'getDivision', 'getTeacher', 'getSubject')
+        ->where('academic_yr', $academicYr);
+
+    if (!empty($section)) {
+        $query->where('section_id', $section);
+    } else {
+        return response()->json([]);
+    }
+
+    $subjectAllotmentList = $query->orderBy('subject_id', 'DESC')->get();
+    return response()->json($subjectAllotmentList);
+} 
 
 public function storeSubjectAllotment(Request $request)
 {
@@ -1963,7 +1973,7 @@ public function storeSubjectAllotment(Request $request)
             'class_id' => 'required|exists:class,class_id',
             'divisions' => 'required|array',
             'subjects' => 'required|array',
-            'teacher_id' => 'required|exists:teacher,teacher_id',
+            // 'teacher_id' => 'required|exists:teacher,teacher_id',
             'divisions.*' => 'exists:section,section_id',
             'subjects.*' => 'exists:subject_master,sm_id',
         ]);
@@ -1992,7 +2002,7 @@ public function storeSubjectAllotment(Request $request)
         'class_id' => $classId,
         'divisions' => $divisions,
         'subjects' => $subjects,
-        'teacher_id' => $teacherId
+        // 'teacher_id' => $teacherId
     ]);
 
     $createdAllotments = [];
@@ -2005,7 +2015,7 @@ public function storeSubjectAllotment(Request $request)
                 'class_id' => $classId,
                 'section_id' => $division,
                 'sm_id' => $subjectId,
-                'teacher_id' => $teacherId,
+                // 'teacher_id' => $teacherId,
                 'academic_yr' => $academicYr,
             ]);
 
@@ -2015,7 +2025,7 @@ public function storeSubjectAllotment(Request $request)
                     'sm_id' => $subjectId,
                     'class_id' => $classId,
                     'section_id' => $division,
-                    'teacher_id' => $teacherId,
+                    // 'teacher_id' => $teacherId,
                     'academic_yr' => $academicYr,
                 ]);
 
@@ -2066,29 +2076,6 @@ public function storeSubjectAllotment(Request $request)
         ],
     ], 201);
 }
-
-public function getSubjectAlloted(Request $request)
-{
-    $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
-
-    $academicYr = $payload->get('academic_year');    
-    $section = $request->query('section');
-    $query = SubjectAllotment::with('getClass', 'getDivision', 'getTeacher', 'getSubject')
-        ->where('academic_yr', $academicYr);
-
-    if (!empty($section)) {
-        $query->where('section_id', $section);
-    } else {
-        return response()->json([]);
-    }
-
-    $subjectAllotmentList = $query->orderBy('subject_id', 'DESC')->get();
-    return response()->json($subjectAllotmentList);
-}
-
 
 
 public function allocateTeacherForClass(Request $request)
@@ -2181,6 +2168,26 @@ public function deleteSubjectAlloted($subjectId)
             'message' => "Subject Allotment Not Found"
         ]);
     }
+}
+
+public function getSubjectsAndSectionsByClass(Request $request, $classId)
+{
+    $class = Classes::find($classId);
+    if (!$class) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Class not found',
+        ], 404);
+    }
+    $subjectsAndSections = SubjectAllotment::with('getSubject', 'getDivision')
+        ->where('class_id', $classId)
+        ->get()
+        ->groupBy('section_id');
+
+    return response()->json([
+        'status' => 200,
+        'data' => $subjectsAndSections,
+    ]);
 }
 
 
