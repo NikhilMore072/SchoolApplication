@@ -1780,19 +1780,27 @@ public function getSubjects(Request $request)
 // }
 public function checkSubjectName(Request $request)
 {
+    // Validate the request data
     $validatedData = $request->validate([
         'name' => 'required|string|max:30',
+        'subject_type' => 'required|string|max:30',
     ]);
+
     $name = $validatedData['name'];
-    $exists = SubjectMaster::whereRaw('LOWER(name) = ?', [strtolower($name)])->exists();
+    $subjectType = $validatedData['subject_type'];
+
+    // Check if the combination of name and subject_type exists
+    $exists = SubjectMaster::whereRaw('LOWER(name) = ? AND LOWER(subject_type) = ?', [strtolower($name), strtolower($subjectType)])->exists();
+
     return response()->json(['exists' => $exists]);
 }
+
 
 public function storeSubject(Request $request)
 {
     $messages = [
         'name.required' => 'The name field is required.',
-        'name.unique' => 'The name has already been taken.',
+        // 'name.unique' => 'The name has already been taken.',
         'subject_type.required' => 'The subject type field is required.',
         'subject_type.unique' => 'The subject type has already been taken.',
     ];
@@ -1802,8 +1810,8 @@ public function storeSubject(Request $request)
             'name' => [
                 'required',
                 'string',
-                'max:255',
-                Rule::unique('subject_master', 'name')
+                'max:30',
+                // Rule::unique('subject_master', 'name')
             ],
             'subject_type' => [
                 'required',
@@ -1832,9 +1840,9 @@ public function updateSubject(Request $request, $id)
     {
         $messages = [
             'name.required' => 'The name field is required.',
-            'name.unique' => 'The name has already been taken.',
+            // 'name.unique' => 'The name has already been taken.',
             'subject_type.required' => 'The subject type field is required.',
-            'subject_type.unique' => 'The subject type has already been taken.',
+            // 'subject_type.unique' => 'The subject type has already been taken.',
         ];
 
         try {
@@ -1842,8 +1850,8 @@ public function updateSubject(Request $request, $id)
                 'name' => [
                     'required',
                     'string',
-                    'max:255',
-                    Rule::unique('subject_master', 'name')->ignore($id, 'sm_id')
+                    'max:30',
+                    // Rule::unique('subject_master', 'name')->ignore($id, 'sm_id')
                 ],
                 'subject_type' => [
                     'required',
