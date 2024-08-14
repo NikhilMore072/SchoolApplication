@@ -233,9 +233,9 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 
         Route::get('/get_subject_Alloted', [MastersController::class, 'getSubjectAlloted']);
-        Route::get('/class/{classId}/subjects-sections', [MastersController::class, 'getSubjectsAndSectionsByClass']);
+        Route::get('/class/{classId}/subjects-allotment', [MastersController::class, 'getSubjectsAndSectionsByClass']);
         Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']);
-        Route::get('/get_all_class', [MastersController::class, 'getallClass']);
+        Route::get('/get_class_section', [MastersController::class, 'getallClass']);
         Route::post('/allocate-teacher-for-class', [MastersController::class, 'allocateTeacherForClass']);
         Route::get('/subject-allotment/{subjectId}/edit', [MastersController::class, 'editallocateTeacherForClass']);
         Route::put('/subject-allotment/{subjectId}', [MastersController::class, 'updateallocateTeacherForClass']);
