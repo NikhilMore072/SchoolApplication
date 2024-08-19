@@ -186,22 +186,12 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::get('/collected_fee_list', [MastersController::class, 'collectedFeeList']);
 
 
-        //Students Module Routes 
-        // Route::get('students', [StudentController::class, 'index']); 
-        // Route::post('students', [StudentController::class, 'store']); 
-        // Route::get('students/{id}/edit', [StudentController::class, 'show']); 
-        // Route::put('students/{id}/update', [StudentController::class, 'update']); 
-        // Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
-
-
         // Staff Module API 
         Route::get('/staff_list', [MastersController::class, 'getStaffList']);
         Route::post('/store_staff', [MastersController::class, 'storeStaff']);
         Route::get('/teachers/{id}', [MastersController::class, 'editStaff']);
         Route::put('/teachers/{id}', [MastersController::class, 'updateStaff']);
         Route::delete('/teachers/{id}', [MastersController::class, 'deleteStaff']);
-
-
 
         // Roles Routes 
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
@@ -231,11 +221,25 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/subject/{id}', [MastersController::class, 'deleteSubject']);     
        
 
+        Route::get('/get_class_section', [MastersController::class, 'getallClass']); //Done
+        Route::get('/get_subject_Alloted', [MastersController::class, 'getSubjectAlloted']); //Done
+        Route::get('/get_subject_Alloted/{subjectId}', [MastersController::class, 'editSubjectAllotment']);//Done
+        Route::put('/update_subject_Alloted/{subjectId}', [MastersController::class, 'updateSubjectAllotment']);//Done
+        Route::delete('/delete_subject_Alloted/{subjectId}', [MastersController::class, 'deleteSubjectAllotment']);// Done
+        Route::get('/get_divisions_and_subjects/{classId}', [MastersController::class, 'getDivisionsAndSubjectsByClass']); //Done 
+        Route::get('/getClassNames', [MastersController::class, 'getClassNames']); //Done
+        Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']); //Done 
+        Route::get('/subject-allotment/section/{section_id}', [MastersController::class, 'getSubjectAllotmentWithTeachersBySection']);//Done
+        Route::put('/subject-allotment', [MastersController::class, 'updateSubjectAllotmentWithTeachers']);
 
-        Route::get('/get_subject_Alloted', [MastersController::class, 'getSubjectAlloted']);
+
+
+
+
+
+
+
         Route::get('/class/{classId}/subjects-allotment', [MastersController::class, 'getSubjectsAndSectionsByClass']);
-        Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']);
-        Route::get('/get_class_section', [MastersController::class, 'getallClass']);
         Route::post('/allocate-teacher-for-class', [MastersController::class, 'allocateTeacherForClass']);
         Route::get('/subject-allotment/{subjectId}/edit', [MastersController::class, 'editallocateTeacherForClass']);
         Route::put('/subject-allotment/{subjectId}', [MastersController::class, 'updateallocateTeacherForClass']);
