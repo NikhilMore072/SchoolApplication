@@ -2482,19 +2482,32 @@ public function deleteStudent($studentId)
 
 
 // get all the class and their associated Division.
-public function getallClass(Request $request){
+public function getallClass(Request $request)
+{
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
 
     $academicYr = $payload->get('academic_year');
-    $classes = Division::with('getClass')
-    ->where('academic_yr',$academicYr) 
-    ->get();
 
-    return response()->json($classes);
+    // Fetch divisions with their associated class data
+    $divisions = Division::with('getClass')
+        ->where('academic_yr', $academicYr)
+        ->get();
+
+    // Transform the data to only include section_id and class name
+    $result = $divisions->map(function ($division) {
+        return [
+            'section_id' => $division->section_id,
+            'name' => $division->name,
+            'class_name' => $division->getClass->name
+        ];
+    });
+
+    return response()->json($result);
 }
+
 
 //get all the subject allotment data base on the selected class and section 
 public function getSubjectAlloted(Request $request)
@@ -2597,8 +2610,69 @@ public function deleteSubjectAllotment(Request $request, $subjectId)
 
     return response()->json(['error' => 'Failed to delete Subject Allotment'], 500);
 }
+ 
+//Classs list
+public function getClassList(Request $request)
+{
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year');
+    $classes =Classes::where('academic_yr', $academicYr)->get();
+    return response()->json($classes);
+}
+  
+//get  the divisions and the subjects base on the selectd class_id 
+public function getDivisionsAndSubjects(Request $request, $classId)
+{
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
 
-// Get the Division and subject for the selected class.
+    $academicYr = $payload->get('academic_year');
+    
+    // Retrieve Class Information
+    $class = Classes::find($classId);
+    if (!$class) {
+        return response()->json(['error' => 'Class not found'], 404);
+    }
+    
+    $className = $class->name;
+
+    // Fetch Division Names
+    $divisionNames = Division::where('academic_yr', $academicYr)
+        ->where('class_id', $classId)
+        ->select('section_id', 'name')
+        ->distinct()
+        ->get();
+    
+    // Fetch Subjects Based on Class Type
+    $subjects = ($className == 11 || $className == 12)
+        ? $this->getAllSubjectsNotHsc()
+        : $this->getAllSubjectsOfHsc();
+    
+    // Return Combined Response
+    return response()->json([
+        'divisions' => $divisionNames,
+        'subjects' => $subjects
+    ]);
+}
+
+private function getAllSubjectsOfHsc()
+{
+    return SubjectMaster::whereIn('subject_type', ['Compulsory', 'Optional', 'Co-Scholastic_hsc', 'Social'])->get();
+}
+
+private function getAllSubjectsNotHsc()
+{
+    return SubjectMaster::whereIn('subject_type', ['Scholastic', 'Co-Scholastic', 'Social'])->get();
+}
+
+
+
+// Get the Division and subject for the selected class preasign.
 public function getDivisionsAndSubjectsByClass($classId)
 {
     $subjectAllotments = SubjectAllotment::with(['getDivision', 'getSubject'])
@@ -2702,7 +2776,7 @@ public function getSubjectAllotmentWithTeachersBySection(Request $request, $sect
     ]);
 }
 
-
+// Pending 
 public function updateSubjectAllotmentWithTeachers(Request $request)
 {
     // Define validation rules
@@ -2710,7 +2784,7 @@ public function updateSubjectAllotmentWithTeachers(Request $request)
         'data' => 'required|array',
         'data.*.class_id' => 'required|exists:class,class_id',
         'data.*.section_id' => 'required|exists:section,section_id',
-        'data.*.subject_id' => 'required',
+        'data.*.subject_id' => 'required|exists:subject,subject_id',
         'data.*.sm_id' => 'required|integer',
         'data.*.teachers' => 'array',
         'data.*.teachers.*' => 'nullable|exists:teacher,teacher_id',
@@ -2720,7 +2794,6 @@ public function updateSubjectAllotmentWithTeachers(Request $request)
     $validator = Validator::make($request->all(), $rules);
 
     if ($validator->fails()) {
-        // Return validation errors
         return response()->json([
             'status' => 'error',
             'message' => $validator->errors()
@@ -2731,22 +2804,29 @@ public function updateSubjectAllotmentWithTeachers(Request $request)
         $subjectAllotments = $request->input('data');
 
         foreach ($subjectAllotments as $allotmentData) {
-            // Update or create the SubjectAllotment record
-            $subjectAllotment = SubjectAllotment::updateOrCreate(
-                ['sm_id' => $allotmentData['sm_id']],
-                [
-                    'class_id' => $allotmentData['class_id'],
-                    'section_id' => $allotmentData['section_id'],
-                    'academic_yr' => $request->input('academic_yr'), // Assuming academic_yr is passed in the request
-                    'sm_id' => $allotmentData['sm_id'],
-                ]
-            );
+            // Loop through each teacher in the provided list
+            if (!empty($allotmentData['teachers'])) {
+                foreach ($allotmentData['teachers'] as $teacherId) {
+                    // Check if the combination already exists in the database
+                    $existingAllotment = SubjectAllotment::where([
+                        ['class_id', '=', $allotmentData['class_id']],
+                        ['section_id', '=', $allotmentData['section_id']],
+                        ['sm_id', '=', $allotmentData['sm_id']],
+                        ['teacher_id', '=', $teacherId],
+                    ])->first();
 
-            // Update teachers
-            $teacherIds = $allotmentData['teachers'] ?? [];
-
-            // Assuming a many-to-many relationship, adjust accordingly if needed
-            $subjectAllotment->teachers()->sync($teacherIds);
+                    // If the combination does not exist, create a new record
+                    if (!$existingAllotment) {
+                        SubjectAllotment::create([
+                            'class_id' => $allotmentData['class_id'],
+                            'section_id' => $allotmentData['section_id'],
+                            'academic_yr' => $request->input('academic_yr'),
+                            'sm_id' => $allotmentData['sm_id'],
+                            'teacher_id' => $teacherId,
+                        ]);
+                    }
+                }
+            }
         }
 
         return response()->json([
@@ -2755,7 +2835,6 @@ public function updateSubjectAllotmentWithTeachers(Request $request)
         ]);
 
     } catch (\Exception $e) {
-        // Log the exception details if needed
         \Log::error('Error updating subject allotments: ' . $e->getMessage());
 
         return response()->json([
@@ -2766,7 +2845,97 @@ public function updateSubjectAllotmentWithTeachers(Request $request)
 }
 
 
+// for the teacher list .
+public function getTeacherNames(Request $request){
+      
+    $teacherList = User::Where('role_id','T')->get();
+    return response()->json($teacherList);
+}
 
+
+
+public function allotTeacherForSubjects(Request $request)
+    {
+        // Manual validation with detailed error logging
+        $validator = Validator::make($request->all(), [
+            'class_id' => 'required|exists:classes,class_id',
+            'section_id' => 'required|exists:sections,section_id',
+            'teacher_id' => 'required|exists:teachers,teacher_id',
+            'sm_ids' => 'required|array',
+            'sm_ids.*' => 'exists:subject_master,sm_id'
+        ]);
+
+        if ($validator->fails()) {
+            // Log validation errors
+            Log::error('Validation failed for subject allotment.', [
+                'errors' => $validator->errors()->toArray()
+            ]);
+            return response()->json(['error' => $validator->errors()], 422);
+        }
+
+        try {
+            // Log the start of the operation
+            Log::info('Starting subject allotment for teacher.', [
+                'class_id' => $request->input('class_id'),
+                'section_id' => $request->input('section_id'),
+                'teacher_id' => $request->input('teacher_id'),
+                'sm_ids' => $request->input('sm_ids')
+            ]);
+
+            // Token validation
+            $payload = getTokenPayload($request);
+            if (!$payload) {
+                Log::warning('Invalid or missing token for subject allotment request.');
+                return response()->json(['error' => 'Invalid or missing token'], 401);
+            }
+            $academicYr = $payload->get('academic_year');
+
+            // Retrieve data from the request
+            $classId = $request->input('class_id');
+            $sectionId = $request->input('section_id');
+            $teacherId = $request->input('teacher_id');
+            $smIds = $request->input('sm_ids');
+
+            // Process each sm_id and create new entries
+            foreach ($smIds as $smId) {
+                $allotment = SubjectAllotment::create([
+                    'sm_id' => $smId,
+                    'class_id' => $classId,
+                    'section_id' => $sectionId,
+                    'teacher_id' => $teacherId,
+                    'academic_yr' => $academicYr
+                ]);
+
+                // Log each successful subject allotment entry
+                Log::info('Subject allotment entry created.', [
+                    'subject_allotment_id' => $allotment->subject_id,
+                    'class_id' => $classId,
+                    'section_id' => $sectionId,
+                    'teacher_id' => $teacherId,
+                    'sm_id' => $smId
+                ]);
+            }
+
+            // Log successful operation
+            Log::info('Subject allotments successfully created.', [
+                'class_id' => $classId,
+                'section_id' => $sectionId,
+                'teacher_id' => $teacherId,
+                'sm_ids' => $smIds
+            ]);
+
+            return response()->json(['message' => 'Subject allotments successfully created'], 201);
+
+        } catch (\Exception $e) {
+            // Log the error message
+            Log::error('Error creating subject allotments: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+
+            // Return detailed error response
+            return response()->json(['error' => 'Failed to create subject allotments. ' . $e->getMessage()], 500);
+        }
+    }
 
 
 
@@ -3020,6 +3189,58 @@ public function getSubjectsAndSectionsByClass(Request $request, $classId)
 
 
 
+//Division list base on the selected class.
+// public function getDivisionNames(Request $request)
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     $classId = $request->input('class_id');
+//     $divisionNames =Division::where('academic_yr', $academicYr)
+//         ->where('class_id', $classId)
+//         ->select('section_id', 'name')
+//         ->distinct()
+//         ->get();
+//     return response()->json(
+//         ['divisions' =>$divisionNames,
+          
+           
+//         ]
+//     );
+// }
+
+// // Subjects according to the new condition for the  hsc and non hsc subjects.
+// public function getSubjectsOfClass($classId)
+//     {
+//         $class = Classes::find($classId);
+
+//         if (!$class) {
+//             return response()->json(['error' => 'Class not found'], 404);
+//         }
+
+//         $className = $class->name;
+
+//         if ($className == 11 || $className == 12) {
+//             $subjects = $this->getAllSubjectsNotHsc();
+//         } else {
+//             $subjects = $this->getAllSubjectsOfHsc();
+//         }
+
+//         return response()->json($subjects);
+//     }
+
+//     private function getAllSubjectsOfHsc()
+//     {
+//         return SubjectMaster::whereIn('subject_type', ['Compulsory', 'Optional', 'Co-Scholastic_hsc', 'Social'])->get();
+//     }
+
+//     private function getAllSubjectsNotHsc()
+//     {
+//         return SubjectMaster::whereIn('subject_type', ['Scholastic', 'Co-Scholastic', 'Social'])->get();
+//     }
 
 
 

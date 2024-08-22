@@ -220,7 +220,8 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::put('/subject/{id}', [MastersController::class, 'updateSubject']);
         Route::delete('/subject/{id}', [MastersController::class, 'deleteSubject']);     
        
-
+        Route::get('/getClassList', [MastersController::class, 'getClassList']);//done 
+        Route::get('/divisions-and-subjects/{class_id}', [MastersController::class, 'getDivisionsAndSubjects']);//  done 
         Route::get('/get_class_section', [MastersController::class, 'getallClass']); //Done
         Route::get('/get_subject_Alloted', [MastersController::class, 'getSubjectAlloted']); //Done
         Route::get('/get_subject_Alloted/{subjectId}', [MastersController::class, 'editSubjectAllotment']);//Done
@@ -228,9 +229,16 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/delete_subject_Alloted/{subjectId}', [MastersController::class, 'deleteSubjectAllotment']);// Done
         Route::get('/get_divisions_and_subjects/{classId}', [MastersController::class, 'getDivisionsAndSubjectsByClass']); //Done 
         Route::get('/getClassNames', [MastersController::class, 'getClassNames']); //Done
+        // Route::get('/class/subjects/{classId}', [MastersController::class, 'getSubjectsOfClass']);
         Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']); //Done 
         Route::get('/subject-allotment/section/{section_id}', [MastersController::class, 'getSubjectAllotmentWithTeachersBySection']);//Done
-        Route::put('/subject-allotment', [MastersController::class, 'updateSubjectAllotmentWithTeachers']);
+        Route::put('/subject-allotment', [MastersController::class, 'updateSubjectAllotmentWithTeachers']);  //not done yet . pending for the 
+        Route::get('/get_teacher_list', [MastersController::class, 'getTeacherNames']); //Done  
+        Route::post('/allotTeacherForSubjects', [MastersController::class, 'allotTeacherForSubjects']); //Done 
+
+
+
+        
 
 
 
