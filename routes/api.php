@@ -220,19 +220,19 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::put('/subject/{id}', [MastersController::class, 'updateSubject']);
         Route::delete('/subject/{id}', [MastersController::class, 'deleteSubject']);     
        
-        Route::get('/getClassList', [MastersController::class, 'getClassList']);//done 
-        Route::get('/divisions-and-subjects/{class_id}', [MastersController::class, 'getDivisionsAndSubjects']);//  done 
-        Route::get('/get_class_section', [MastersController::class, 'getallClass']); //Done
-        Route::get('/get_subject_Alloted', [MastersController::class, 'getSubjectAlloted']); //Done
-        Route::get('/get_subject_Alloted/{subjectId}', [MastersController::class, 'editSubjectAllotment']);//Done
-        Route::put('/update_subject_Alloted/{subjectId}', [MastersController::class, 'updateSubjectAllotment']);//Done
-        Route::delete('/delete_subject_Alloted/{subjectId}', [MastersController::class, 'deleteSubjectAllotment']);// Done
-        Route::get('/get_divisions_and_subjects/{classId}', [MastersController::class, 'getDivisionsAndSubjectsByClass']); //Done 
-        Route::get('/getClassNames', [MastersController::class, 'getClassNames']); //Done
+        Route::get('/getClassList', [MastersController::class, 'getClassList']);//done  //list the class 
+        Route::get('/divisions-and-subjects/{class_id}', [MastersController::class, 'getDivisionsAndSubjects']);//  done list the division and subject by selected class,    
+        Route::get('/get_class_section', [MastersController::class, 'getallClass']); //Done  list the class name with the division
+        Route::get('/get_subject_Alloted', [MastersController::class, 'getSubjectAlloted']); //Done  list the subject allotment base on the selected section_id
+        Route::get('/get_subject_Alloted/{subjectId}', [MastersController::class, 'editSubjectAllotment']);//Done    return the object of subject with associated details for the selected subject
+        Route::put('/update_subject_Alloted/{subjectId}', [MastersController::class, 'updateSubjectAllotment']);//Done  update 
+        Route::delete('/delete_subject_Alloted/{subjectId}', [MastersController::class, 'deleteSubjectAllotment']);// Done  delete 
+        Route::get('/get_divisions_and_subjects/{classId}', [MastersController::class, 'getDivisionsAndSubjectsByClass']); //Done   list the division and  the subject which are already allocated.
+        // Route::get('/getClassNames', [MastersController::class, 'getClassNames']); //Done
         // Route::get('/class/subjects/{classId}', [MastersController::class, 'getSubjectsOfClass']);
         Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']); //Done 
-        Route::get('/subject-allotment/section/{section_id}', [MastersController::class, 'getSubjectAllotmentWithTeachersBySection']);//Done
-        Route::put('/subject-allotment', [MastersController::class, 'updateSubjectAllotmentWithTeachers']);  //not done yet . pending for the 
+        Route::get('/subject-allotment/section/{section_id}', [MastersController::class, 'getSubjectAllotmentWithTeachersBySection']);//Done   list the subject and the teachers
+        Route::put('/teacher-allotment/update', [MastersController::class, 'updateTeacherAllotment']);
         Route::get('/get_teacher_list', [MastersController::class, 'getTeacherNames']); //Done  
         Route::post('/allotTeacherForSubjects', [MastersController::class, 'allotTeacherForSubjects']); //Done 
 
