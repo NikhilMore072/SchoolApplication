@@ -232,7 +232,8 @@ Route::middleware(['jwt.auth'])->group(function () {
         // Route::get('/class/subjects/{classId}', [MastersController::class, 'getSubjectsOfClass']);
         Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']); //Done 
         Route::get('/subject-allotment/section/{section_id}', [MastersController::class, 'getSubjectAllotmentWithTeachersBySection']);//Done   list the subject and the teachers
-        Route::put('/teacher-allotment/update', [MastersController::class, 'updateTeacherAllotment']);
+        // Route::put('/teacher-allotment/update', [MastersController::class, 'updateTeacherAllotment']);
+        Route::put('/subject-allotments/{classId}/{sectionId}', [MastersController::class, 'updateTeacherAllotment']);
         Route::get('/get_teacher_list', [MastersController::class, 'getTeacherNames']); //Done  
         Route::post('/allotTeacherForSubjects', [MastersController::class, 'allotTeacherForSubjects']); //Done 
 
