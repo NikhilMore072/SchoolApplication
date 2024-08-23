@@ -12,6 +12,6 @@ class SubjectMaster extends Model
     protected $table = 'subject_master';
     protected $primaryKey = 'sm_id'; 
     public $incrementing = true; 
-    protected $fillable = ['name','subject_type'];
+    protected $fillable = ['sm_id','name','subject_type'];
 
 }

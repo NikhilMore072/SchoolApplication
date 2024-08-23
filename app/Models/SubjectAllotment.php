@@ -20,8 +20,7 @@ class SubjectAllotment extends Model
     public function getClass()
     {
         return $this->belongsTo(Classes::class, 'class_id');  
-    }
-    
+    }    
 
     public function getDivision()
     {
