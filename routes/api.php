@@ -228,14 +228,16 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::put('/update_subject_Alloted/{subjectId}', [MastersController::class, 'updateSubjectAllotment']);//Done  update 
         Route::delete('/delete_subject_Alloted/{subjectId}', [MastersController::class, 'deleteSubjectAllotment']);// Done  delete 
         Route::get('/get_divisions_and_subjects/{classId}', [MastersController::class, 'getDivisionsAndSubjectsByClass']); //Done   list the division and  the subject which are already allocated.
-        // Route::get('/getClassNames', [MastersController::class, 'getClassNames']); //Done
-        // Route::get('/class/subjects/{classId}', [MastersController::class, 'getSubjectsOfClass']);
         Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']); //Done 
         Route::get('/subject-allotment/section/{section_id}', [MastersController::class, 'getSubjectAllotmentWithTeachersBySection']);//Done   list the subject and the teachers
         // Route::put('/teacher-allotment/update', [MastersController::class, 'updateTeacherAllotment']);
         Route::put('/subject-allotments/{classId}/{sectionId}', [MastersController::class, 'updateTeacherAllotment']);
+        Route::get('/get_divisions/{classId}', [MastersController::class, 'getDivisionsbyClass']); //Done  Allot teacher tab list the division for the selected class.
+        Route::get('/get_subjects/{sectionId}', [MastersController::class, 'getSubjectsbyDivision']);  //Done   Allot teacher tab list the subject  for the selected Division. 
+        Route::get('/get_presubjects/{sectionId}', [MastersController::class, 'getPresignSubjectByDivision']);  //Done   Allot teacher tab list the subject(Presign Subjects )  for the selected Division. 
         Route::get('/get_teacher_list', [MastersController::class, 'getTeacherNames']); //Done  
-        Route::post('/allotTeacherForSubjects', [MastersController::class, 'allotTeacherForSubjects']); //Done 
+        Route::post('/allot-teacher-for-subject/{class_id}/{section_id}', [MastersController::class, 'updateOrCreateSubjectAllotments']);
+        Route::post('/allotTeacherForSubjects', [MastersController::class, 'allotTeacherForSubjects']);
 
 
 
