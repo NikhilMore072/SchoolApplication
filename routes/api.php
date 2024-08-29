@@ -231,7 +231,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/delete_subject_Alloted/{subjectId}', [MastersController::class, 'deleteSubjectAllotment']);// Done  delete 
          
         // Allot Subjects
-        Route::get('/get_divisions_and_subjects/{classId}', [MastersController::class, 'getDivisionsAndSubjectsByClass']); //Done   list the division and  the subject which are already allocated.
+        Route::get('/get_divisions_and_subjects/{classId}', [MastersController::class, 'getDivisionsAndSubjects']); //Done   list the division and  the subject which are already allocated.
         Route::post('/store_subject_allotment', [MastersController::class, 'storeSubjectAllotment']); //Done 
 
         // Allot Teacher for a class 
