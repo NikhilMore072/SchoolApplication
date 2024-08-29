@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Event;
 use App\Models\Notice;
 use App\Models\Classes;
+use App\Models\Parents;
 use App\Models\Section;
 use App\Models\Setting;
 use App\Models\Student;
@@ -19,6 +20,7 @@ use App\Models\UserMaster;
 use App\Models\StaffNotice;
 use Illuminate\Http\Request;
 use App\Models\SubjectMaster;
+use App\Models\ContactDetails;
 use Illuminate\Support\Carbon;
 use App\Models\BankAccountName;
 use Illuminate\Validation\Rule;
@@ -32,6 +34,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use App\Models\DeletedContactDetails;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -2296,6 +2299,7 @@ public function getStudentListBySection(Request $request)
     $academicYr = $payload->get('academic_year');    
     $sectionId = $request->query('section_id');    
     $query = Student::where('academic_yr', $academicYr)
+        ->where('IsDelete','N')   
         ->whereNotNull('parent_id');
     
     if ($sectionId) {
@@ -2303,10 +2307,10 @@ public function getStudentListBySection(Request $request)
     }
 
     $students = $query->get();    
-    $studentCount = $students->count();    
+    // $studentCount = $students->count();    
     
     return response()->json([
-        'count' => $studentCount,
+        // 'count' => $studentCount,
         'students' => $students,
       
     ]);
@@ -2322,16 +2326,125 @@ public function getStudentById($studentId)
     return response()->json($student);
 }
 
+// public function deleteStudent($studentId)
+// {
+//     // Find the student by ID
+//     $student = Student::find($studentId);
+    
+//     if (!$student) {
+//         return response()->json(['error' => 'Student not found'], 404);
+//     }
+
+//     // Update the student's isDelete and isModify status to 'Y'
+//     $student->isDelete = 'Y';
+//     $student->isModify = 'Y';
+//     $student->save();
+
+//     // Hard delete the student from the user_master table
+//     $userMaster = UserMaster::where('reg_id', $studentId)->first();
+//     if ($userMaster) {
+//         $userMaster->delete();
+//     }
+
+//     // Check if the student has siblings
+//     $siblingsCount = Student::where('parent_id', $student->parent_id)
+//         ->where('student_id', '!=', $studentId)
+//         ->where('isDelete', 'N')
+//         ->count();
+
+//     // If no siblings are present, mark the parent as deleted in the parent table
+//     if ($siblingsCount == 0) {
+//         $parent = Parents::find($student->parent_id);
+//         if ($parent) {
+//             $parent->isDelete = 'Y';
+//             $parent->save();
+
+//             // Hard delete parent information from the user_master table
+//             $userMasterParent = UserMaster::where('reg_id', $student->parent_id)->first();
+//             if ($userMasterParent) {
+//                 $userMasterParent->delete();
+//             }
+
+//             // Hard delete parent information from the contact_details table
+//             ContactDetails::where('id', $student->parent_id)->delete();
+//         }
+//     }
+
+//     // After deletion, check if the deleted information exists in the deleted_contact_details table
+//     $deletedContact = DeletedContactDetails::where('student_id', $studentId)->first();
+//     if (!$deletedContact) {
+//         // Insert deleted contact details into the deleted_contact_details table
+//         DeletedContactDetails::create([
+//             'student_id' => $studentId,
+//             'parent_id' => $student->parent_id,
+//             'contact_info' => $student->contact_details // Assuming the contact info is available in the student model
+//         ]);
+//     }
+
+//     return response()->json(['message' => 'Student deleted successfully']);
+// }
+
 public function deleteStudent($studentId)
-    {
-        $student = Student::find($studentId);        
-        if (!$student) {
-            return response()->json(['error' => 'Student not found'], 404);
-        }
-        $student->isDelete = 'Y';
-        $student->save();        
-        return response()->json(['message' => 'Student deleted successfully']);
+{
+    // Find the student by ID
+    $student = Student::find($studentId);
+    
+    if (!$student) {
+        return response()->json(['error' => 'Student not found'], 404);
     }
+
+    // Update the student's isDelete and isModify status to 'Y'
+    $student->isDelete = 'Y';
+    $student->isModify = 'Y';
+    $student->save();
+
+    // Hard delete the student from the user_master table
+    $userMaster = UserMaster::where('reg_id', $studentId)->first();
+    if ($userMaster) {
+        $userMaster->delete();
+    }
+
+    // Check if the student has siblings
+    $siblingsCount = Student::where('parent_id', $student->parent_id)
+        ->where('student_id', '!=', $studentId)
+        ->where('isDelete', 'N')
+        ->count();
+
+    // If no siblings are present, mark the parent as deleted in the parent table
+    if ($siblingsCount == 0) {
+        $parent = Parents::find($student->parent_id);
+        if ($parent) {
+            $parent->isDelete = 'Y';
+            $parent->save();
+
+            // Hard delete parent information from the user_master table
+            $userMasterParent = UserMaster::where('reg_id', $student->parent_id)->first();
+            if ($userMasterParent) {
+                $userMasterParent->delete();
+            }
+
+            // Hard delete parent information from the contact_details table
+            ContactDetails::where('id', $student->parent_id)->delete();
+        }
+    }
+
+    // After deletion, check if the deleted information exists in the deleted_contact_details table
+    $deletedContact = DeletedContactDetails::where('id', $studentId)->first();
+    if (!$deletedContact) {
+        // Insert deleted contact details into the deleted_contact_details table
+        DeletedContactDetails::create([
+            'student_id' => $studentId,
+            'parent_id' => $student->parent_id,
+            'phone_no' => $student->parents->m_mobile, 
+            'email_id' => $student->parents->m_emailid,
+            'm_emailid' => $student->parents->m_emailid
+        ]);
+    }
+
+    return response()->json(['message' => 'Student deleted successfully']);
+}
+
+
 
 
     public function inAvateStudent($studentId)
@@ -2346,169 +2459,194 @@ public function deleteStudent($studentId)
     }
 
 
-    public function updateStudentAndParent(Request $request, $studentId)
+
+public function updateStudentAndParent(Request $request, $studentId)
 {
-    // Validate the incoming request
-    $request->validate([
-        'student_name' => 'sometimes|string|max:255',
-        'dob' => 'sometimes|date',
-        'gender' => 'sometimes|string|max:10',
-        'admission_date' => 'sometimes|date',
-        'stud_id_no' => 'sometimes|string|max:255',
-        'mother_tongue' => 'sometimes|string|max:50',
-        'birth_place' => 'sometimes|string|max:255',
-        'admission_class' => 'sometimes|string|max:50',
-        'roll_no' => 'sometimes|string|max:50',
-        'class_id' => 'sometimes|integer|exists:classes,class_id',
-        'section_id' => 'sometimes|integer|exists:sections,section_id',
-        'fees_paid' => 'sometimes|numeric',
-        'blood_group' => 'sometimes|string|max:10',
-        'religion' => 'sometimes|string|max:50',
-        'caste' => 'sometimes|string|max:50',
-        'subcaste' => 'sometimes|string|max:50',
-        'transport_mode' => 'sometimes|string|max:50',
-        'vehicle_no' => 'sometimes|string|max:50',
-        'bus_id' => 'sometimes|integer',
-        'emergency_name' => 'sometimes|string|max:100',
-        'emergency_contact' => 'sometimes|string|max:15',
-        'emergency_add' => 'sometimes|string|max:255',
-        'height' => 'sometimes|numeric',
-        'weight' => 'sometimes|numeric',
-        'has_specs' => 'sometimes|boolean',
-        'allergies' => 'sometimes|string|max:255',
-        'nationality' => 'sometimes|string|max:50',
-        'permant_add' => 'sometimes|string|max:255',
-        'city' => 'sometimes|string|max:100',
-        'state' => 'sometimes|string|max:100',
-        'pincode' => 'sometimes|string|max:10',
-        'IsDelete' => 'sometimes|in:Y,N',
-        'prev_year_student_id' => 'sometimes|string|max:255',
-        'isPromoted' => 'sometimes|boolean',
-        'isNew' => 'sometimes|boolean',
-        'isModify' => 'sometimes|boolean',
-        'isActive' => 'sometimes|in:Y,N',
-        'reg_no' => 'sometimes|string|max:255',
-        'house' => 'sometimes|string|max:50',
-        'stu_aadhaar_no' => 'sometimes|string|max:20',
-        'category' => 'sometimes|string|max:50',
-        'last_date' => 'sometimes|date',
-        'slc_no' => 'sometimes|string|max:255',
-        'slc_issue_date' => 'sometimes|date',
-        'leaving_remark' => 'sometimes|string|max:255',
-        'deleted_date' => 'sometimes|date',
-        'deleted_by' => 'sometimes|string|max:50',
-        'image_name' => 'sometimes|string|max:100',
-        'guardian_name' => 'sometimes|string|max:100',
-        'guardian_add' => 'sometimes|string|max:255',
-        'guardian_mobile' => 'sometimes|string|max:15',
-        'relation' => 'sometimes|string|max:50',
-        'guardian_image_name' => 'sometimes|string|max:100',
-        'udise_pen_no' => 'sometimes|string|max:50',
-        'added_bk_date' => 'sometimes|date',
-        'added_by' => 'sometimes|string|max:50',
-        
-        'parent_id' => 'sometimes|exists:parents,parent_id',
-        'father_name' => 'sometimes|string|max:100',
-        'father_occupation' => 'sometimes|string|max:100',
-        'f_office_add' => 'sometimes|string|max:200',
-        'f_office_tel' => 'sometimes|string|max:11',
-        'f_mobile' => 'sometimes|string|max:10',
-        'f_email' => 'sometimes|string|max:50',
-        'mother_name' => 'sometimes|string|max:100',
-        'mother_occupation' => 'sometimes|string|max:100',
-        'm_office_add' => 'sometimes|string|max:200',
-        'm_office_tel' => 'sometimes|string|max:11',
-        'm_mobile' => 'sometimes|string|max:13',
-        'm_emailid' => 'sometimes|string|max:50',
-        'parent_adhar_no' => 'sometimes|string|max:14',
-        'm_adhar_no' => 'sometimes|string|max:14',
-        'f_dob' => 'sometimes|date',
-        'm_dob' => 'sometimes|date',
-        'f_blood_group' => 'sometimes|string|max:5',
-        'm_blood_group' => 'sometimes|string|max:5',
-        'IsDelete' => 'sometimes|in:Y,N',
-        'father_image_name' => 'sometimes|string|max:100',
-        'mother_image_name' => 'sometimes|string|max:100',
+    // Validate the incoming request for all fields
+    $validatedData = $request->validate([
+        // Student model fields
+        'first_name' => 'required|string|max:255',
+        'mid_name' => 'nullable|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'student_name' => 'nullable|string|max:255',
+        'dob' => 'required|date',
+        'gender' => 'required|string',
+        'admission_date' => 'nullable|date',
+        'stud_id_no' => 'nullable|string|max:255',
+        'mother_tongue' => 'nullable|string|max:255',
+        'birth_place' => 'nullable|string|max:255',
+        'admission_class' => 'nullable|string|max:255',
+        'roll_no' => 'nullable|string|max:255',
+        'class_id' => 'required|integer',
+        'section_id' => 'nullable|integer',
+        'fees_paid' => 'nullable|numeric',
+        'blood_group' => 'nullable|string|max:255',
+        'religion' => 'nullable|string|max:255',
+        'caste' => 'nullable|string|max:255',
+        'subcaste' => 'nullable|string|max:255',
+        'transport_mode' => 'nullable|string|max:255',
+        'vehicle_no' => 'nullable|string|max:255',
+        'bus_id' => 'nullable|integer',
+        'emergency_name' => 'nullable|string|max:255',
+        'emergency_contact' => 'nullable|string|max:255',
+        'emergency_add' => 'nullable|string|max:255',
+        'height' => 'nullable|numeric',
+        'weight' => 'nullable|numeric',
+        'has_specs' => 'nullable|boolean',
+        'allergies' => 'nullable|string|max:255',
+        'nationality' => 'nullable|string|max:255',
+        'permant_add' => 'nullable|string|max:255',
+        'city' => 'nullable|string|max:255',
+        'state' => 'nullable|string|max:255',
+        'pincode' => 'nullable|string|max:255',
+        'IsDelete' => 'nullable|boolean',
+        'prev_year_student_id' => 'nullable|integer',
+        'isPromoted' => 'nullable|boolean',
+        'isNew' => 'nullable|boolean',
+        'isModify' => 'nullable|boolean',
+        'isActive' => 'nullable|boolean',
+        'reg_no' => 'nullable|string|max:255',
+        'house' => 'nullable|string|max:255',
+        'stu_aadhaar_no' => 'nullable|string|max:255',
+        'category' => 'nullable|string|max:255',
+        'last_date' => 'nullable|date',
+        'slc_no' => 'nullable|string|max:255',
+        'slc_issue_date' => 'nullable|date',
+        'leaving_remark' => 'nullable|string|max:255',
+        'deleted_date' => 'nullable|date',
+        'deleted_by' => 'nullable|string|max:255',
+        'image_name' => 'nullable|string|max:255',
+        'guardian_name' => 'nullable|string|max:255',
+        'guardian_add' => 'nullable|string|max:255',
+        'guardian_mobile' => 'nullable|string|max:255',
+        'relation' => 'nullable|string|max:255',
+        'guardian_image_name' => 'nullable|string|max:255',
+        'udise_pen_no' => 'nullable|string|max:255',
+        'added_bk_date' => 'nullable|date',
+        'added_by' => 'nullable|string|max:255',
+
+        // Parent model fields
+        'father_name' => 'nullable|string|max:255',
+        'father_occupation' => 'nullable|string|max:255',
+        'f_office_add' => 'nullable|string|max:255',
+        'f_office_tel' => 'nullable|string|max:255',
+        'f_mobile' => 'nullable|string|max:255',
+        'f_email' => 'nullable|string|max:255',
+        'mother_name' => 'nullable|string|max:255',
+        'mother_occupation' => 'nullable|string|max:255',
+        'm_office_add' => 'nullable|string|max:255',
+        'm_office_tel' => 'nullable|string|max:255',
+        'm_mobile' => 'nullable|string|max:255',
+        'm_emailid' => 'nullable|string|max:255',
+        'parent_adhar_no' => 'nullable|string|max:255',
+        'm_adhar_no' => 'nullable|string|max:255',
+        'f_dob' => 'nullable|date',
+        'm_dob' => 'nullable|date',
+        'f_blood_group' => 'nullable|string|max:255',
+        'm_blood_group' => 'nullable|string|max:255',
+        'father_image_name' => 'nullable|string|max:255',
+        'mother_image_name' => 'nullable|string|max:255',
+
+        'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
+        'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother',
     ]);
 
-    // Find the student by ID
-    $student = Student::find($studentId);
-    if (!$student) {
-        return response()->json(['error' => 'Student not found'], 404);
-    }
-
-    // Update student details
-    $student->update($request->only([
-        'student_name', 'dob', 'gender', 'admission_date', 'stud_id_no', 
-        'mother_tongue', 'birth_place', 'admission_class', 'roll_no', 
-        'class_id', 'section_id', 'fees_paid', 'blood_group', 'religion', 
-        'caste', 'subcaste', 'transport_mode', 'vehicle_no', 'bus_id', 
-        'emergency_name', 'emergency_contact', 'emergency_add', 'height', 
-        'weight', 'has_specs', 'allergies', 'nationality', 'permant_add', 
-        'city', 'state', 'pincode', 'IsDelete', 'prev_year_student_id', 
-        'isPromoted', 'isNew', 'isModify', 'isActive', 'reg_no', 'house', 
-        'stu_aadhaar_no', 'category', 'last_date', 'slc_no', 'slc_issue_date', 
-        'leaving_remark', 'deleted_date', 'deleted_by', 'image_name', 
-        'guardian_name', 'guardian_add', 'guardian_mobile', 'relation', 
-        'guardian_image_name', 'udise_pen_no', 'added_bk_date', 'added_by', 
-        'parent_id'
-    ]));
-
-    // If parent_id is provided, update parent details
-    if ($request->has('parent_id')) {
-        $parentId = $request->input('parent_id');
-        $parent = Parents::find($parentId);
-        if ($parent) {
-            $parent->update($request->only([
-                'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 
-                'f_mobile', 'f_email', 'mother_name', 'mother_occupation', 
-                'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid', 
-                'parent_adhar_no', 'm_adhar_no', 'f_dob', 'm_dob', 
-                'f_blood_group', 'm_blood_group', 'IsDelete', 'father_image_name', 
-                'mother_image_name'
-            ]));
-        } else {
-            return response()->json(['error' => 'Parent not found'], 404);
-        }
-    }
-
-    return response()->json([
-        'message' => 'Student and parent details updated successfully',
-        'student' => $student
-    ]);
-}
-
-
-
-// Subject Allotment Methods
-
-
-// get all the class and their associated Division.
-public function getallClass(Request $request)
-{
+    // Retrieve the token payload
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
-
     $academicYr = $payload->get('academic_year');
 
-    $divisions = Division::with('getClass')
+    // Find the student by ID
+    $student = Student::find($studentId);
+
+    if (!$student) {
+        return response()->json(['error' => 'Student not found'], 404);
+    }
+
+    // Handle student image if provided
+    if ($request->has('student_image')) {
+        $base64Image = $request->input('student_image');
+        $imageParts = explode(';', $base64Image);
+        $imageType = explode(':', $imageParts[0])[1];
+        $imageExtension = str_replace('image/', '', $imageType);
+        $image = str_replace('data:image/' . $imageExtension . ';base64,', '', $base64Image);
+        $image = str_replace(' ', '+', $image);
+        $imageName = $studentId . '.' . $imageExtension;
+        $imagePath = public_path('uploads/student_image');
+
+        // Create directory if it doesn't exist
+        if (!file_exists($imagePath)) {
+            mkdir($imagePath, 0755, true);
+        }
+
+        // Save the image
+        file_put_contents($imagePath . '/' . $imageName, base64_decode($image));
+        $validatedData['image_name'] = $imageName;
+    }
+
+    // Include academic year in the update data
+    $validatedData['academic_yr'] = $academicYr;
+
+    // Update student information
+    $student->update($validatedData);
+
+    // Handle parent details if provided
+    $parent = Parents::find($student->parent_id);
+
+    if ($parent) {
+        $parentData = $request->only([
+            'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
+            'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
+            'parent_adhar_no', 'm_adhar_no', 'f_dob', 'm_dob', 'f_blood_group', 'm_blood_group',
+        ]);
+
+        // Update SMS contact preference
+        $contactDetails = ContactDetails::where('id', $student->parent_id)->first();
+        if ($request->input('SetToReceiveSMS') == 'Father') {
+            $contactDetails->update(['phone_no' => $parent->f_mobile]);
+        } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
+            $contactDetails->update(['phone_no' => $parent->m_mobile]);
+        }
+
+        // Update email ID as username preference
+        $user = UserMaster::where('reg_id', $student->parent_id)->first();
+        if ($request->input('SetEmailIDAsUsername') == 'Father') {  
+            $user->update(['user_id' => $parent->f_email]);
+        } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
+            $user->update(['user_id' => $parent->m_emailid]);
+        }
+
+        $parent->update($parentData);
+    }
+
+    return response()->json([
+        "status" => "success",
+        "message" => "Student updated successfully",
+        "data" => $student
+    ]);
+}
+
+// get all the class and their associated Division.
+public function getallClass(Request $request)
+{
+    $payload = getTokenPayload($request);    
+    $academicYr = $payload->get('academic_year');
+
+    $divisions = Division::select('name', 'section_id', 'class_id')
+        ->with(['getClass' => function($query) {
+            $query->select('name', 'class_id');
+        }])
         ->where('academic_yr', $academicYr)
         ->distinct()
+        ->orderBy('class_id') 
+        ->orderBy('section_id', 'asc')
         ->get();
-
-    // $result = $divisions->map(function ($division) {
-    //     return [
-    //         'section_id' => $division->section_id,
-    //         'name' => $division->name,
-    //         'class_name' => $division->getClass->name,
-    //         'class_id' => $division->getClass->class_id
-    //     ];
-    // });
 
     return response()->json($divisions);
 }
+
 
 
 //get all the subject allotment data base on the selected class and section 
@@ -2522,7 +2660,7 @@ public function getSubjectAlloted(Request $request)
     $academicYr = $payload->get('academic_year');    
     $section = $request->query('section_id');
     $query = SubjectAllotment::with('getClass', 'getDivision', 'getTeacher', 'getSubject')
-        ->where('academic_yr', $academicYr);
+            ->where('academic_yr', $academicYr);
 
     if (!empty($section)) {
         $query->where('section_id', $section);
@@ -2530,7 +2668,9 @@ public function getSubjectAlloted(Request $request)
         return response()->json([]);
     }
 
-    $subjectAllotmentList = $query->orderBy('subject_id', 'DESC')->get();
+    $subjectAllotmentList = $query->
+                             orderBy('class_id', 'DESC') // multiple section_id, sm_id
+                             ->get();
     return response()->json($subjectAllotmentList);
 } 
   
@@ -2623,12 +2763,11 @@ public function deleteSubjectAllotment(Request $request, $subjectId)
 //Classs list
 public function getClassList(Request $request)
 {
-    $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
+    $payload = getTokenPayload($request);  
     $academicYr = $payload->get('academic_year');
-    $classes =Classes::where('academic_yr', $academicYr)->get();
+    $classes =Classes::where('academic_yr', $academicYr)
+                     ->orderBy('class_id','desc')  //order 
+                     ->get();
     return response()->json($classes);
 }
   
@@ -2661,11 +2800,12 @@ public function getDivisionsAndSubjects(Request $request, $classId)
     $subjects = ($className == 11 || $className == 12)
         ? $this->getAllSubjectsNotHsc()
         : $this->getAllSubjectsOfHsc();
-    
+    $count = $subjects->count();
     // Return Combined Response
     return response()->json([
         'divisions' => $divisionNames,
-        'subjects' => $subjects
+        'subjects' => $subjects,
+        'count' => $count
     ]);
 }
 
@@ -2680,20 +2820,21 @@ private function getAllSubjectsNotHsc()
 }
 
 // Get the Division and subject for the selected class preasign.
-public function getDivisionsAndSubjectsByClass($classId)
-{
-    $subjectAllotments = SubjectAllotment::with(['getDivision', 'getSubject'])
-        ->where('class_id', $classId)
-        ->get();  
-    $subjectAllotmentsCount = SubjectAllotment::with(['getDivision', 'getSubject'])
-        ->where('class_id', $classId)
-        ->count();  
-    return response()->json(
-      ['subjectAllotments'=>$subjectAllotments,
-       'subjectAllotmentsCount' =>$subjectAllotmentsCount      
-      ]
-    );
-}
+// public function getSubjectAllotedForClassDivision($classId)  // change in the API for the selected class and division shows the subjects
+// {
+//     $subjectAllotments = SubjectAllotment::with(['getDivision', 'getSubject'])
+//         ->where('class_id', $classId)
+//         ->get();  
+//     $subjectAllotmentsCount = SubjectAllotment::with(['getDivision', 'getSubject'])
+//         ->where('class_id', $classId)
+//         ->count();  
+//     return response()->json(
+//       ['subjectAllotments'=>$subjectAllotments,
+//        'subjectAllotmentsCount' =>$subjectAllotmentsCount      
+//       ]
+//     );
+// }
+
 
 // Save the Subject Allotment  
 public function storeSubjectAllotment(Request $request)
@@ -2935,25 +3076,16 @@ public function getTeacherNames(Request $request){
 public function getDivisionsbyClass(Request $request, $classId)
 {
     $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
-
-    $academicYr = $payload->get('academic_year');
-    
+    $academicYr = $payload->get('academic_year');    
     // Retrieve Class Information
-    $class = Classes::find($classId);
-    if (!$class) {
-        return response()->json(['error' => 'Class not found'], 404);
-    }
-    
-    $className = $class->name;
-
+    $class = Classes::find($classId);    
+    // $className = $class->name;
     // Fetch Division Names
     $divisionNames = Division::where('academic_yr', $academicYr)
         ->where('class_id', $classId)
         ->select('section_id', 'name')
-        ->distinct()
+        ->orderBy('section_id','desc')
+        // ->distinct()
         ->get(); 
     
     // Return Combined Response
@@ -2966,15 +3098,12 @@ public function getDivisionsbyClass(Request $request, $classId)
 public function getSubjectsbyDivision(Request $request, $sectionId)
 {
     $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
     $academicYr = $payload->get('academic_year');
     
     // Retrieve Division Information
     $division = Division::find($sectionId);
     if (!$division) {
-        return response()->json(['error' => 'Division not found'], 404);
+        return response()->json(['error' => '']);
     }
 
     // Fetch Class Information based on the division
@@ -3010,11 +3139,33 @@ public function getPresignSubjectByDivision(Request $request, $sectionId)
     ->where('section_id', $sectionId)
     ->groupBy('sm_id', 'subject_id')
     ->get(); 
+
+    $count = $subjects->count();
+    return response()->json([
+        'subjects' => $subjects,
+        'count' =>$count
+    ]);
+}
+
+public function getPresignSubjectByTeacher(Request $request,$classID, $sectionId,$teacherID)
+{
+    $payload = getTokenPayload($request);
+    if (!$payload) {
+        return response()->json(['error' => 'Invalid or missing token'], 401);
+    }
+    $academicYr = $payload->get('academic_year'); 
+    
+    $subjects = SubjectAllotment::with('getSubject')
+    ->where('academic_yr', $academicYr)
+    ->where('class_id', $classID)
+    ->where('section_id', $sectionId)
+    ->where('teacher_id', $teacherID)
+    ->groupBy('sm_id', 'subject_id')
+    ->get(); 
     return response()->json([
         'subjects' => $subjects
     ]);
 }
-
 
 public function updateOrCreateSubjectAllotments($class_id, $section_id, Request $request)
 {
