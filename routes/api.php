@@ -242,7 +242,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         // Allot Teachers 
         Route::get('/get_divisions/{classId}', [MastersController::class, 'getDivisionsbyClass']); //Done  Allot teacher tab list the division for the selected class.
         Route::get('/get_subjects/{sectionId}', [MastersController::class, 'getSubjectsbyDivision']);  //Done   Allot teacher tab list the subject  for the selected Division. 
-        Route::get('/get_presubjects/{sectionId}', [MastersController::class, 'getPresignSubjectByDivision']);  //Done   Allot teacher tab list the subject(Presign Subjects )  for the selected Division. 
+        Route::get('/get_presubjects/{classId}/{sectionId}', [MastersController::class, 'getPresignSubjectByDivision']);  //Done   Allot teacher tab list the subject(Presign Subjects )  for the selected Division. 
         Route::get('/get_presubjectss/{sectionId}', [MastersController::class, 'getSubjectsByDivisionWithAssigned']);  //Done   Allot teacher tab list the subject(Presign Subjects )  for the selected Division. 
         Route::get('/get_teacher_list', [MastersController::class, 'getTeacherNames']); //Done  Get the teacher list 
         Route::get('/get_presign_subject_by_teacher/{classID}/{sectionId}/{teacherID}', [MastersController::class, 'getPresignSubjectByTeacher']); // get the list of the preasign subject base on the selected clss_id,section_id,teacher_id .

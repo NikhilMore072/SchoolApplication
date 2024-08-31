@@ -2458,6 +2458,24 @@ public function deleteStudent($studentId)
         return response()->json(['message' => 'Student deactivated successfully']);
     }
 
+     public function resetPasssword($user_id){  
+            
+        $user = UserMaster::find($user_id);
+        if(!$userID){
+            return response()->json("User ID not found");
+        }
+
+        $password = "arnolds";
+        $user->password=$password;
+        $user->save();
+        
+        return response()->json(
+                      [
+                        'Status' => 200 ,
+                         'Message' => "Password Updated Successfully "
+                      ]
+                      );
+     }
 
 
 public function updateStudentAndParent(Request $request, $studentId)
@@ -2766,7 +2784,7 @@ public function getClassList(Request $request)
     $payload = getTokenPayload($request);  
     $academicYr = $payload->get('academic_year');
     $classes =Classes::where('academic_yr', $academicYr)
-                     ->orderBy('class_id','desc')  //order 
+                     ->orderBy('class_id')  //order 
                      ->get();
     return response()->json($classes);
 }
@@ -3126,26 +3144,51 @@ public function getSubjectsbyDivision(Request $request, $sectionId)
 }
 
 // Get the Subject List base on the selectd  Division Pre-Asign Subjects.
-public function getPresignSubjectByDivision(Request $request, $sectionId)
+// public function getPresignSubjectByDivision(Request $request, $sectionId)
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year'); 
+    
+//     $subjects = SubjectAllotment::with('getSubject')
+//     ->where('academic_yr', $academicYr)
+//     ->where('section_id', $sectionId)
+//     ->groupBy('sm_id', 'subject_id')
+//     ->get(); 
+
+//     $count = $subjects->count();
+//     return response()->json([
+//         'subjects' => $subjects,
+//         'count' =>$count
+//     ]);
+// }
+
+public function getPresignSubjectByDivision(Request $request,$classId, $sectionId )
 {
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+    
     $academicYr = $payload->get('academic_year'); 
     
     $subjects = SubjectAllotment::with('getSubject')
-    ->where('academic_yr', $academicYr)
-    ->where('section_id', $sectionId)
-    ->groupBy('sm_id', 'subject_id')
-    ->get(); 
+        ->where('academic_yr', $academicYr)
+        ->where('class_id', $classId) 
+        ->where('section_id', $sectionId)        
+        ->groupBy('sm_id', 'subject_id')
+        ->get(); 
 
     $count = $subjects->count();
+
     return response()->json([
         'subjects' => $subjects,
-        'count' =>$count
+        'count' => $count
     ]);
 }
+
 
 public function getPresignSubjectByTeacher(Request $request,$classID, $sectionId,$teacherID)
 {
