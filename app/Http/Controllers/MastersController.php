@@ -27,6 +27,7 @@ use Illuminate\Validation\Rule;
 use App\Models\SubjectAllotment;
 use Illuminate\Http\JsonResponse;
 use App\Mail\TeacherBirthdayEmail;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Log;
@@ -3165,21 +3166,57 @@ public function getSubjectsbyDivision(Request $request, $sectionId)
 //     ]);
 // }
 
-public function getPresignSubjectByDivision(Request $request,$classId, $sectionId )
+// public function getPresignSubjectByDivision(Request $request,$classId, $sectionId )
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+    
+//     $academicYr = $payload->get('academic_year'); 
+    
+//     $subjects = SubjectAllotment::with('getSubject')
+//         ->where('academic_yr', $academicYr)
+//         ->where('class_id', $classId) 
+//         ->where('section_id', $sectionId)        
+//         ->groupBy('sm_id', 'subject_id')
+//         ->get(); 
+
+//     $count = $subjects->count();
+
+//     return response()->json([
+//         'subjects' => $subjects,
+//         'count' => $count
+//     ]);
+// }
+
+
+
+public function getPresignSubjectByDivision(Request $request, $classId)
 {
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
-    
-    $academicYr = $payload->get('academic_year'); 
-    
+
+    $academicYr = $payload->get('academic_year');
+
+    // Retrieve section_id(s) from the query parameters
+    $sectionIds = $request->query('section_id', []);
+
+    // Ensure sectionIds is an array
+    if (!is_array($sectionIds)) {
+        return response()->json(['error' => 'section_id must be an array'], 400);
+    }
+
     $subjects = SubjectAllotment::with('getSubject')
-        ->where('academic_yr', $academicYr)
-        ->where('class_id', $classId) 
-        ->where('section_id', $sectionId)        
-        ->groupBy('sm_id', 'subject_id')
-        ->get(); 
+    ->select('sm_id', DB::raw('MAX(subject_id) as subject_id')) // Aggregate subject_id if needed
+    ->where('academic_yr', $academicYr)
+    ->where('class_id', $classId)
+    ->whereIn('section_id', $sectionIds)
+    ->groupBy('sm_id')
+    ->get();
+
 
     $count = $subjects->count();
 
@@ -3188,6 +3225,9 @@ public function getPresignSubjectByDivision(Request $request,$classId, $sectionI
         'count' => $count
     ]);
 }
+
+
+
 
 
 public function getPresignSubjectByTeacher(Request $request,$classID, $sectionId,$teacherID)
