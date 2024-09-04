@@ -2318,28 +2318,36 @@ public function getStudentListBySection(Request $request)
 }
 
 //  get the student list by there id  with the parent details 
-// public function getStudentById($studentId)
-// {
-//     $student = Student::with('parents')->find($studentId);
-//     if (!$student) {
-//         return response()->json(['error' => 'Student not found'], 404);
-//     }    
-//     return response()->json(
-//         ['students' => $student]
-//     );
-// }
 public function getStudentById($studentId)
 {
-    $student = Student::with('parents')->find($studentId);
+    $student = Student::with('parents.user')->find($studentId);
     
     if (!$student) {
         return response()->json(['error' => 'Student not found'], 404);
     }    
  
     return response()->json(
-        ['students' => [$student]] // Wrapping the student data in an array
+        ['students' => [$student]] 
     );
 }
+
+public function getStudentByGRN($reg_no){
+    $student = Student::with('parents.user')
+    ->where('reg_no', $reg_no)
+    ->first();
+    
+    if (!$student) {
+        return response()->json(['error' => 'Student not found'], 404);
+    }     
+
+    return response()->json(
+        ['students' => [$student]] 
+    );
+}
+
+
+
+
 
 
 // public function deleteStudent($studentId)
