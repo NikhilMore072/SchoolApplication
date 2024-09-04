@@ -31,6 +31,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Log;
+use App\Models\SubjectForReportCard;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -2040,63 +2041,6 @@ public function getSubjects(Request $request)
     return response()->json($subjects);
 }
 
-// public function storeSubject(Request $request)
-// {
-//     $messages = [
-//         'name.required' => 'The name field is required.',
-//         'name.regex' => 'The name may only contain letters.',
-//         'subject_type.required' => 'The subject type field is required.',
-//         'subject_type.regex' => 'The subject type may only contain letters.',
-//     ];
-
-//     $validatedData = $request->validate([
-//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-//         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-//     ], $messages);
-
-//     $subject = new SubjectMaster();
-//     $subject->name = $validatedData['name'];
-//     $subject->subject_type = $validatedData['subject_type'];
-//     $subject->save();
-
-//     return response()->json([
-//         'status' => 201,
-//         'message' => 'Subject created successfully',
-//     ], 201);
-// }
-
-// public function updateSubject(Request $request, $id)
-// {
-//     $messages = [
-//         'name.required' => 'The name field is required.',
-//         'name.regex' => 'The name may only contain letters.',
-//         'subject_type.required' => 'The subject type field is required.',
-//         'subject_type.regex' => 'The subject type may only contain letters.',
-//     ];
-
-//     $validatedData = $request->validate([
-//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-//         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
-//     ], $messages);
-
-//     $subject = SubjectMaster::find($id);
-
-//     if (!$subject) {
-//         return response()->json([
-//             'status' => 404,
-//             'message' => 'Subject not found',
-//         ], 404);
-//     }
-
-//     $subject->name = $validatedData['name'];
-//     $subject->subject_type = $validatedData['subject_type'];
-//     $subject->save();
-
-//     return response()->json([
-//         'status' => 200,
-//         'message' => 'Subject updated successfully',
-//     ], 200);
-// }
 public function checkSubjectName(Request $request)
 {
     // Validate the request data
@@ -2221,9 +2165,6 @@ public function editSubject($id)
     return response()->json($subject);
 }
 
-
-
-
 public function deleteSubject($id)
 {
     $subject = SubjectMaster::find($id);
@@ -2302,7 +2243,7 @@ public function getStudentListBySection(Request $request)
     $query = Student::with(['parents.user', 'getClass', 'getDivision'])->where('academic_yr', $academicYr)
         ->where('IsDelete','N')   
         ->whereNotNull('parent_id');
-        
+
     if ($sectionId) {
         $query->where('section_id', $sectionId);
     }
@@ -3641,6 +3582,162 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
 
 
 
+// Metods for the Subject for report card  
+public function getSubjectsForReportCard(Request $request)
+{
+    $subjects = SubjectForReportCard::all();
+    return response()->json(
+        ['subjects'=>$subjects]
+    );
+}
+
+public function checkSubjectNameForReportCard(Request $request)
+{
+    $validatedData = $request->validate([
+        'name' => 'required|string|max:30',
+    ]);
+
+    $name = $validatedData['name'];
+    $exists = SubjectForReportCard::where(DB::raw('LOWER(name)'), strtolower($name))->exists();
+    return response()->json(['exists' => $exists]);
+}
+
+
+public function storeSubjectForReportCard(Request $request)
+{
+    $messages = [
+        'name.required' => 'The name field is required.',
+        'sequence.required' => 'The sequence field is required.',
+    ];
+
+    try {
+        $validatedData = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:30',
+                // Rule::unique('subject_master', 'name')
+            ],
+            'sequence' => [
+                'required',
+                'Integer',
+                'max:5',
+            ],
+        ], $messages);
+    } catch (ValidationException $e) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $e->errors(),
+        ], 422);
+    }
+
+    $subject = new SubjectForReportCard();
+    $subject->name = $validatedData['name'];
+    $subject->sequence = $validatedData['sequence'];
+    $subject->save();
+
+    return response()->json([
+        'status' => 201,
+        'message' => 'Subject created successfully',
+    ], 201);
+}
+
+public function updateSubjectForReportCard(Request $request, $sub_rc_master_id)
+    {
+        $messages = [
+            'name.required' => 'The name field is required.',
+            // 'name.unique' => 'The name has already been taken.',
+            'sequence.required' => 'The sequence field is required.',
+            // 'subject_type.unique' => 'The subject type has already been taken.',
+        ];
+
+        try {
+            $validatedData = $request->validate([
+                'name' => [
+                    'required',
+                    'string',
+                    'max:30',
+                    // Rule::unique('subject_master', 'name')->ignore($id, 'sm_id')
+                ],
+                'sequence' => [
+                    'required',
+                    'Integer',
+                    'max:5'
+                ],
+            ], $messages);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'status' => 422,
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        $subject = SubjectForReportCard::find($sub_rc_master_id);
+
+        if (!$subject) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Subject not found',
+            ], 404);
+        }
+
+        $subject->name = $validatedData['name'];
+        $subject->sequence = $validatedData['sequence'];
+        $subject->save();
+
+        return response()->json([
+            'status' => 200,
+            'message' => 'Subject updated successfully',
+        ], 200);
+    }
+
+    
+
+public function editSubjectForReportCard($sub_rc_master_id)
+{
+    $subject = SubjectForReportCard::find($sub_rc_master_id);
+
+    if (!$subject) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Subject not found',
+        ]);
+    }
+
+    return response()->json($subject);
+}
+
+public function deleteSubjectForReportCard($sub_rc_master_id)
+{
+    $subject = SubjectForReportCard::find($sub_rc_master_id);
+
+    if (!$subject) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Subject not found',
+        ]);
+    }
+
+    //Delete condition pending 
+    // $subjectAllotmentExists = SubjectAllotment::where('sm_id', $id)->exists();
+    // if ($subjectAllotmentExists) {
+    //     return response()->json([
+    //         'status' => 400,
+    //         'message' => 'Subject cannot be deleted because it is associated with other records.',
+    //     ]);
+    // }
+    $subject->delete();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'Subject deleted successfully',
+        'success' => true
+    ]);
+}
+
+
+
+
 
 }
 
@@ -3761,6 +3858,63 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
 
 
 
+// public function storeSubject(Request $request)
+// {
+//     $messages = [
+//         'name.required' => 'The name field is required.',
+//         'name.regex' => 'The name may only contain letters.',
+//         'subject_type.required' => 'The subject type field is required.',
+//         'subject_type.regex' => 'The subject type may only contain letters.',
+//     ];
+
+//     $validatedData = $request->validate([
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ], $messages);
+
+//     $subject = new SubjectMaster();
+//     $subject->name = $validatedData['name'];
+//     $subject->subject_type = $validatedData['subject_type'];
+//     $subject->save();
+
+//     return response()->json([
+//         'status' => 201,
+//         'message' => 'Subject created successfully',
+//     ], 201);
+// }
+
+// public function updateSubject(Request $request, $id)
+// {
+//     $messages = [
+//         'name.required' => 'The name field is required.',
+//         'name.regex' => 'The name may only contain letters.',
+//         'subject_type.required' => 'The subject type field is required.',
+//         'subject_type.regex' => 'The subject type may only contain letters.',
+//     ];
+
+//     $validatedData = $request->validate([
+//         'name' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//         'subject_type' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z]+$/'],
+//     ], $messages);
+
+//     $subject = SubjectMaster::find($id);
+
+//     if (!$subject) {
+//         return response()->json([
+//             'status' => 404,
+//             'message' => 'Subject not found',
+//         ], 404);
+//     }
+
+//     $subject->name = $validatedData['name'];
+//     $subject->subject_type = $validatedData['subject_type'];
+//     $subject->save();
+
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Subject updated successfully',
+//     ], 200);
+// }
 
 
 
