@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\UserMaster;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Parents extends Model
 {
@@ -36,5 +37,11 @@ class Parents extends Model
         'father_image_name',
         'mother_image_name'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(UserMaster::class, 'parent_id', 'reg_id');
+    }
+
 
 }
