@@ -266,6 +266,14 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/students/{studentId}', [MastersController::class, 'deleteStudent']);
         Route::patch('/students/{studentId}/deactivate', [MastersController::class, 'inAvateStudent']); // Done.
         Route::put('/students/{studentId}', [MastersController::class, 'updateStudentAndParent']);
+      
+        //routes for the SubjectForReportCard
+        Route::post('/check_subject_name', [MastersController::class, 'checkSubjectName']);
+        Route::get('/subject_for_reportcard', [MastersController::class, 'getSubjectsForReportCard']);
+        Route::post('/subject_for_reportcard', [MastersController::class, 'storeSubjectForReportCard']);
+        Route::get('/subject_for_reportcard/{sub_rc_master_id}', [MastersController::class, 'editSubjectForReportCard']);
+        Route::put('/subject_for_reportcard/{sub_rc_master_id}', [MastersController::class, 'updateSubjectForReportCard']);
+        Route::delete('/subject_for_reportcard/{sub_rc_master_id}', [MastersController::class, 'deleteSubjectForReportCard']);    
 });
 
 
