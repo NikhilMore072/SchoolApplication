@@ -2324,7 +2324,9 @@ public function getStudentById($studentId)
     if (!$student) {
         return response()->json(['error' => 'Student not found'], 404);
     }    
-    return response()->json($student);
+    return response()->json(
+        ['students' => $student]
+    );
 }
 
 // public function deleteStudent($studentId)
@@ -2479,93 +2481,229 @@ public function deleteStudent($studentId)
      }
 
 
+// public function updateStudentAndParent(Request $request, $studentId)
+// {
+//     // Validate the incoming request for all fields
+//     $validatedData = $request->validate([
+//         // Student model fields
+//         'first_name' => 'required|string|max:255',
+//         'mid_name' => 'nullable|string|max:255',
+//         'last_name' => 'required|string|max:255',
+//         'student_name' => 'nullable|string|max:255',
+//         'dob' => 'required|date',
+//         'gender' => 'required|string',
+//         'admission_date' => 'nullable|date',
+//         'stud_id_no' => 'nullable|string|max:255',
+//         'mother_tongue' => 'nullable|string|max:255',
+//         'birth_place' => 'nullable|string|max:255',
+//         'admission_class' => 'nullable|string|max:255',
+//         'roll_no' => 'nullable|string|max:255',
+//         'class_id' => 'required|integer',
+//         'section_id' => 'nullable|integer',
+//         'fees_paid' => 'nullable|numeric',
+//         'blood_group' => 'nullable|string|max:255',
+//         'religion' => 'nullable|string|max:255',
+//         'caste' => 'nullable|string|max:255',
+//         'subcaste' => 'nullable|string|max:255',
+//         'transport_mode' => 'nullable|string|max:255',
+//         'vehicle_no' => 'nullable|string|max:255',
+//         'bus_id' => 'nullable|integer',
+//         'emergency_name' => 'nullable|string|max:255',
+//         'emergency_contact' => 'nullable|string|max:255',
+//         'emergency_add' => 'nullable|string|max:255',
+//         'height' => 'nullable|numeric',
+//         'weight' => 'nullable|numeric',
+//         'has_specs' => 'nullable|boolean',
+//         'allergies' => 'nullable|string|max:255',
+//         'nationality' => 'nullable|string|max:255',
+//         'permant_add' => 'nullable|string|max:255',
+//         'city' => 'nullable|string|max:255',
+//         'state' => 'nullable|string|max:255',
+//         'pincode' => 'nullable|string|max:255',
+//         'IsDelete' => 'nullable|boolean',
+//         'prev_year_student_id' => 'nullable|integer',
+//         'isPromoted' => 'nullable|boolean',
+//         'isNew' => 'nullable|boolean',
+//         'isModify' => 'nullable|boolean',
+//         'isActive' => 'nullable|boolean',
+//         'reg_no' => 'nullable|string|max:255',
+//         'house' => 'nullable|string|max:255',
+//         'stu_aadhaar_no' => 'nullable|string|max:255',
+//         'category' => 'nullable|string|max:255',
+//         'last_date' => 'nullable|date',
+//         'slc_no' => 'nullable|string|max:255',
+//         'slc_issue_date' => 'nullable|date',
+//         'leaving_remark' => 'nullable|string|max:255',
+//         'deleted_date' => 'nullable|date',
+//         'deleted_by' => 'nullable|string|max:255',
+//         'image_name' => 'nullable|string|max:255',
+//         'guardian_name' => 'nullable|string|max:255',
+//         'guardian_add' => 'nullable|string|max:255',
+//         'guardian_mobile' => 'nullable|string|max:255',
+//         'relation' => 'nullable|string|max:255',
+//         'guardian_image_name' => 'nullable|string|max:255',
+//         'udise_pen_no' => 'nullable|string|max:255',
+//         'added_bk_date' => 'nullable|date',
+//         'added_by' => 'nullable|string|max:255',
+
+//         // Parent model fields
+//         'father_name' => 'nullable|string|max:255',
+//         'father_occupation' => 'nullable|string|max:255',
+//         'f_office_add' => 'nullable|string|max:255',
+//         'f_office_tel' => 'nullable|string|max:255',
+//         'f_mobile' => 'nullable|string|max:255',
+//         'f_email' => 'nullable|string|max:255',
+//         'mother_name' => 'nullable|string|max:255',
+//         'mother_occupation' => 'nullable|string|max:255',
+//         'm_office_add' => 'nullable|string|max:255',
+//         'm_office_tel' => 'nullable|string|max:255',
+//         'm_mobile' => 'nullable|string|max:255',
+//         'm_emailid' => 'nullable|string|max:255',
+//         'parent_adhar_no' => 'nullable|string|max:255',
+//         'm_adhar_no' => 'nullable|string|max:255',
+//         'f_dob' => 'nullable|date',
+//         'm_dob' => 'nullable|date',
+//         'f_blood_group' => 'nullable|string|max:255',
+//         'm_blood_group' => 'nullable|string|max:255',
+//         'father_image_name' => 'nullable|string|max:255',
+//         'mother_image_name' => 'nullable|string|max:255',
+
+//         'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
+//         'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother',
+//     ]);
+
+//     // Retrieve the token payload
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     // Find the student by ID
+//     $student = Student::find($studentId);
+
+//     if (!$student) {
+//         return response()->json(['error' => 'Student not found'], 404);
+//     }
+
+//     // Handle student image if provided
+//     if ($request->has('student_image')) {
+//         $base64Image = $request->input('student_image');
+//         $imageParts = explode(';', $base64Image);
+//         $imageType = explode(':', $imageParts[0])[1];
+//         $imageExtension = str_replace('image/', '', $imageType);
+//         $image = str_replace('data:image/' . $imageExtension . ';base64,', '', $base64Image);
+//         $image = str_replace(' ', '+', $image);
+//         $imageName = $studentId . '.' . $imageExtension;
+//         $imagePath = public_path('uploads/student_image');
+
+//         // Create directory if it doesn't exist
+//         if (!file_exists($imagePath)) {
+//             mkdir($imagePath, 0755, true);
+//         }
+
+//         // Save the image
+//         file_put_contents($imagePath . '/' . $imageName, base64_decode($image));
+//         $validatedData['image_name'] = $imageName;
+//     }
+
+//     // Include academic year in the update data
+//     $validatedData['academic_yr'] = $academicYr;
+
+//     // Update student information
+//     $student->update($validatedData);
+
+//     // Handle parent details if provided
+//     $parent = Parents::find($student->parent_id);
+
+//     if ($parent) {
+//         $parentData = $request->only([
+//             'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
+//             'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
+//             'parent_adhar_no', 'm_adhar_no', 'f_dob', 'm_dob', 'f_blood_group', 'm_blood_group',
+//         ]);
+
+//         // Update SMS contact preference
+//         $contactDetails = ContactDetails::where('id', $student->parent_id)->first();
+//         if ($request->input('SetToReceiveSMS') == 'Father') {
+//             $contactDetails->update(['phone_no' => $parent->f_mobile]);
+//         } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
+//             $contactDetails->update(['phone_no' => $parent->m_mobile]);
+//         }
+
+//         // Update email ID as username preference
+//         $user = UserMaster::where('reg_id', $student->parent_id)->first();
+//         if ($request->input('SetEmailIDAsUsername') == 'Father') {  
+//             $user->update(['user_id' => $parent->f_email]);
+//         } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
+//             $user->update(['user_id' => $parent->m_emailid]);
+//         }
+
+//         $parent->update($parentData);
+//     }
+
+//     return response()->json([
+//         "status" => "success",
+//         "message" => "Student updated successfully",
+//         "data" => $student
+//     ]);
+// }
+
+
 public function updateStudentAndParent(Request $request, $studentId)
 {
     // Validate the incoming request for all fields
     $validatedData = $request->validate([
         // Student model fields
-        'first_name' => 'required|string|max:255',
-        'mid_name' => 'nullable|string|max:255',
-        'last_name' => 'required|string|max:255',
-        'student_name' => 'nullable|string|max:255',
+        'first_name' => 'required|string|max:100',
+        'mid_name' => 'nullable|string|max:100',
+        'last_name' => 'required|string|max:100',
+        'house' => 'nullable|string|max:100',
+        'student_name' => 'required|string|max:100',
         'dob' => 'required|date',
+        'admission_date' => 'required|date', // Changed from 'nullable' to 'required'
+        'stud_id_no' => 'nullable|string|max:25',
+        'stu_aadhaar_no' => 'required|string|max:14',
         'gender' => 'required|string',
-        'admission_date' => 'nullable|date',
-        'stud_id_no' => 'nullable|string|max:255',
-        'mother_tongue' => 'nullable|string|max:255',
-        'birth_place' => 'nullable|string|max:255',
-        'admission_class' => 'nullable|string|max:255',
-        'roll_no' => 'nullable|string|max:255',
+        'mother_tongue' => 'required|string|max:20', // Changed from 'nullable' to 'required'
+        'birth_place' => 'nullable|string|max:50',
+        'admission_class' => 'required|string|max:255',
+        'city' => 'required|string|max:100', // Changed from 'nullable' to 'required'
+        'state' => 'required|string|max:100', // Changed from 'nullable' to 'required'
+        'roll_no' => 'nullable|string|max:11',
         'class_id' => 'required|integer',
-        'section_id' => 'nullable|integer',
-        'fees_paid' => 'nullable|numeric',
-        'blood_group' => 'nullable|string|max:255',
-        'religion' => 'nullable|string|max:255',
-        'caste' => 'nullable|string|max:255',
-        'subcaste' => 'nullable|string|max:255',
-        'transport_mode' => 'nullable|string|max:255',
-        'vehicle_no' => 'nullable|string|max:255',
-        'bus_id' => 'nullable|integer',
-        'emergency_name' => 'nullable|string|max:255',
-        'emergency_contact' => 'nullable|string|max:255',
-        'emergency_add' => 'nullable|string|max:255',
-        'height' => 'nullable|numeric',
-        'weight' => 'nullable|numeric',
-        'has_specs' => 'nullable|boolean',
-        'allergies' => 'nullable|string|max:255',
-        'nationality' => 'nullable|string|max:255',
-        'permant_add' => 'nullable|string|max:255',
-        'city' => 'nullable|string|max:255',
-        'state' => 'nullable|string|max:255',
-        'pincode' => 'nullable|string|max:255',
-        'IsDelete' => 'nullable|boolean',
-        'prev_year_student_id' => 'nullable|integer',
-        'isPromoted' => 'nullable|boolean',
-        'isNew' => 'nullable|boolean',
-        'isModify' => 'nullable|boolean',
-        'isActive' => 'nullable|boolean',
-        'reg_no' => 'nullable|string|max:255',
-        'house' => 'nullable|string|max:255',
-        'stu_aadhaar_no' => 'nullable|string|max:255',
-        'category' => 'nullable|string|max:255',
-        'last_date' => 'nullable|date',
-        'slc_no' => 'nullable|string|max:255',
-        'slc_issue_date' => 'nullable|date',
-        'leaving_remark' => 'nullable|string|max:255',
-        'deleted_date' => 'nullable|date',
-        'deleted_by' => 'nullable|string|max:255',
+        'section_id' => 'required|integer', // Changed from 'nullable' to 'required'
+        'religion' => 'required|string|max:255', // Changed from 'nullable' to 'required'
+        'caste' => 'nullable|string|max:100',
+        'subcaste' => 'required|string|max:255', // Changed from 'nullable' to 'required'
+        'vehicle_no' => 'nullable|string|max:13',
+        'emergency_name' => 'nullable|string|max:100',
+        'emergency_contact' => 'nullable|string|max:11',
+        'emergency_add' => 'nullable|string|max:200',
+        'height' => 'nullable|numeric|max:4.1',
+        'weight' => 'nullable|numeric|max:4.1',
+        'allergies' => 'nullable|string|max:200',
+        'nationality' => 'required|string|max:100', // Changed from 'nullable' to 'required'
+        'pincode' => 'nullable|string|max:11',
         'image_name' => 'nullable|string|max:255',
-        'guardian_name' => 'nullable|string|max:255',
-        'guardian_add' => 'nullable|string|max:255',
-        'guardian_mobile' => 'nullable|string|max:255',
-        'relation' => 'nullable|string|max:255',
-        'guardian_image_name' => 'nullable|string|max:255',
-        'udise_pen_no' => 'nullable|string|max:255',
-        'added_bk_date' => 'nullable|date',
-        'added_by' => 'nullable|string|max:255',
 
         // Parent model fields
-        'father_name' => 'nullable|string|max:255',
-        'father_occupation' => 'nullable|string|max:255',
-        'f_office_add' => 'nullable|string|max:255',
-        'f_office_tel' => 'nullable|string|max:255',
-        'f_mobile' => 'nullable|string|max:255',
-        'f_email' => 'nullable|string|max:255',
-        'mother_name' => 'nullable|string|max:255',
-        'mother_occupation' => 'nullable|string|max:255',
-        'm_office_add' => 'nullable|string|max:255',
-        'm_office_tel' => 'nullable|string|max:255',
-        'm_mobile' => 'nullable|string|max:255',
-        'm_emailid' => 'nullable|string|max:255',
-        'parent_adhar_no' => 'nullable|string|max:255',
-        'm_adhar_no' => 'nullable|string|max:255',
-        'f_dob' => 'nullable|date',
-        'm_dob' => 'nullable|date',
-        'f_blood_group' => 'nullable|string|max:255',
-        'm_blood_group' => 'nullable|string|max:255',
-        'father_image_name' => 'nullable|string|max:255',
-        'mother_image_name' => 'nullable|string|max:255',
+        'father_name' => 'required|string|max:100',
+        'father_occupation' => 'nullable|string|max:100',
+        'f_office_add' => 'nullable|string|max:200',
+        'f_office_tel' => 'nullable|string|max:11',
+        'f_mobile' => 'required|string|max:10', // Changed from 'nullable' to 'required'
+        'f_email' => 'required|string|max:50', // Changed from 'nullable' to 'required'
+        'father_adhar_card' => 'required|string|max:14',
+        'mother_name' => 'required|string|max:100',
+        'mother_occupation' => 'nullable|string|max:100',
+        'm_office_add' => 'nullable|string|max:200',
+        'm_office_tel' => 'nullable|string|max:11',
+        'm_mobile' => 'required|string|max:10', // Changed from 'nullable' to 'required'
+        'm_emailid' => 'required|string|max:50', // Changed from 'nullable' to 'required'
+        'mother_adhar_card' => 'required|string|max:14',
 
+        // Preferences for SMS and email as username
         'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
         'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother',
     ]);
@@ -2618,7 +2756,7 @@ public function updateStudentAndParent(Request $request, $studentId)
         $parentData = $request->only([
             'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
             'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
-            'parent_adhar_no', 'm_adhar_no', 'f_dob', 'm_dob', 'f_blood_group', 'm_blood_group',
+            'parent_adhar_no', 'm_adhar_no', 'father_adhar_card', 'mother_adhar_card',
         ]);
 
         // Update SMS contact preference
@@ -2642,10 +2780,11 @@ public function updateStudentAndParent(Request $request, $studentId)
 
     return response()->json([
         "status" => "success",
-        "message" => "Student updated successfully",
+        "message" => "Student and parent information updated successfully",
         "data" => $student
     ]);
 }
+
 
 // get all the class and their associated Division.
 public function getallClass(Request $request)
@@ -2838,104 +2977,163 @@ private function getAllSubjectsNotHsc()
     return SubjectMaster::whereIn('subject_type', ['Scholastic', 'Co-Scholastic', 'Social'])->get();
 }
 
-// Get the Division and subject for the selected class preasign.
-// public function getSubjectAllotedForClassDivision($classId)  // change in the API for the selected class and division shows the subjects
-// {
-//     $subjectAllotments = SubjectAllotment::with(['getDivision', 'getSubject'])
-//         ->where('class_id', $classId)
-//         ->get();  
-//     $subjectAllotmentsCount = SubjectAllotment::with(['getDivision', 'getSubject'])
-//         ->where('class_id', $classId)
-//         ->count();  
-//     return response()->json(
-//       ['subjectAllotments'=>$subjectAllotments,
-//        'subjectAllotmentsCount' =>$subjectAllotmentsCount      
-//       ]
-//     );
-// }
 
 
 // Save the Subject Allotment  
-public function storeSubjectAllotment(Request $request)
-{
-    $validatedData = $request->validate([
-        'class_id' => 'required|exists:class,class_id',
-        'section_ids' => 'required|array',
-        'section_ids.*' => 'exists:section,section_id', 
-        'subject_ids' => 'required|array',
-        'subject_ids.*' => 'exists:subject_master,sm_id',
-    ]);
-
-    $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
-    $academicYr = $payload->get('academic_year');
-
-    $classId = $validatedData['class_id'];
-    $sectionIds = $validatedData['section_ids'];
-    $subjectIds = $validatedData['subject_ids'];
-
-    foreach ($sectionIds as $sectionId) {
-        foreach ($subjectIds as $subjectId) {
-            $existingAllotment = SubjectAllotment::where([
-                ['class_id', '=', $classId],
-                ['section_id', '=', $sectionId],
-                ['sm_id', '=', $subjectId],
-                ['academic_yr', '=', $academicYr],
-            ])->first();
-
-            if (!$existingAllotment) {
-                SubjectAllotment::create([
-                    'class_id' => $classId,
-                    'section_id' => $sectionId,
-                    'sm_id' => $subjectId,
-                    'academic_yr' => $academicYr,
-                ]);
-            }
-        }
-    }
-
-    return response()->json([
-        'message' => 'Subject allotment details stored successfully',
-    ], 201);
-}
-
-// Get the Subject-Allotment details subject with teachers By Section
-// public function getSubjectAllotmentWithTeachersBySection(Request $request, $sectionId)
+// public function storeSubjectAllotment(Request $request)
 // {
+//     $validatedData = $request->validate([
+//         'class_id' => 'required|exists:class,class_id',
+//         'section_ids' => 'required|array',
+//         'section_ids.*' => 'exists:section,section_id', 
+//         'subject_ids' => 'required|array',
+//         'subject_ids.*' => 'exists:subject_master,sm_id',
+//     ]);
+
 //     $payload = getTokenPayload($request);
 //     if (!$payload) {
 //         return response()->json(['error' => 'Invalid or missing token'], 401);
 //     }
 //     $academicYr = $payload->get('academic_year');
 
-//     $subjectAllotments = SubjectAllotment::with(['getSubject', 'getTeacher'])
-//         ->where('section_id', $sectionId)
-//         ->where('academic_yr', $academicYr)
-//         ->get()
-//         ->groupBy('sm_id');
+//     $classId = $validatedData['class_id'];
+//     $sectionIds = $validatedData['section_ids'];
+//     $subjectIds = $validatedData['subject_ids'];
 
-//     // Create a new array to hold the transformed data
-//     $transformedData = [];
+//     foreach ($sectionIds as $sectionId) {
+//         foreach ($subjectIds as $subjectId) {
+//             $existingAllotment = SubjectAllotment::where([
+//                 ['class_id', '=', $classId],
+//                 ['section_id', '=', $sectionId],
+//                 ['sm_id', '=', $subjectId],
+//                 ['academic_yr', '=', $academicYr],
+//             ])->first();
 
-//     foreach ($subjectAllotments as $smId => $allotments) {
-//         // Get the first record to extract subject details (assuming all records for a sm_id have the same subject)
-//         $firstRecord = $allotments->first();
-//         $subjectName = $firstRecord->getSubject->name ?? 'Unknown Subject';
-
-//         // Add the sm_id and subject name to the transformed data
-//         $transformedData[$smId] = [
-//             'subject_name' => $subjectName,
-//             'details' => $allotments
-//         ];
+//             if (!$existingAllotment) {
+//                 SubjectAllotment::create([
+//                     'class_id' => $classId,
+//                     'section_id' => $sectionId,
+//                     'sm_id' => $subjectId,
+//                     'academic_yr' => $academicYr,
+//                 ]);
+//             }
+//         }
 //     }
 
 //     return response()->json([
-//         'status' => 'success',
-//         'data' => $transformedData
-//     ]);
+//         'message' => 'Subject allotment details stored successfully',
+//     ], 201);
 // }
+
+public function storeSubjectAllotment(Request $request)
+{
+    try {
+        Log::info('Starting subject allotment process.', ['request_data' => $request->all()]);
+
+        // Validate the request data
+        $validatedData = $request->validate([
+            'class_id' => 'required|exists:class,class_id',
+            'section_ids' => 'required|array',
+            'section_ids.*' => 'exists:section,section_id', 
+            'subject_ids' => 'required|array',
+            'subject_ids.*' => 'exists:subject_master,sm_id',
+        ]);
+
+        // Retrieve token payload
+        $payload = getTokenPayload($request);
+        if (!$payload) {
+            Log::error('Invalid or missing token.', ['request_data' => $request->all()]);
+            return response()->json(['error' => 'Invalid or missing token'], 401);
+        }
+
+        $academicYr = $payload->get('academic_year');
+
+        $classId = $validatedData['class_id'];
+        $sectionIds = $validatedData['section_ids'];
+        $subjectIds = $validatedData['subject_ids'];
+
+        foreach ($sectionIds as $sectionId) {
+            Log::info('Processing section', ['section_id' => $sectionId]);
+
+            // Fetch existing subject allotments for the class, section, and academic year
+            $existingAllotments = SubjectAllotment::where('class_id', $classId)
+                ->where('section_id', $sectionId)
+                ->where('academic_yr', $academicYr)
+                ->get();
+
+            $existingSubjectIds = $existingAllotments->pluck('sm_id')->toArray();
+
+            // Identify subject IDs that need to be removed (set to null)
+            $subjectIdsToRemove = array_diff($existingSubjectIds, $subjectIds);
+            Log::info('Subjects to remove', ['subject_ids_to_remove' => $subjectIdsToRemove]);
+
+            if (!empty($subjectIdsToRemove)) {
+                // Set sm_id to null for the removed subjects
+                SubjectAllotment::where('class_id', $classId)
+                    ->where('section_id', $sectionId)
+                    ->where('academic_yr', $academicYr)
+                    ->whereIn('sm_id', $subjectIdsToRemove)
+                    ->update(['sm_id' => null]);
+
+                Log::info('Removed subjects', ['class_id' => $classId, 'section_id' => $sectionId, 'removed_subject_ids' => $subjectIdsToRemove]);
+            }
+
+            // Add or update the subject allotments
+            foreach ($subjectIds as $subjectId) {
+                $existingAllotment = SubjectAllotment::where([
+                    ['class_id', '=', $classId],
+                    ['section_id', '=', $sectionId],
+                    ['sm_id', '=', $subjectId],
+                    ['academic_yr', '=', $academicYr],
+                ])->first();
+
+                if (!$existingAllotment) {
+                    Log::info('Creating new subject allotment', [
+                        'class_id' => $classId,
+                        'section_id' => $sectionId,
+                        'subject_id' => $subjectId,
+                        'academic_year' => $academicYr,
+                    ]);
+
+                    SubjectAllotment::create([
+                        'class_id' => $classId,
+                        'section_id' => $sectionId,
+                        'sm_id' => $subjectId,
+                        'academic_yr' => $academicYr,
+                    ]);
+                } else {
+                    Log::info('Subject allotment already exists', [
+                        'class_id' => $classId,
+                        'section_id' => $sectionId,
+                        'subject_id' => $subjectId,
+                        'academic_year' => $academicYr,
+                    ]);
+                }
+            }
+        }
+
+        Log::info('Subject allotment process completed successfully.');
+
+        return response()->json([
+            'message' => 'Subject allotment details stored successfully',
+        ], 201);
+
+    } catch (\Exception $e) {
+        Log::error('Error during subject allotment process.', [
+            'error_message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'request_data' => $request->all()
+        ]);
+
+        return response()->json([
+            'error' => 'An error occurred during the subject allotment process. Please try again later.'
+        ], 500);
+    }
+}
+
+
+
+
 
 
 public function getSubjectAllotmentWithTeachersBySection(Request $request, $sectionId)
@@ -2992,6 +3190,8 @@ public function getSubjectAllotmentWithTeachersBySection(Request $request, $sect
     ]);
 }
 
+
+
 // public function updateTeacherAllotment(Request $request, $classId, $sectionId)
 // {
 //     // Retrieve the incoming data
@@ -3002,8 +3202,17 @@ public function getSubjectAllotmentWithTeachersBySection(Request $request, $sect
 //         return response()->json(['error' => 'Invalid or missing token'], 401);
 //     }
 //     $academicYr = $payload->get('academic_year');
-    
-//     // Iterate through the subjects
+
+//     // Step 1: Fetch existing records
+//     $existingRecords = SubjectAllotment::where('class_id', $classId)
+//         ->where('section_id', $sectionId)
+//         ->where('academic_yr', $academicYr)
+//         ->get();
+
+//     // Collect IDs to keep
+//     $idsToKeep = [];
+
+//     // Step 2: Iterate through the subjects from the input and process updates
 //     foreach ($subjects as $sm_id => $subjectData) {
 //         foreach ($subjectData['details'] as $detail) {
 //             // If subject_id is null, get the max subject_id from the database and increment by 1
@@ -3012,30 +3221,26 @@ public function getSubjectAllotmentWithTeachersBySection(Request $request, $sect
 //                 $detail['subject_id'] = $maxSubjectId ? $maxSubjectId + 1 : 1;
 //             }
 
-//             // Check if the subject allotment exists based on subject_id, class_id, and section_id
+//             // Store the identifier in the list of IDs to keep
+//             $idsToKeep[] = [
+//                 'subject_id' => $detail['subject_id'],
+//                 'class_id' => $classId,
+//                 'section_id' => $sectionId,
+//                 'teacher_id' => $detail['teacher_id'],
+//                 'sm_id' => $sm_id
+//             ];
+
+//             // Check if the subject allotment exists based on subject_id, class_id, section_id, and academic_yr
 //             $subjectAllotment = SubjectAllotment::where('subject_id', $detail['subject_id'])
 //                 ->where('class_id', $classId)
 //                 ->where('section_id', $sectionId)
+//                 ->where('academic_yr', $academicYr)
 //                 ->first();
 
 //             if ($detail['teacher_id'] === null) {
-//                 // If teacher_id is null, delete the record or handle accordingly
+//                 // If teacher_id is null, delete the record 
 //                 if ($subjectAllotment) {
-//                     // Check the count of records with the same class_id, section_id, and sm_id
-//                     $count = SubjectAllotment::where('class_id', $classId)
-//                         ->where('section_id', $sectionId)
-//                         ->where('sm_id', $sm_id)
-//                         ->count();
-
-//                     if ($count > 1) {
-//                         // Delete the record if more than one exists
-//                         $subjectAllotment->delete();
-//                     } else {
-//                         // Set teacher_id to null if this is the only record
-//                         $subjectAllotment->update([
-//                             'teacher_id' => null,
-//                         ]);
-//                     }
+//                     $subjectAllotment->delete();
 //                 }
 //             } else {
 //                 if ($subjectAllotment) {
@@ -3058,11 +3263,49 @@ public function getSubjectAllotmentWithTeachersBySection(Request $request, $sect
 //         }
 //     }
 
+//     // Step 3: Delete records not present in the input data
+//     $idsToKeepArray = array_map(function ($item) {
+//         return [
+//             'subject_id' => $item['subject_id'],
+//             'class_id' => $item['class_id'],
+//             'section_id' => $item['section_id'],
+//             'teacher_id' => $item['teacher_id'],
+//             'sm_id' => $item['sm_id'],
+//         ];
+//     }, $idsToKeep);
+
+//     $idsToKeepArray = array_map(function ($item) {
+//         return implode(',', [
+//             $item['subject_id'],
+//             $item['class_id'],
+//             $item['section_id'],
+//             $item['teacher_id'],
+//             $item['sm_id'],
+//         ]);
+//     }, $idsToKeepArray);
+
+//     $existingRecordsToDelete = $existingRecords->filter(function ($record) use ($idsToKeepArray) {
+//         $recordKey = implode(',', [
+//             $record->subject_id,
+//             $record->class_id,
+//             $record->section_id,
+//             $record->teacher_id,
+//             $record->sm_id,
+//         ]);
+
+//         return !in_array($recordKey, $idsToKeepArray);
+//     });
+
+//     foreach ($existingRecordsToDelete as $record) {
+//         $record->delete();
+//     }
+
 //     return response()->json([
 //         'status' => 'success',
 //         'message' => 'Subject allotments updated successfully.',
 //     ]);
 // }
+
 
 public function updateTeacherAllotment(Request $request, $classId, $sectionId)
 {
@@ -3124,28 +3367,18 @@ public function updateTeacherAllotment(Request $request, $classId, $sectionId)
                     // Create a new record if it doesn't exist
                     SubjectAllotment::create([
                         'subject_id' => $detail['subject_id'],
-                        'class_id' => $classId,
-                        'section_id' => $sectionId,
-                        'teacher_id' => $detail['teacher_id'],
-                        'academic_yr' => $academicYr,
-                        'sm_id' => $sm_id // Use the sm_id from the subjects keys
+                        'class_id' => $ClassId,
+                        'section_id' => $SectionId,
+                        'teacher_id' => $Detail['Teacher_id'],
+                        'academic_yr' => $AcademicYr,
+                        'sm_id' => $Sm_id // Use the sm_id from the subjects keys
                     ]);
                 }
             }
         }
     }
 
-    // Step 3: Delete records not present in the input data
-    $idsToKeepArray = array_map(function ($item) {
-        return [
-            'subject_id' => $item['subject_id'],
-            'class_id' => $item['class_id'],
-            'section_id' => $item['section_id'],
-            'teacher_id' => $item['teacher_id'],
-            'sm_id' => $item['sm_id'],
-        ];
-    }, $idsToKeep);
-
+    // Step 3: Delete records not present in the input data, but retain one record with null teacher_id if needed
     $idsToKeepArray = array_map(function ($item) {
         return implode(',', [
             $item['subject_id'],
@@ -3154,22 +3387,32 @@ public function updateTeacherAllotment(Request $request, $classId, $sectionId)
             $item['teacher_id'],
             $item['sm_id'],
         ]);
-    }, $idsToKeepArray);
+    }, $idsToKeep);
 
-    $existingRecordsToDelete = $existingRecords->filter(function ($record) use ($idsToKeepArray) {
-        $recordKey = implode(',', [
-            $record->subject_id,
-            $record->class_id,
-            $record->section_id,
-            $record->teacher_id,
-            $record->sm_id,
-        ]);
+    $groupedExistingRecords = $existingRecords->groupBy('sm_id');
 
-        return !in_array($recordKey, $idsToKeepArray);
-    });
+    foreach ($groupedExistingRecords as $sm_id => $records) {
+        $recordsToDelete = $records->filter(function ($record) use ($idsToKeepArray) {
+            $recordKey = implode(',', [
+                $record->subject_id,
+                $record->class_id,
+                $record->section_id,
+                $record->teacher_id,
+                $record->sm_id,
+            ]);
+            return !in_array($recordKey, $idsToKeepArray);
+        });
 
-    foreach ($existingRecordsToDelete as $record) {
-        $record->delete();
+        $recordCount = $recordsToDelete->count();
+
+        if ($recordCount > 1) {
+            // Delete all but one, and set teacher_id to null on the remaining one
+            $recordsToDelete->slice(1)->each->delete();
+            $recordsToDelete->first()->update(['teacher_id' => null]);
+        } elseif ($recordCount == 1) {
+            // Just set teacher_id to null
+            $recordsToDelete->first()->update(['teacher_id' => null]);
+        }
     }
 
     return response()->json([
@@ -3263,51 +3506,6 @@ public function getSubjectsbyDivision(Request $request, $sectionId)
     ]);
 }
 
-// Get the Subject List base on the selectd  Division Pre-Asign Subjects.
-// public function getPresignSubjectByDivision(Request $request, $sectionId)
-// {
-//     $payload = getTokenPayload($request);
-//     if (!$payload) {
-//         return response()->json(['error' => 'Invalid or missing token'], 401);
-//     }
-//     $academicYr = $payload->get('academic_year'); 
-    
-//     $subjects = SubjectAllotment::with('getSubject')
-//     ->where('academic_yr', $academicYr)
-//     ->where('section_id', $sectionId)
-//     ->groupBy('sm_id', 'subject_id')
-//     ->get(); 
-
-//     $count = $subjects->count();
-//     return response()->json([
-//         'subjects' => $subjects,
-//         'count' =>$count
-//     ]);
-// }
-
-// public function getPresignSubjectByDivision(Request $request,$classId, $sectionId )
-// {
-//     $payload = getTokenPayload($request);
-//     if (!$payload) {
-//         return response()->json(['error' => 'Invalid or missing token'], 401);
-//     }
-    
-//     $academicYr = $payload->get('academic_year'); 
-    
-//     $subjects = SubjectAllotment::with('getSubject')
-//         ->where('academic_yr', $academicYr)
-//         ->where('class_id', $classId) 
-//         ->where('section_id', $sectionId)        
-//         ->groupBy('sm_id', 'subject_id')
-//         ->get(); 
-
-//     $count = $subjects->count();
-
-//     return response()->json([
-//         'subjects' => $subjects,
-//         'count' => $count
-//     ]);
-// }
 
 
 
@@ -3547,14 +3745,180 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
 
 
 
+// public function updateTeacherAllotment(Request $request, $classId, $sectionId)
+// {
+//     // Retrieve the incoming data
+//     $subjects = $request->input('subjects'); // Expecting an array of subjects with details
+//     $payload = getTokenPayload($request);
+
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+    
+//     // Iterate through the subjects
+//     foreach ($subjects as $sm_id => $subjectData) {
+//         foreach ($subjectData['details'] as $detail) {
+//             // If subject_id is null, get the max subject_id from the database and increment by 1
+//             if ($detail['subject_id'] === null) {
+//                 $maxSubjectId = SubjectAllotment::max('subject_id');
+//                 $detail['subject_id'] = $maxSubjectId ? $maxSubjectId + 1 : 1;
+//             }
+
+//             // Check if the subject allotment exists based on subject_id, class_id, and section_id
+//             $subjectAllotment = SubjectAllotment::where('subject_id', $detail['subject_id'])
+//                 ->where('class_id', $classId)
+//                 ->where('section_id', $sectionId)
+//                 ->first();
+
+//             if ($detail['teacher_id'] === null) {
+//                 // If teacher_id is null, delete the record or handle accordingly
+//                 if ($subjectAllotment) {
+//                     // Check the count of records with the same class_id, section_id, and sm_id
+//                     $count = SubjectAllotment::where('class_id', $classId)
+//                         ->where('section_id', $sectionId)
+//                         ->where('sm_id', $sm_id)
+//                         ->count();
+
+//                     if ($count > 1) {
+//                         // Delete the record if more than one exists
+//                         $subjectAllotment->delete();
+//                     } else {
+//                         // Set teacher_id to null if this is the only record
+//                         $subjectAllotment->update([
+//                             'teacher_id' => null,
+//                         ]);
+//                     }
+//                 }
+//             } else {
+//                 if ($subjectAllotment) {
+//                     // Update the existing record
+//                     $subjectAllotment->update([
+//                         'teacher_id' => $detail['teacher_id'],
+//                     ]);
+//                 } else {
+//                     // Create a new record if it doesn't exist
+//                     SubjectAllotment::create([
+//                         'subject_id' => $detail['subject_id'],
+//                         'class_id' => $classId,
+//                         'section_id' => $sectionId,
+//                         'teacher_id' => $detail['teacher_id'],
+//                         'academic_yr' => $academicYr,
+//                         'sm_id' => $sm_id // Use the sm_id from the subjects keys
+//                     ]);
+//                 }
+//             }
+//         }
+//     }
+
+//     return response()->json([
+//         'status' => 'success',
+//         'message' => 'Subject allotments updated successfully.',
+//     ]);
+// }
+
+
+// Get the Division and subject for the selected class preasign.
+// public function getSubjectAllotedForClassDivision($classId)  // change in the API for the selected class and division shows the subjects
+// {
+//     $subjectAllotments = SubjectAllotment::with(['getDivision', 'getSubject'])
+//         ->where('class_id', $classId)
+//         ->get();  
+//     $subjectAllotmentsCount = SubjectAllotment::with(['getDivision', 'getSubject'])
+//         ->where('class_id', $classId)
+//         ->count();  
+//     return response()->json(
+//       ['subjectAllotments'=>$subjectAllotments,
+//        'subjectAllotmentsCount' =>$subjectAllotmentsCount      
+//       ]
+//     );
+// }
 
 
 
+// Get the Subject List base on the selectd  Division Pre-Asign Subjects.
+// public function getPresignSubjectByDivision(Request $request, $sectionId)
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year'); 
+    
+//     $subjects = SubjectAllotment::with('getSubject')
+//     ->where('academic_yr', $academicYr)
+//     ->where('section_id', $sectionId)
+//     ->groupBy('sm_id', 'subject_id')
+//     ->get(); 
+
+//     $count = $subjects->count();
+//     return response()->json([
+//         'subjects' => $subjects,
+//         'count' =>$count
+//     ]);
+// }
+
+// public function getPresignSubjectByDivision(Request $request,$classId, $sectionId )
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+    
+//     $academicYr = $payload->get('academic_year'); 
+    
+//     $subjects = SubjectAllotment::with('getSubject')
+//         ->where('academic_yr', $academicYr)
+//         ->where('class_id', $classId) 
+//         ->where('section_id', $sectionId)        
+//         ->groupBy('sm_id', 'subject_id')
+//         ->get(); 
+
+//     $count = $subjects->count();
+
+//     return response()->json([
+//         'subjects' => $subjects,
+//         'count' => $count
+//     ]);
+// }
 
 
 
+// Get the Subject-Allotment details subject with teachers By Section
+// public function getSubjectAllotmentWithTeachersBySection(Request $request, $sectionId)
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
 
+//     $subjectAllotments = SubjectAllotment::with(['getSubject', 'getTeacher'])
+//         ->where('section_id', $sectionId)
+//         ->where('academic_yr', $academicYr)
+//         ->get()
+//         ->groupBy('sm_id');
 
+//     // Create a new array to hold the transformed data
+//     $transformedData = [];
+
+//     foreach ($subjectAllotments as $smId => $allotments) {
+//         // Get the first record to extract subject details (assuming all records for a sm_id have the same subject)
+//         $firstRecord = $allotments->first();
+//         $subjectName = $firstRecord->getSubject->name ?? 'Unknown Subject';
+
+//         // Add the sm_id and subject name to the transformed data
+//         $transformedData[$smId] = [
+//             'subject_name' => $subjectName,
+//             'details' => $allotments
+//         ];
+//     }
+
+//     return response()->json([
+//         'status' => 'success',
+//         'data' => $transformedData
+//     ]);
+// }
 
 
 
