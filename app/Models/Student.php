@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Classes;
+use App\Models\Parents;
+use App\Models\Division;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Student extends Model
 {
@@ -76,9 +79,13 @@ class Student extends Model
         'added_by'
     ];
 
-    public function class()
+    public function getClass()
     {
         return $this->belongsTo(Classes::class, 'class_id');
+    }
+    public function getDivision()
+    {
+        return $this->belongsTo(Division::class, 'section_id');
     }
 
     public function parents()
