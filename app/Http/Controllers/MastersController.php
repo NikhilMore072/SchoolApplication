@@ -2299,10 +2299,10 @@ public function getStudentListBySection(Request $request)
     }
     $academicYr = $payload->get('academic_year');    
     $sectionId = $request->query('section_id');    
-    $query = Student::where('academic_yr', $academicYr)
+    $query = Student::with(['parents.user', 'getClass', 'getDivision'])->where('academic_yr', $academicYr)
         ->where('IsDelete','N')   
         ->whereNotNull('parent_id');
-    
+        
     if ($sectionId) {
         $query->where('section_id', $sectionId);
     }
@@ -2320,7 +2320,7 @@ public function getStudentListBySection(Request $request)
 //  get the student list by there id  with the parent details 
 public function getStudentById($studentId)
 {
-    $student = Student::with('parents.user')->find($studentId);
+    $student = Student::with(['parents.user', 'getClass', 'getDivision'])->find($studentId);
     
     if (!$student) {
         return response()->json(['error' => 'Student not found'], 404);
@@ -2331,19 +2331,18 @@ public function getStudentById($studentId)
     );
 }
 
-public function getStudentByGRN($reg_no){
-    $student = Student::with('parents.user')
-    ->where('reg_no', $reg_no)
-    ->first();
-    
+public function getStudentByGRN($reg_no)
+{
+    $student = Student::with(['parents.user', 'getClass', 'getDivision'])
+        ->where('reg_no', $reg_no)
+        ->first();
+
     if (!$student) {
         return response()->json(['error' => 'Student not found'], 404);
     }     
-
-    return response()->json(
-        ['students' => [$student]] 
-    );
+    return response()->json(['student' => $student]);
 }
+
 
 
 
