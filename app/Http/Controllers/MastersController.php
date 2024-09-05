@@ -2281,7 +2281,7 @@ public function getStudentByGRN($reg_no)
     if (!$student) {
         return response()->json(['error' => 'Student not found'], 404);
     }     
-    return response()->json(['student' => $student]);
+    return response()->json(['student' => [$student]]);
 }
 
 
@@ -3547,8 +3547,8 @@ public function getDivisionsbyClass(Request $request, $classId)
     $divisionNames = Division::where('academic_yr', $academicYr)
         ->where('class_id', $classId)
         ->select('section_id', 'name')
-        ->orderBy('section_id','desc')
-        // ->distinct()
+        ->orderBy('section_id','asc')
+        ->distinct()
         ->get(); 
     
     // Return Combined Response
