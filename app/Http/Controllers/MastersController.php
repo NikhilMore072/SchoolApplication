@@ -3268,6 +3268,120 @@ public function getSubjectAllotmentWithTeachersBySection(Request $request, $sect
 // }
 
 
+// public function updateTeacherAllotment(Request $request, $classId, $sectionId)
+// {
+//     // Retrieve the incoming data
+//     $subjects = $request->input('subjects'); // Expecting an array of subjects with details
+//     $payload = getTokenPayload($request);
+
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     // Step 1: Fetch existing records
+//     $existingRecords = SubjectAllotment::where('class_id', $classId)
+//         ->where('section_id', $sectionId)
+//         ->where('academic_yr', $academicYr)
+//         ->get();
+
+//     // Collect IDs to keep
+//     $idsToKeep = [];
+
+//     // Step 2: Iterate through the subjects from the input and process updates
+//     foreach ($subjects as $sm_id => $subjectData) {
+//         foreach ($subjectData['details'] as $detail) {
+//             // If subject_id is null, get the max subject_id from the database and increment by 1
+//             if ($detail['subject_id'] === null) {
+//                 $maxSubjectId = SubjectAllotment::max('subject_id');
+//                 $detail['subject_id'] = $maxSubjectId ? $maxSubjectId + 1 : 1;
+//             }
+
+//             // Store the identifier in the list of IDs to keep
+//             $idsToKeep[] = [
+//                 'subject_id' => $detail['subject_id'],
+//                 'class_id' => $classId,
+//                 'section_id' => $sectionId,
+//                 'teacher_id' => $detail['teacher_id'],
+//                 'sm_id' => $sm_id
+//             ];
+
+//             // Check if the subject allotment exists based on subject_id, class_id, section_id, and academic_yr
+//             $subjectAllotment = SubjectAllotment::where('subject_id', $detail['subject_id'])
+//                 ->where('class_id', $classId)
+//                 ->where('section_id', $sectionId)
+//                 ->where('academic_yr', $academicYr)
+//                 ->first();
+
+//             if ($detail['teacher_id'] === null) {
+//                 // If teacher_id is null, delete the record 
+//                 if ($subjectAllotment) {
+//                     $subjectAllotment->delete();
+//                 }
+//             } else {
+//                 if ($subjectAllotment) {
+//                     // Update the existing record
+//                     $subjectAllotment->update([
+//                         'teacher_id' => $detail['teacher_id'],
+//                     ]);
+//                 } else {
+//                     // Create a new record if it doesn't exist
+//                     SubjectAllotment::create([
+//                         'subject_id' => $detail['subject_id'],
+//                         'class_id' => $classId,
+//                         'section_id' => $sectionId,
+//                         'teacher_id' => $detail['teacher_id'],
+//                         'academic_yr' => $academicYr,
+//                         'sm_id' => $sm_id // Use the sm_id from the subjects keys
+//                     ]);
+//                 }
+//             }
+//         }
+//     }
+
+//     // Step 3: Delete records not present in the input data, but retain one record with null teacher_id if needed
+//     $idsToKeepArray = array_map(function ($item) {
+//         return implode(',', [
+//             $item['subject_id'],
+//             $item['class_id'],
+//             $item['section_id'],
+//             $item['teacher_id'],
+//             $item['sm_id'],
+//         ]);
+//     }, $idsToKeep);
+
+//     $groupedExistingRecords = $existingRecords->groupBy('sm_id');
+
+//     foreach ($groupedExistingRecords as $sm_id => $records) {
+//         $recordsToDelete = $records->filter(function ($record) use ($idsToKeepArray) {
+//             $recordKey = implode(',', [
+//                 $record->subject_id,
+//                 $record->class_id,
+//                 $record->section_id,
+//                 $record->teacher_id,
+//                 $record->sm_id,
+//             ]);
+//             return !in_array($recordKey, $idsToKeepArray);
+//         });
+
+//         $recordCount = $recordsToDelete->count();
+
+//         if ($recordCount > 1) {
+//             // Delete all but one, and set teacher_id to null on the remaining one
+//             $recordsToDelete->slice(1)->each->delete();
+//             $recordsToDelete->first()->update(['teacher_id' => null]);
+//         } elseif ($recordCount == 1) {
+//             // Just set teacher_id to null
+//             $recordsToDelete->first()->update(['teacher_id' => null]);
+//         }
+//     }
+
+//     return response()->json([
+//         'status' => 'success',
+//         'message' => 'Subject allotments updated successfully.',
+//     ]);
+// }
+
 public function updateTeacherAllotment(Request $request, $classId, $sectionId)
 {
     // Retrieve the incoming data
@@ -3290,8 +3404,13 @@ public function updateTeacherAllotment(Request $request, $classId, $sectionId)
 
     // Step 2: Iterate through the subjects from the input and process updates
     foreach ($subjects as $sm_id => $subjectData) {
+        // Ensure sm_id is not null or empty before proceeding
+        if (empty($sm_id)) {
+            return response()->json(['error' => 'Invalid subject module ID (sm_id) provided.'], 400);
+        }
+
         foreach ($subjectData['details'] as $detail) {
-            // If subject_id is null, get the max subject_id from the database and increment by 1
+            // Ensure subject_id is not null or empty, otherwise generate a new subject_id
             if ($detail['subject_id'] === null) {
                 $maxSubjectId = SubjectAllotment::max('subject_id');
                 $detail['subject_id'] = $maxSubjectId ? $maxSubjectId + 1 : 1;
@@ -3311,6 +3430,7 @@ public function updateTeacherAllotment(Request $request, $classId, $sectionId)
                 ->where('class_id', $classId)
                 ->where('section_id', $sectionId)
                 ->where('academic_yr', $academicYr)
+                ->where('sm_id', $sm_id)
                 ->first();
 
             if ($detail['teacher_id'] === null) {
@@ -3328,11 +3448,11 @@ public function updateTeacherAllotment(Request $request, $classId, $sectionId)
                     // Create a new record if it doesn't exist
                     SubjectAllotment::create([
                         'subject_id' => $detail['subject_id'],
-                        'class_id' => $ClassId,
-                        'section_id' => $SectionId,
-                        'teacher_id' => $Detail['Teacher_id'],
-                        'academic_yr' => $AcademicYr,
-                        'sm_id' => $Sm_id // Use the sm_id from the subjects keys
+                        'class_id' => $classId,
+                        'section_id' => $sectionId,
+                        'teacher_id' => $detail['teacher_id'],
+                        'academic_yr' => $academicYr,
+                        'sm_id' => $sm_id // Ensure sm_id is correctly passed
                     ]);
                 }
             }
@@ -3381,6 +3501,7 @@ public function updateTeacherAllotment(Request $request, $classId, $sectionId)
         'message' => 'Subject allotments updated successfully.',
     ]);
 }
+
 
 
 
@@ -3528,6 +3649,58 @@ public function getPresignSubjectByTeacher(Request $request,$classID, $sectionId
     ]);
 }
 
+// public function updateOrCreateSubjectAllotments($class_id, $section_id, Request $request)
+// {
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+//     $validatedData = $request->validate([
+//         'subjects' => 'required|array',
+//         'subjects.*.sm_id' => 'required|integer|exists:subject_master,sm_id',
+//         'subjects.*.teacher_id' => 'nullable|integer|exists:teacher,teacher_id',
+//         'subjects.*.subject_id' => 'nullable|integer|exists:subject,subject_id',
+//     ]);
+
+//     $subjects = $validatedData['subjects'];
+
+//     foreach ($subjects as $subjectData) {
+//         if (isset($subjectData['subject_id'])) {
+//             // Update existing record
+//             SubjectAllotment::updateOrCreate(
+//                 [
+//                     'subject_id' => $subjectData['subject_id'],
+//                     'class_id' => $class_id,
+//                     'section_id' => $section_id,
+//                     'academic_yr' => $academicYr,
+
+//                 ],
+//                 [
+//                     'sm_id' => $subjectData['sm_id'],
+//                     'teacher_id' => $subjectData['teacher_id'],
+//                 ]
+//             );
+//         } else {
+//             // Create new record
+//             SubjectAllotment::updateOrCreate(
+//                 [
+//                     'class_id' => $class_id,
+//                     'section_id' => $section_id,
+//                     'sm_id' => $subjectData['sm_id'],
+//                     'academic_yr' => $academicYr, 
+
+//                 ],
+//                 [
+//                     'teacher_id' => $subjectData['teacher_id'],
+//                 ]
+//             );
+//         }
+//     }
+
+//     return response()->json(['success' => 'Subject allotments updated or created successfully']);
+// }
+
 public function updateOrCreateSubjectAllotments($class_id, $section_id, Request $request)
 {
     $payload = getTokenPayload($request);
@@ -3543,7 +3716,18 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
     ]);
 
     $subjects = $validatedData['subjects'];
+    
+    // Get existing subject allotments for the class, section, and academic year
+    $existingAllotments = SubjectAllotment::where('class_id', $class_id)
+        ->where('section_id', $section_id)
+        ->where('academic_yr', $academicYr)
+        ->get()
+        ->keyBy('sm_id'); // Use sm_id as the key for easy comparison
 
+    $inputSmIds = collect($subjects)->pluck('sm_id')->toArray();
+    $existingSmIds = $existingAllotments->pluck('sm_id')->toArray();
+
+    // Iterate through the input subjects and update or create records
     foreach ($subjects as $subjectData) {
         if (isset($subjectData['subject_id'])) {
             // Update existing record
@@ -3553,7 +3737,6 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
                     'class_id' => $class_id,
                     'section_id' => $section_id,
                     'academic_yr' => $academicYr,
-
                 ],
                 [
                     'sm_id' => $subjectData['sm_id'],
@@ -3567,8 +3750,7 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
                     'class_id' => $class_id,
                     'section_id' => $section_id,
                     'sm_id' => $subjectData['sm_id'],
-                    'academic_yr' => $academicYr, 
-
+                    'academic_yr' => $academicYr,
                 ],
                 [
                     'teacher_id' => $subjectData['teacher_id'],
@@ -3577,8 +3759,15 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
         }
     }
 
+    // Handle extra records in the existing allotments that are not in the input
+    $extraSmIds = array_diff($existingSmIds, $inputSmIds);
+    foreach ($extraSmIds as $extraSmId) {
+        $existingAllotments[$extraSmId]->update(['teacher_id' => null]);
+    }
+
     return response()->json(['success' => 'Subject allotments updated or created successfully']);
 }
+
 
 
 
