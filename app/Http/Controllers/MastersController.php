@@ -2411,16 +2411,27 @@ public function deleteStudent($studentId)
 
 
 
-    public function inAvateStudent($studentId)
-    {
-        $student = Student::find($studentId);        
-        if (!$student) {
-            return response()->json(['error' => 'Student not found'], 404);
-        }
-        $student->isActive = 'N';
-        $student->save();        
-        return response()->json(['message' => 'Student deactivated successfully']);
+public function toggleActiveStudent($studentId)
+{
+    $student = Student::find($studentId);     
+    
+    if (!$student) {
+        return response()->json(['error' => 'Student not found'], 404);
     }
+    
+    // Toggle isActive value
+    if ($student->isActive == 'Y') {
+        $student->isActive = 'N'; 
+        $message = 'Student deactivated successfully';
+    } else {
+        $student->isActive = 'Y'; 
+        $message = 'Student activated successfully';
+    }
+    $student->save();      
+
+    return response()->json(['message' => $message]);
+}
+
 
      public function resetPasssword($user_id){  
             

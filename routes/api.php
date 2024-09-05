@@ -264,7 +264,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::get('/students/{studentId}', [MastersController::class, 'getStudentById']); // Edit Student , for the view Student. and single student select for the list.
         Route::get('/student_by_reg_no/{reg_no}', [MastersController::class, 'getStudentByGRN']); // Student By GRN .
         Route::delete('/students/{studentId}', [MastersController::class, 'deleteStudent']);
-        Route::patch('/students/{studentId}/deactivate', [MastersController::class, 'inAvateStudent']); // Done.
+        Route::patch('/students/{studentId}/deactivate', [MastersController::class, 'toggleActiveStudent']); // Done.
         Route::put('/students/{studentId}', [MastersController::class, 'updateStudentAndParent']);
       
         //routes for the SubjectForReportCard
