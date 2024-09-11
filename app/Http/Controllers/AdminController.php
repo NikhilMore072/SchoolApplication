@@ -1878,6 +1878,135 @@ public function storeStaff(Request $request)
 //     }
 // }
 
+// public function updateStaff(Request $request, $id)
+// {
+//     DB::beginTransaction(); // Start the transaction
+
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//             'teacher_image_name.string' => 'The file must be an image.',
+//             'role.required' => 'The role field is required.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'father_spouse_name' => 'nullable|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
+//             'teacher_image_name' => 'nullable|string', // Base64 string
+//             'class_id' => 'nullable|integer',
+//             'section_id' => 'nullable|integer',
+//             'isDelete' => 'nullable|string|in:Y,N',
+//         ], $messages);
+
+//         // Handle base64 image
+//         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+//             $imageData = $request->input('teacher_image_name');
+//             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+//                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
+//                 $type = strtolower($type[1]); // jpg, png, gif
+//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+//                     throw new \Exception('Invalid image type');
+//                 }
+//                 $imageData = base64_decode($imageData);
+//                 if ($imageData === false) {
+//                     throw new \Exception('Base64 decode failed');
+//                 }
+//                 $filename = 'teacher_' . time() . '.' . $type;
+//                 $filePath = storage_path('app/public/teacher_images/' . $filename);
+
+//                 // Ensure directory exists
+//                 $directory = dirname($filePath);
+//                 if (!is_dir($directory)) {
+//                     mkdir($directory, 0755, true);
+//                 }
+
+//                 // Save image to file
+//                 if (file_put_contents($filePath, $imageData) === false) {
+//                     throw new \Exception('Failed to save image file');
+//                 }
+
+//                 $validatedData['teacher_image_name'] = $filename;
+//             } else {
+//                 throw new \Exception('Invalid image data');
+//             }
+//         }
+
+//         $teacher = Teacher::findOrFail($id);
+//         $teacher->fill($validatedData);
+
+//         if (!$teacher->save()) {
+//             DB::rollBack(); // Rollback the transaction
+//             return response()->json([
+//                 'message' => 'Failed to update teacher',
+//             ], 500);
+//         }
+
+//         $user = User::where('reg_id', $id)->first();
+//         if ($user) {
+//             $user->name = $validatedData['name'];
+//             $user->email = $validatedData['email'];
+
+//             if (!$user->save()) {
+//                 // Rollback by reverting the teacher record if user update fails
+//                 $teacher->delete();
+//                 DB::rollBack(); // Rollback the transaction
+//                 return response()->json([
+//                     'message' => 'Failed to update user',
+//                 ], 500);
+//             }
+//         }
+
+//         DB::commit(); // Commit the transaction
+//         return response()->json([
+//             'message' => 'Teacher updated successfully!',
+//             'teacher' => $teacher,
+//             'user' => $user,
+//         ], 200);
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         DB::rollBack(); // Rollback the transaction on validation error
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         // Handle unexpected errors
+//         if (isset($teacher) && $teacher->exists) {
+//             $teacher->delete();
+//         }
+//         DB::rollBack(); // Rollback the transaction
+//         return response()->json([
+//             'message' => 'An error occurred while updating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
 public function updateStaff(Request $request, $id)
 {
     DB::beginTransaction(); // Start the transaction
@@ -1900,7 +2029,6 @@ public function updateStaff(Request $request, $id)
         $validatedData = $request->validate([
             'employee_id' => 'nullable|string|max:255',
             'name' => 'required|string|max:255',
-            'father_spouse_name' => 'nullable|string|max:255',
             'birthday' => 'required|date',
             'date_of_joining' => 'required|date',
             'sex' => 'required|string|max:10',
@@ -1918,10 +2046,12 @@ public function updateStaff(Request $request, $id)
             'experience' => 'nullable|string|max:255',
             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
             'teacher_image_name' => 'nullable|string', // Base64 string
-            'class_id' => 'nullable|integer',
-            'section_id' => 'nullable|integer',
-            'isDelete' => 'nullable|string|in:Y,N',
+            'role' => 'required|string|max:255',
         ], $messages);
+
+        if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+            $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+        }
 
         // Handle base64 image
         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
@@ -1937,7 +2067,7 @@ public function updateStaff(Request $request, $id)
                     throw new \Exception('Base64 decode failed');
                 }
                 $filename = 'teacher_' . time() . '.' . $type;
-                $filePath = storage_path('app/public/teacher_images/' . $filename);
+                $filePath = storage_path('app/public/teacher_images/'.$filename);
 
                 // Ensure directory exists
                 $directory = dirname($filePath);
@@ -1956,6 +2086,7 @@ public function updateStaff(Request $request, $id)
             }
         }
 
+        // Find the teacher record by ID
         $teacher = Teacher::findOrFail($id);
         $teacher->fill($validatedData);
 
@@ -1966,14 +2097,13 @@ public function updateStaff(Request $request, $id)
             ], 500);
         }
 
-        $user = User::where('reg_id', $id)->first();
+        // Update user associated with the teacher
+        $user = User::where('reg_id', $teacher->teacher_id)->first();
         if ($user) {
             $user->name = $validatedData['name'];
-            $user->email = $validatedData['email'];
+            $user->email = strtolower(str_replace(' ', '.', trim($validatedData['name']))) . '@arnolds';
 
             if (!$user->save()) {
-                // Rollback by reverting the teacher record if user update fails
-                $teacher->delete();
                 DB::rollBack(); // Rollback the transaction
                 return response()->json([
                     'message' => 'Failed to update user',
@@ -1987,6 +2117,7 @@ public function updateStaff(Request $request, $id)
             'teacher' => $teacher,
             'user' => $user,
         ], 200);
+
     } catch (\Illuminate\Validation\ValidationException $e) {
         DB::rollBack(); // Rollback the transaction on validation error
         return response()->json([
@@ -1996,7 +2127,7 @@ public function updateStaff(Request $request, $id)
     } catch (\Exception $e) {
         // Handle unexpected errors
         if (isset($teacher) && $teacher->exists) {
-            $teacher->delete();
+            // Keep teacher record but return an error
         }
         DB::rollBack(); // Rollback the transaction
         return response()->json([
@@ -2615,33 +2746,33 @@ public function toggleActiveStudent($studentId)
         $oldEmailPreference = $user->user_id; // Store old email preference for comparison
 
 
-        if ($request->input('SetEmailIDAsUsername') == 'Father') {
-            $apiData['user_id'] = $parent->f_email;
-            $user->update(['user_id' => $parent->f_email]);
-        } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
-            $apiData['user_id'] = $parent->m_emailid;
-            $user->update(['user_id' => $parent->m_emailid]);
-        } elseif ($request->input('SetEmailIDAsUsername') == 'FatherMob') {
-            $apiData['user_id'] = $parent->f_mobile; 
-            $user->update(['user_id' => $parent->f_mobile]);
-        } elseif ($request->input('SetEmailIDAsUsername') == 'MotherMob') {
-            $apiData['user_id'] = $parent->m_mobile; 
-            $user->update(['user_id' => $parent->m_mobile]);
-        }
+        // if ($request->input('SetEmailIDAsUsername') == 'Father') {
+        //     $apiData['user_id'] = $parent->f_email;
+        //     $user->update(['user_id' => $parent->f_email]);
+        // } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
+        //     $apiData['user_id'] = $parent->m_emailid;
+        //     $user->update(['user_id' => $parent->m_emailid]);
+        // } elseif ($request->input('SetEmailIDAsUsername') == 'FatherMob') {
+        //     $apiData['user_id'] = $parent->f_mobile; 
+        //     $user->update(['user_id' => $parent->f_mobile]);
+        // } elseif ($request->input('SetEmailIDAsUsername') == 'MotherMob') {
+        //     $apiData['user_id'] = $parent->m_mobile; 
+        //     $user->update(['user_id' => $parent->m_mobile]);
+        // }
         
 
         // Check if the email preference changed
-        if ($oldEmailPreference != $apiData['user_id']) {
-            // Call the external API only if the email preference has changed
-            $response = Http::post('http://aceventura.in/demo/evolvuUserService/user_create_new', $apiData);
+        // if ($oldEmailPreference != $apiData['user_id']) {
+        //     // Call the external API only if the email preference has changed
+        //     $response = Http::post('http://aceventura.in/demo/evolvuUserService/user_create_new', $apiData);
 
-            // Handle the API response if needed
-            if ($response->successful()) {
-                // You can log the response or handle further logic here if needed
-            } else {
-                return response()->json(['error' => 'Failed to call the API.'], 500);
-            }
-        }
+        //     // Handle the API response if needed
+        //     if ($response->successful()) {
+        //         // You can log the response or handle further logic here if needed
+        //     } else {
+        //         return response()->json(['error' => 'Failed to call the API.'], 500);
+        //     }
+        // }
 
         $parent->update($parentData);
     }
