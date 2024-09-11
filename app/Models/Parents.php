@@ -37,8 +37,10 @@ class Parents extends Model
         'father_image_name',
         'mother_image_name'
     ];
-
-    public function user()
+     
+    //reg_id and role_id combination is unique .
+    // role should be 'P'.
+    public function user()  
     {
         return $this->belongsTo(UserMaster::class, 'parent_id', 'reg_id');
     }
