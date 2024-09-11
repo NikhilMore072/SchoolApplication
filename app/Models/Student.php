@@ -92,7 +92,13 @@ class Student extends Model
     {
         return $this->belongsTo(Parents::class, 'parent_id');
     }
-
+    public function userMaster(){
+        return $this->belongsTo(UserMaster::class,'parent_id','reg_id');
+    }
+    
+    // public function userMaster(){
+    //     return $this->belongsTo(House::class,'house','house_id');
+    // }
 
 
 }

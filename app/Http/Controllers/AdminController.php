@@ -39,12 +39,13 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\DeletedContactDetails;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
+use App\Models\SubjectAllotmentForReportCard;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 // use Illuminate\Support\Facades\Auth;
 
 
-class MastersController extends Controller
+class AdminController extends Controller
 {
     public function hello(){
         return view('hello');
@@ -890,6 +891,7 @@ public function getClass(Request $request)
         ->get();
     return response()->json($classes);
 }
+
 public function storeClass(Request $request)
 {
     $payload = getTokenPayload($request);
@@ -914,6 +916,7 @@ public function storeClass(Request $request)
             'errors' => $validator->errors(),
         ], 422);
     }
+
     $class = new Classes();
     $class->name = $request->name;
     $class->department_id = $request->department_id;
@@ -2216,10 +2219,6 @@ public function getStudentListBaseonClass(Request $request){
 public function getallSectionsWithStudentCount(Request $request)
 {
     $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
-
     $academicYr = $payload->get('academic_year');
     $divisions = Division::with('getClass')
         ->withCount(['students' => function ($query) use ($academicYr) {
@@ -2227,23 +2226,18 @@ public function getallSectionsWithStudentCount(Request $request)
         }])
         ->where('academic_yr', $academicYr)
         ->get();
-
     return response()->json($divisions);
 }
+
 
  // get the student list by the section id 
 public function getStudentListBySection(Request $request)
 {
     $payload = getTokenPayload($request);    
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
     $academicYr = $payload->get('academic_year');    
     $sectionId = $request->query('section_id');    
-    $query = Student::with(['parents.user', 'getClass', 'getDivision'])->where('academic_yr', $academicYr)
-        ->where('IsDelete','N')   
-        ->whereNotNull('parent_id');
-
+    $query = Student::with(['parents','userMaster','getClass', 'getDivision',])->where('academic_yr', $academicYr)
+        ->where('IsDelete','N');    
     if ($sectionId) {
         $query->where('section_id', $sectionId);
     }
@@ -2261,7 +2255,7 @@ public function getStudentListBySection(Request $request)
 //  get the student list by there id  with the parent details 
 public function getStudentById($studentId)
 {
-    $student = Student::with(['parents.user', 'getClass', 'getDivision'])->find($studentId);
+    $student = Student::with(['parents','userMaster', 'getClass', 'getDivision'])->find($studentId);
     
     if (!$student) {
         return response()->json(['error' => 'Student not found'], 404);
@@ -2283,12 +2277,6 @@ public function getStudentByGRN($reg_no)
     }     
     return response()->json(['student' => [$student]]);
 }
-
-
-
-
-
-
 
 // public function deleteStudent($studentId)
 // {
@@ -2348,7 +2336,7 @@ public function getStudentByGRN($reg_no)
 //     return response()->json(['message' => 'Student deleted successfully']);
 // }
 
-public function deleteStudent($studentId)
+public function deleteStudent( Request $request , $studentId)
 {
     // Find the student by ID
     $student = Student::find($studentId);
@@ -2358,21 +2346,28 @@ public function deleteStudent($studentId)
     }
 
     // Update the student's isDelete and isModify status to 'Y'
+    $payload = getTokenPayload($request);    
+    $authUser = $payload->get('reg_id'); 
     $student->isDelete = 'Y';
     $student->isModify = 'Y';
+    $student->deleted_by = $authUser;
+    $student->deleted_date = Carbon::now();
     $student->save();
-
+    
+    $academicYr = $payload->get('academic_year'); 
     // Hard delete the student from the user_master table
-    $userMaster = UserMaster::where('reg_id', $studentId)->first();
-    if ($userMaster) {
-        $userMaster->delete();
-    }
+    $userMaster = UserMaster::where('role_id','S')
+                            ->where('reg_id', $studentId)->first();
+                            if ($userMaster) {
+                                $userMaster->delete();
+                            }
 
     // Check if the student has siblings
-    $siblingsCount = Student::where('parent_id', $student->parent_id)
-        ->where('student_id', '!=', $studentId)
-        ->where('isDelete', 'N')
-        ->count();
+    $siblingsCount = Student::where('academic_yr',$academicYr)
+                                ->where('parent_id', $student->parent_id)
+                                ->where('student_id', '!=', $studentId)
+                                ->where('isDelete', 'N')
+                                ->count();
 
     // If no siblings are present, mark the parent as deleted in the parent table
     if ($siblingsCount == 0) {
@@ -2381,10 +2376,12 @@ public function deleteStudent($studentId)
             $parent->isDelete = 'Y';
             $parent->save();
 
-            // Hard delete parent information from the user_master table
-            $userMasterParent = UserMaster::where('reg_id', $student->parent_id)->first();
+            // Soft Delete  delete parent information from the user_master table
+            $userMasterParent = UserMaster::where('role_id','P')
+                                           ->where('reg_id', $student->parent_id)->first();
             if ($userMasterParent) {
-                $userMasterParent->delete();
+                $userMasterParent->IsDelete='Y';
+                $userMasterParent->save();
             }
 
             // Hard delete parent information from the contact_details table
@@ -2393,19 +2390,20 @@ public function deleteStudent($studentId)
     }
 
     // After deletion, check if the deleted information exists in the deleted_contact_details table
-    $deletedContact = DeletedContactDetails::where('id', $studentId)->first();
+    $deletedContact = ContactDetails::where('id', $parent)->first();
     if (!$deletedContact) {
         // Insert deleted contact details into the deleted_contact_details table
         DeletedContactDetails::create([
             'student_id' => $studentId,
             'parent_id' => $student->parent_id,
             'phone_no' => $student->parents->m_mobile, 
-            'email_id' => $student->parents->m_emailid,
-            'm_emailid' => $student->parents->m_emailid
+            'email_id' => $student->parents->f_emailid, 
+            'm_emailid' => $student->parents->m_emailid 
         ]);
     }
 
     return response()->json(['message' => 'Student deleted successfully']);
+    //while deleting  please cll the api for the evolvu database. while sibling is not present then  call the api to delete the paret 
 }
 
 
@@ -2439,7 +2437,6 @@ public function toggleActiveStudent($studentId)
         if(!$userID){
             return response()->json("User ID not found");
         }
-
         $password = "arnolds";
         $user->password=$password;
         $user->save();
@@ -2447,182 +2444,15 @@ public function toggleActiveStudent($studentId)
         return response()->json(
                       [
                         'Status' => 200 ,
-                         'Message' => "Password Updated Successfully "
+                         'Message' => "Password is reset to arnolds . "
                       ]
                       );
      }
+     
 
 
-// public function updateStudentAndParent(Request $request, $studentId)
-// {
-//     // Validate the incoming request for all fields
-//     $validatedData = $request->validate([
-//         // Student model fields
-//         'first_name' => 'required|string|max:255',
-//         'mid_name' => 'nullable|string|max:255',
-//         'last_name' => 'required|string|max:255',
-//         'student_name' => 'nullable|string|max:255',
-//         'dob' => 'required|date',
-//         'gender' => 'required|string',
-//         'admission_date' => 'nullable|date',
-//         'stud_id_no' => 'nullable|string|max:255',
-//         'mother_tongue' => 'nullable|string|max:255',
-//         'birth_place' => 'nullable|string|max:255',
-//         'admission_class' => 'nullable|string|max:255',
-//         'roll_no' => 'nullable|string|max:255',
-//         'class_id' => 'required|integer',
-//         'section_id' => 'nullable|integer',
-//         'fees_paid' => 'nullable|numeric',
-//         'blood_group' => 'nullable|string|max:255',
-//         'religion' => 'nullable|string|max:255',
-//         'caste' => 'nullable|string|max:255',
-//         'subcaste' => 'nullable|string|max:255',
-//         'transport_mode' => 'nullable|string|max:255',
-//         'vehicle_no' => 'nullable|string|max:255',
-//         'bus_id' => 'nullable|integer',
-//         'emergency_name' => 'nullable|string|max:255',
-//         'emergency_contact' => 'nullable|string|max:255',
-//         'emergency_add' => 'nullable|string|max:255',
-//         'height' => 'nullable|numeric',
-//         'weight' => 'nullable|numeric',
-//         'has_specs' => 'nullable|boolean',
-//         'allergies' => 'nullable|string|max:255',
-//         'nationality' => 'nullable|string|max:255',
-//         'permant_add' => 'nullable|string|max:255',
-//         'city' => 'nullable|string|max:255',
-//         'state' => 'nullable|string|max:255',
-//         'pincode' => 'nullable|string|max:255',
-//         'IsDelete' => 'nullable|boolean',
-//         'prev_year_student_id' => 'nullable|integer',
-//         'isPromoted' => 'nullable|boolean',
-//         'isNew' => 'nullable|boolean',
-//         'isModify' => 'nullable|boolean',
-//         'isActive' => 'nullable|boolean',
-//         'reg_no' => 'nullable|string|max:255',
-//         'house' => 'nullable|string|max:255',
-//         'stu_aadhaar_no' => 'nullable|string|max:255',
-//         'category' => 'nullable|string|max:255',
-//         'last_date' => 'nullable|date',
-//         'slc_no' => 'nullable|string|max:255',
-//         'slc_issue_date' => 'nullable|date',
-//         'leaving_remark' => 'nullable|string|max:255',
-//         'deleted_date' => 'nullable|date',
-//         'deleted_by' => 'nullable|string|max:255',
-//         'image_name' => 'nullable|string|max:255',
-//         'guardian_name' => 'nullable|string|max:255',
-//         'guardian_add' => 'nullable|string|max:255',
-//         'guardian_mobile' => 'nullable|string|max:255',
-//         'relation' => 'nullable|string|max:255',
-//         'guardian_image_name' => 'nullable|string|max:255',
-//         'udise_pen_no' => 'nullable|string|max:255',
-//         'added_bk_date' => 'nullable|date',
-//         'added_by' => 'nullable|string|max:255',
 
-//         // Parent model fields
-//         'father_name' => 'nullable|string|max:255',
-//         'father_occupation' => 'nullable|string|max:255',
-//         'f_office_add' => 'nullable|string|max:255',
-//         'f_office_tel' => 'nullable|string|max:255',
-//         'f_mobile' => 'nullable|string|max:255',
-//         'f_email' => 'nullable|string|max:255',
-//         'mother_name' => 'nullable|string|max:255',
-//         'mother_occupation' => 'nullable|string|max:255',
-//         'm_office_add' => 'nullable|string|max:255',
-//         'm_office_tel' => 'nullable|string|max:255',
-//         'm_mobile' => 'nullable|string|max:255',
-//         'm_emailid' => 'nullable|string|max:255',
-//         'parent_adhar_no' => 'nullable|string|max:255',
-//         'm_adhar_no' => 'nullable|string|max:255',
-//         'f_dob' => 'nullable|date',
-//         'm_dob' => 'nullable|date',
-//         'f_blood_group' => 'nullable|string|max:255',
-//         'm_blood_group' => 'nullable|string|max:255',
-//         'father_image_name' => 'nullable|string|max:255',
-//         'mother_image_name' => 'nullable|string|max:255',
-
-//         'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
-//         'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother',
-//     ]);
-
-//     // Retrieve the token payload
-//     $payload = getTokenPayload($request);
-//     if (!$payload) {
-//         return response()->json(['error' => 'Invalid or missing token'], 401);
-//     }
-//     $academicYr = $payload->get('academic_year');
-
-//     // Find the student by ID
-//     $student = Student::find($studentId);
-
-//     if (!$student) {
-//         return response()->json(['error' => 'Student not found'], 404);
-//     }
-
-//     // Handle student image if provided
-//     if ($request->has('student_image')) {
-//         $base64Image = $request->input('student_image');
-//         $imageParts = explode(';', $base64Image);
-//         $imageType = explode(':', $imageParts[0])[1];
-//         $imageExtension = str_replace('image/', '', $imageType);
-//         $image = str_replace('data:image/' . $imageExtension . ';base64,', '', $base64Image);
-//         $image = str_replace(' ', '+', $image);
-//         $imageName = $studentId . '.' . $imageExtension;
-//         $imagePath = public_path('uploads/student_image');
-
-//         // Create directory if it doesn't exist
-//         if (!file_exists($imagePath)) {
-//             mkdir($imagePath, 0755, true);
-//         }
-
-//         // Save the image
-//         file_put_contents($imagePath . '/' . $imageName, base64_decode($image));
-//         $validatedData['image_name'] = $imageName;
-//     }
-
-//     // Include academic year in the update data
-//     $validatedData['academic_yr'] = $academicYr;
-
-//     // Update student information
-//     $student->update($validatedData);
-
-//     // Handle parent details if provided
-//     $parent = Parents::find($student->parent_id);
-
-//     if ($parent) {
-//         $parentData = $request->only([
-//             'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
-//             'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
-//             'parent_adhar_no', 'm_adhar_no', 'f_dob', 'm_dob', 'f_blood_group', 'm_blood_group',
-//         ]);
-
-//         // Update SMS contact preference
-//         $contactDetails = ContactDetails::where('id', $student->parent_id)->first();
-//         if ($request->input('SetToReceiveSMS') == 'Father') {
-//             $contactDetails->update(['phone_no' => $parent->f_mobile]);
-//         } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
-//             $contactDetails->update(['phone_no' => $parent->m_mobile]);
-//         }
-
-//         // Update email ID as username preference
-//         $user = UserMaster::where('reg_id', $student->parent_id)->first();
-//         if ($request->input('SetEmailIDAsUsername') == 'Father') {  
-//             $user->update(['user_id' => $parent->f_email]);
-//         } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
-//             $user->update(['user_id' => $parent->m_emailid]);
-//         }
-
-//         $parent->update($parentData);
-//     }
-
-//     return response()->json([
-//         "status" => "success",
-//         "message" => "Student updated successfully",
-//         "data" => $student
-//     ]);
-// }
-
-
-public function updateStudentAndParent(Request $request, $studentId)
+     public function updateStudentAndParent(Request $request, $studentId)
 {
     // Validate the incoming request for all fields
     $validatedData = $request->validate([
@@ -2633,21 +2463,21 @@ public function updateStudentAndParent(Request $request, $studentId)
         'house' => 'nullable|string|max:100',
         'student_name' => 'required|string|max:100',
         'dob' => 'required|date',
-        'admission_date' => 'required|date', // Changed from 'nullable' to 'required'
+        'admission_date' => 'required|date',
         'stud_id_no' => 'nullable|string|max:25',
         'stu_aadhaar_no' => 'required|string|max:14',
         'gender' => 'required|string',
-        'mother_tongue' => 'required|string|max:20', // Changed from 'nullable' to 'required'
+        'mother_tongue' => 'required|string|max:20',
         'birth_place' => 'nullable|string|max:50',
         'admission_class' => 'required|string|max:255',
-        'city' => 'required|string|max:100', // Changed from 'nullable' to 'required'
-        'state' => 'required|string|max:100', // Changed from 'nullable' to 'required'
+        'city' => 'required|string|max:100',
+        'state' => 'required|string|max:100',
         'roll_no' => 'nullable|string|max:11',
         'class_id' => 'required|integer',
-        'section_id' => 'required|integer', // Changed from 'nullable' to 'required'
-        'religion' => 'required|string|max:255', // Changed from 'nullable' to 'required'
+        'section_id' => 'required|integer',
+        'religion' => 'required|string|max:255',
         'caste' => 'nullable|string|max:100',
-        'subcaste' => 'required|string|max:255', // Changed from 'nullable' to 'required'
+        'subcaste' => 'required|string|max:255',
         'vehicle_no' => 'nullable|string|max:13',
         'emergency_name' => 'nullable|string|max:100',
         'emergency_contact' => 'nullable|string|max:11',
@@ -2655,43 +2485,82 @@ public function updateStudentAndParent(Request $request, $studentId)
         'height' => 'nullable|numeric|max:4.1',
         'weight' => 'nullable|numeric|max:4.1',
         'allergies' => 'nullable|string|max:200',
-        'nationality' => 'required|string|max:100', // Changed from 'nullable' to 'required'
+        'nationality' => 'required|string|max:100',
         'pincode' => 'nullable|string|max:11',
-        'image_name' => 'nullable|string|max:255',
+        'image_name' => 'nullable|string',
 
         // Parent model fields
         'father_name' => 'required|string|max:100',
         'father_occupation' => 'nullable|string|max:100',
         'f_office_add' => 'nullable|string|max:200',
         'f_office_tel' => 'nullable|string|max:11',
-        'f_mobile' => 'required|string|max:10', // Changed from 'nullable' to 'required'
-        'f_email' => 'required|string|max:50', // Changed from 'nullable' to 'required'
+        'f_mobile' => 'required|string|max:10',
+        'f_email' => 'required|string|max:50',
         'father_adhar_card' => 'required|string|max:14',
         'mother_name' => 'required|string|max:100',
         'mother_occupation' => 'nullable|string|max:100',
         'm_office_add' => 'nullable|string|max:200',
         'm_office_tel' => 'nullable|string|max:11',
-        'm_mobile' => 'required|string|max:10', // Changed from 'nullable' to 'required'
-        'm_emailid' => 'required|string|max:50', // Changed from 'nullable' to 'required'
+        'm_mobile' => 'required|string|max:10',
+        'm_emailid' => 'required|string|max:50',
         'mother_adhar_card' => 'required|string|max:14',
 
         // Preferences for SMS and email as username
         'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
-        'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother',
+        'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother,FatherMob,MotherMob',
     ]);
+
+
+      // Convert relevant fields to uppercase
+      $fieldsToUpper = [
+        'first_name', 'mid_name', 'last_name', 'house', 'emergency_name', 
+        'emergency_contact', 'nationality', 'city', 'state', 'birth_place', 
+        'mother_tongue', 'father_name', 'mother_name', 'vehicle_no', 'caste'
+    ];
+
+    foreach ($fieldsToUpper as $field) {
+        if (isset($validatedData[$field])) {
+            $validatedData[$field] = strtoupper(trim($validatedData[$field]));
+        }
+    }
+
+    // Additional fields for parent model that need to be converted to uppercase
+    $parentFieldsToUpper = [
+        'father_name', 'mother_name', 'f_blood_group', 'm_blood_group', 'student_blood_group'
+    ];
+
+    foreach ($parentFieldsToUpper as $field) {
+        if (isset($validatedData[$field])) {
+            $validatedData[$field] = strtoupper(trim($validatedData[$field]));
+        }
+    }
+  
+
 
     // Retrieve the token payload
     $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
     $academicYr = $payload->get('academic_year');
 
     // Find the student by ID
     $student = Student::find($studentId);
-
     if (!$student) {
         return response()->json(['error' => 'Student not found'], 404);
+    }
+
+    // Check if specified fields have changed  str to upper case and trim the space   Include the parent_id and 
+    $fieldsToCheck = ['first_name', 'mid_name', 'last_name', 'class_id', 'section_id', 'roll_no'];
+    $isModified = false;
+
+    foreach ($fieldsToCheck as $field) {
+        if ($student->$field != $validatedData[$field]) {
+            $isModified = true;
+            break;
+        }
+    }
+
+    // If any of the fields are modified, set 'is_modify' to 'Y'
+    if ($isModified) {
+        $validatedData['is_modify'] = 'Y';
     }
 
     // Handle student image if provided
@@ -2705,12 +2574,10 @@ public function updateStudentAndParent(Request $request, $studentId)
         $imageName = $studentId . '.' . $imageExtension;
         $imagePath = public_path('uploads/student_image');
 
-        // Create directory if it doesn't exist
         if (!file_exists($imagePath)) {
             mkdir($imagePath, 0755, true);
         }
 
-        // Save the image
         file_put_contents($imagePath . '/' . $imageName, base64_decode($image));
         $validatedData['image_name'] = $imageName;
     }
@@ -2723,7 +2590,6 @@ public function updateStudentAndParent(Request $request, $studentId)
 
     // Handle parent details if provided
     $parent = Parents::find($student->parent_id);
-
     if ($parent) {
         $parentData = $request->only([
             'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
@@ -2739,12 +2605,42 @@ public function updateStudentAndParent(Request $request, $studentId)
             $contactDetails->update(['phone_no' => $parent->m_mobile]);
         }
 
-        // Update email ID as username preference
+        // Update email ID as username preference and call the external API if it has changed
         $user = UserMaster::where('reg_id', $student->parent_id)->first();
-        if ($request->input('SetEmailIDAsUsername') == 'Father') {  
+        $apiData = [
+            'user_id' => '',
+            'short_name' => 'SACS',
+        ];
+
+        $oldEmailPreference = $user->user_id; // Store old email preference for comparison
+
+
+        if ($request->input('SetEmailIDAsUsername') == 'Father') {
+            $apiData['user_id'] = $parent->f_email;
             $user->update(['user_id' => $parent->f_email]);
         } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
+            $apiData['user_id'] = $parent->m_emailid;
             $user->update(['user_id' => $parent->m_emailid]);
+        } elseif ($request->input('SetEmailIDAsUsername') == 'FatherMob') {
+            $apiData['user_id'] = $parent->f_mobile; 
+            $user->update(['user_id' => $parent->f_mobile]);
+        } elseif ($request->input('SetEmailIDAsUsername') == 'MotherMob') {
+            $apiData['user_id'] = $parent->m_mobile; 
+            $user->update(['user_id' => $parent->m_mobile]);
+        }
+        
+
+        // Check if the email preference changed
+        if ($oldEmailPreference != $apiData['user_id']) {
+            // Call the external API only if the email preference has changed
+            $response = Http::post('http://aceventura.in/demo/evolvuUserService/user_create_new', $apiData);
+
+            // Handle the API response if needed
+            if ($response->successful()) {
+                // You can log the response or handle further logic here if needed
+            } else {
+                return response()->json(['error' => 'Failed to call the API.'], 500);
+            }
         }
 
         $parent->update($parentData);
@@ -2756,6 +2652,8 @@ public function updateStudentAndParent(Request $request, $studentId)
         "data" => $student
     ]);
 }
+
+
 
 
 // get all the class and their associated Division.
@@ -3936,6 +3834,241 @@ public function deleteSubjectForReportCard($sub_rc_master_id)
 }
 
 
+// Method for Subject Allotment for the report Card 
+ 
+public function getSubjectAllotmentForReportCard(Request $request,$class_id)
+{  
+     $payload = getTokenPayload($request);    
+    $academicYr = $payload->get('academic_year');
+
+    $subjectAllotments = SubjectAllotmentForReportCard::where('academic_yr',$academicYr)
+                                ->where('class_id', $class_id)
+                                ->with('getSubjectsForReportCard')
+                                ->get();
+
+    return response()->json([
+        'subjectAllotments' => $subjectAllotments,
+    ]);
+}
+// for Edit 
+public function getSubjectAllotmentById($sub_reportcard_id)
+{
+    $subjectAllotment = SubjectAllotmentForReportCard::where('sub_reportcard_id', $sub_reportcard_id)
+                                ->with('getSubjectsForReportCard')
+                                ->first();
+
+    if (!$subjectAllotment) {
+        return response()->json(['error' => 'Subject Allotment not found'], 404);
+    }
+
+    return response()->json([
+        'subjectAllotment' => $subjectAllotment,
+    ]);
+}
+
+// for update 
+public function updateSubjectType(Request $request, $sub_reportcard_id)
+{
+    $subjectAllotment = SubjectAllotmentForReportCard::find($sub_reportcard_id);
+    if (!$subjectAllotment) {
+        return response()->json(['error' => 'Subject Allotment not found'], 404);
+    }
+
+    $request->validate([
+        'subject_type' => 'required|string',
+    ]);
+    $payload = getTokenPayload($request);    
+    $academicYr = $payload->get('academic_year');
+
+    $subjectAllotment->subject_type = $request->input('subject_type');
+    $subjectAllotment->academic_yr = $academicYr;
+
+    $subjectAllotment->save();
+
+    return response()->json(['message' => 'Subject type updated successfully']);
+}
+
+// for delete
+public function deleteSubjectAllotmentforReportcard($sub_reportcard_id)
+{
+    $subjectAllotment = SubjectAllotmentForReportCard::find($sub_reportcard_id);
+
+    if (!$subjectAllotment) {
+        return response()->json(['error' => 'Subject Allotment not found'], 404);
+    }
+
+    // Check if the subject allotment is associated with any MarkHeading
+    $isAssociatedWithMarkHeading = MarkHeading::where('sub_reportcard_id', $sub_reportcard_id)->exists();
+
+    if ($isAssociatedWithMarkHeading) {
+        return response()->json(['error' => 'Cannot delete: Subject allotment is associated with a Mark Heading'], 400);
+    }
+
+    // Hard delete the subject allotment
+    $subjectAllotment->delete();
+
+    return response()->json(['message' => 'Subject allotment deleted successfully']);
+}
+   // for the Edit 
+public function editSubjectAllotmentforReportCard(Request $request, $class_id, $subject_type)
+{   
+    $payload = getTokenPayload($request);    
+    $academicYr = $payload->get('academic_year');
+    // Fetch the list of subjects for the selected class_id and subject_type
+    $subjectAllotments = SubjectAllotmentForReportCard::where('academic_yr',$academicYr)
+                                    ->where('class_id', $class_id)
+                                    ->where('subject_type', $subject_type)
+                                    ->with('getSubjectsForReportCard') // Include subject details
+                                    ->get();
+
+    // Check if subject allotments are found
+    if ($subjectAllotments->isEmpty()) {
+        return response()->json(['error' => 'No subject allotments found for the selected class and subject type'], 404);
+    }
+
+    return response()->json([
+        'message' => 'Subject allotments retrieved successfully',
+        'subjectAllotments' => $subjectAllotments,
+    ]);
+}
+
+public function createOrUpdateSubjectAllotment(Request $request, $class_id)
+{
+    // Validate the request parameters
+    $request->validate([
+        'subject_type'     => 'required|string',
+        'subject_ids'      => 'required|array', // Input: array of subject IDs (sub_rc_master_id)
+        'subject_ids.*'    => 'integer',        // Each subject ID must be an integer
+    ]);
+
+    // Log incoming request data
+    Log::info('Received request to create/update subject allotment', [
+        'class_id' => $class_id,
+        'subject_type' => $request->input('subject_type'),
+        'subject_ids' => $request->input('subject_ids')
+    ]);
+
+    // Fetch the existing subject allotments for the class and subject_type
+    $existingAllotments = SubjectAllotmentForReportCard::where('class_id', $class_id)
+                                    ->where('subject_type', $request->input('subject_type'))
+                                    ->get();
+
+    // Log existing subject allotments
+    Log::info('Fetched existing subject allotments', ['existingAllotments' => $existingAllotments]);
+
+    // Extract the existing sub_rc_master_id values
+    $existingSubjectIds = $existingAllotments->pluck('sub_rc_master_id')->toArray();
+
+    // Input subject IDs to be compared with existing records
+    $inputSubjectIds = $request->input('subject_ids'); 
+
+    // Find subjects that need to be added (in input but not in existing)
+    $newSubjectIds = array_diff($inputSubjectIds, $existingSubjectIds);
+
+    // Find subjects that need to be deallocated (in existing but not in input)
+    $deallocateSubjectIds = array_diff($existingSubjectIds, $inputSubjectIds);
+
+    // Find subjects that need to be updated (in both input and existing)
+    $updateSubjectIds = array_intersect($inputSubjectIds, $existingSubjectIds);
+
+    // Log comparison results
+    Log::info('Subject comparison results', [
+        'newSubjectIds' => $newSubjectIds,
+        'updateSubjectIds' => $updateSubjectIds,
+        'deallocateSubjectIds' => $deallocateSubjectIds
+    ]);
+
+    // Create new allotments for the new subjects
+    foreach ($newSubjectIds as $subjectId) {
+        SubjectAllotmentForReportCard::create([
+            'class_id'         => $class_id,
+            'sub_rc_master_id' => $subjectId,
+            'subject_type'     => $request->input('subject_type'),
+            'academic_yr'      => $request->input('academic_yr', now()->year),
+        ]);
+
+        // Log the new subject creation
+        Log::info('Created new subject allotment', [
+            'class_id' => $class_id,
+            'sub_rc_master_id' => $subjectId,
+            'subject_type' => $request->input('subject_type')
+        ]);
+    }
+
+    // Update the existing records for subjects that are in both the input and existing
+    foreach ($updateSubjectIds as $subjectId) {
+        $allotment = SubjectAllotmentForReportCard::where('class_id', $class_id)
+                            ->where('subject_type', $request->input('subject_type'))
+                            ->where('sub_rc_master_id', $subjectId)
+                            ->first();
+
+        if ($allotment) {
+            $allotment->sub_rc_master_id = $subjectId;
+            $allotment->save();
+
+            // Log the update
+            Log::info('Updated subject allotment', [
+                'class_id' => $class_id,
+                'sub_rc_master_id' => $subjectId,
+                'subject_type' => $request->input('subject_type')
+            ]);
+        } else {
+            Log::warning('Subject allotment not found for updating', [
+                'class_id' => $class_id,
+                'sub_rc_master_id' => $subjectId,
+                'subject_type' => $request->input('subject_type')
+            ]);
+            return response()->json(['error' => 'Subject Allotment not found'], 404);
+        }
+    }
+
+    // Deallocate the subjects that are no longer in the input (set sub_rc_master_id to null)
+    foreach ($deallocateSubjectIds as $subjectId) {
+        $allotment = SubjectAllotmentForReportCard::where('class_id', $class_id)
+                            ->where('subject_type', $request->input('subject_type'))
+                            ->where('sub_rc_master_id', $subjectId)
+                            ->first();
+
+        if ($allotment) {
+            $allotment->sub_rc_master_id = null; // Set to null to deallocate
+            $allotment->save();
+
+            // Log the deallocation
+            Log::info('Deallocated subject', [
+                'class_id' => $class_id,
+                'sub_rc_master_id' => $subjectId,
+                'subject_type' => $request->input('subject_type')
+            ]);
+        } else {
+            Log::warning('Subject allotment not found for deallocation', [
+                'class_id' => $class_id,
+                'sub_rc_master_id' => $subjectId,
+                'subject_type' => $request->input('subject_type')
+            ]);
+            return response()->json(['error' => 'Subject Allotment not found'], 404);
+        }
+    }
+
+    // Log completion
+    Log::info('Subject allotments updated successfully for class_id', ['class_id' => $class_id]);
+
+    return response()->json(['message' => 'Subject allotments updated successfully']);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4052,7 +4185,459 @@ public function deleteSubjectForReportCard($sub_rc_master_id)
 
 
 
+// public function updateStudentAndParent(Request $request, $studentId)
+// {
+//     // Validate the incoming request for all fields
+//     $validatedData = $request->validate([
+//         // Student model fields
+//         'first_name' => 'required|string|max:255',
+//         'mid_name' => 'nullable|string|max:255',
+//         'last_name' => 'required|string|max:255',
+//         'student_name' => 'nullable|string|max:255',
+//         'dob' => 'required|date',
+//         'gender' => 'required|string',
+//         'admission_date' => 'nullable|date',
+//         'stud_id_no' => 'nullable|string|max:255',
+//         'mother_tongue' => 'nullable|string|max:255',
+//         'birth_place' => 'nullable|string|max:255',
+//         'admission_class' => 'nullable|string|max:255',
+//         'roll_no' => 'nullable|string|max:255',
+//         'class_id' => 'required|integer',
+//         'section_id' => 'nullable|integer',
+//         'fees_paid' => 'nullable|numeric',
+//         'blood_group' => 'nullable|string|max:255',
+//         'religion' => 'nullable|string|max:255',
+//         'caste' => 'nullable|string|max:255',
+//         'subcaste' => 'nullable|string|max:255',
+//         'transport_mode' => 'nullable|string|max:255',
+//         'vehicle_no' => 'nullable|string|max:255',
+//         'bus_id' => 'nullable|integer',
+//         'emergency_name' => 'nullable|string|max:255',
+//         'emergency_contact' => 'nullable|string|max:255',
+//         'emergency_add' => 'nullable|string|max:255',
+//         'height' => 'nullable|numeric',
+//         'weight' => 'nullable|numeric',
+//         'has_specs' => 'nullable|boolean',
+//         'allergies' => 'nullable|string|max:255',
+//         'nationality' => 'nullable|string|max:255',
+//         'permant_add' => 'nullable|string|max:255',
+//         'city' => 'nullable|string|max:255',
+//         'state' => 'nullable|string|max:255',
+//         'pincode' => 'nullable|string|max:255',
+//         'IsDelete' => 'nullable|boolean',
+//         'prev_year_student_id' => 'nullable|integer',
+//         'isPromoted' => 'nullable|boolean',
+//         'isNew' => 'nullable|boolean',
+//         'isModify' => 'nullable|boolean',
+//         'isActive' => 'nullable|boolean',
+//         'reg_no' => 'nullable|string|max:255',
+//         'house' => 'nullable|string|max:255',
+//         'stu_aadhaar_no' => 'nullable|string|max:255',
+//         'category' => 'nullable|string|max:255',
+//         'last_date' => 'nullable|date',
+//         'slc_no' => 'nullable|string|max:255',
+//         'slc_issue_date' => 'nullable|date',
+//         'leaving_remark' => 'nullable|string|max:255',
+//         'deleted_date' => 'nullable|date',
+//         'deleted_by' => 'nullable|string|max:255',
+//         'image_name' => 'nullable|string|max:255',
+//         'guardian_name' => 'nullable|string|max:255',
+//         'guardian_add' => 'nullable|string|max:255',
+//         'guardian_mobile' => 'nullable|string|max:255',
+//         'relation' => 'nullable|string|max:255',
+//         'guardian_image_name' => 'nullable|string|max:255',
+//         'udise_pen_no' => 'nullable|string|max:255',
+//         'added_bk_date' => 'nullable|date',
+//         'added_by' => 'nullable|string|max:255',
 
+//         // Parent model fields
+//         'father_name' => 'nullable|string|max:255',
+//         'father_occupation' => 'nullable|string|max:255',
+//         'f_office_add' => 'nullable|string|max:255',
+//         'f_office_tel' => 'nullable|string|max:255',
+//         'f_mobile' => 'nullable|string|max:255',
+//         'f_email' => 'nullable|string|max:255',
+//         'mother_name' => 'nullable|string|max:255',
+//         'mother_occupation' => 'nullable|string|max:255',
+//         'm_office_add' => 'nullable|string|max:255',
+//         'm_office_tel' => 'nullable|string|max:255',
+//         'm_mobile' => 'nullable|string|max:255',
+//         'm_emailid' => 'nullable|string|max:255',
+//         'parent_adhar_no' => 'nullable|string|max:255',
+//         'm_adhar_no' => 'nullable|string|max:255',
+//         'f_dob' => 'nullable|date',
+//         'm_dob' => 'nullable|date',
+//         'f_blood_group' => 'nullable|string|max:255',
+//         'm_blood_group' => 'nullable|string|max:255',
+//         'father_image_name' => 'nullable|string|max:255',
+//         'mother_image_name' => 'nullable|string|max:255',
+
+//         'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
+//         'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother',
+//     ]);
+
+//     // Retrieve the token payload
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     // Find the student by ID
+//     $student = Student::find($studentId);
+
+//     if (!$student) {
+//         return response()->json(['error' => 'Student not found'], 404);
+//     }
+
+//     // Handle student image if provided
+//     if ($request->has('student_image')) {
+//         $base64Image = $request->input('student_image');
+//         $imageParts = explode(';', $base64Image);
+//         $imageType = explode(':', $imageParts[0])[1];
+//         $imageExtension = str_replace('image/', '', $imageType);
+//         $image = str_replace('data:image/' . $imageExtension . ';base64,', '', $base64Image);
+//         $image = str_replace(' ', '+', $image);
+//         $imageName = $studentId . '.' . $imageExtension;
+//         $imagePath = public_path('uploads/student_image');
+
+//         // Create directory if it doesn't exist
+//         if (!file_exists($imagePath)) {
+//             mkdir($imagePath, 0755, true);
+//         }
+
+//         // Save the image
+//         file_put_contents($imagePath . '/' . $imageName, base64_decode($image));
+//         $validatedData['image_name'] = $imageName;
+//     }
+
+//     // Include academic year in the update data
+//     $validatedData['academic_yr'] = $academicYr;
+
+//     // Update student information
+//     $student->update($validatedData);
+
+//     // Handle parent details if provided
+//     $parent = Parents::find($student->parent_id);
+
+//     if ($parent) {
+//         $parentData = $request->only([
+//             'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
+//             'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
+//             'parent_adhar_no', 'm_adhar_no', 'f_dob', 'm_dob', 'f_blood_group', 'm_blood_group',
+//         ]);
+
+//         // Update SMS contact preference
+//         $contactDetails = ContactDetails::where('id', $student->parent_id)->first();
+//         if ($request->input('SetToReceiveSMS') == 'Father') {
+//             $contactDetails->update(['phone_no' => $parent->f_mobile]);
+//         } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
+//             $contactDetails->update(['phone_no' => $parent->m_mobile]);
+//         }
+
+//         // Update email ID as username preference
+//         $user = UserMaster::where('reg_id', $student->parent_id)->first();
+//         if ($request->input('SetEmailIDAsUsername') == 'Father') {  
+//             $user->update(['user_id' => $parent->f_email]);
+//         } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
+//             $user->update(['user_id' => $parent->m_emailid]);
+//         }
+
+//         $parent->update($parentData);
+//     }
+
+//     return response()->json([
+//         "status" => "success",
+//         "message" => "Student updated successfully",
+//         "data" => $student
+//     ]);
+// }
+
+
+// public function updateStudentAndParent(Request $request, $studentId)
+// {
+//     // Validate the incoming request for all fields
+//     $validatedData = $request->validate([
+//         // Student model fields
+//         'first_name' => 'required|string|max:100',
+//         'mid_name' => 'nullable|string|max:100',
+//         'last_name' => 'required|string|max:100',
+//         'house' => 'nullable|string|max:100',
+//         'student_name' => 'required|string|max:100',
+//         'dob' => 'required|date',
+//         'admission_date' => 'required|date', // Changed from 'nullable' to 'required'
+//         'stud_id_no' => 'nullable|string|max:25',
+//         'stu_aadhaar_no' => 'required|string|max:14',
+//         'gender' => 'required|string',
+//         'mother_tongue' => 'required|string|max:20', // Changed from 'nullable' to 'required'
+//         'birth_place' => 'nullable|string|max:50',
+//         'admission_class' => 'required|string|max:255',
+//         'city' => 'required|string|max:100', // Changed from 'nullable' to 'required'
+//         'state' => 'required|string|max:100', // Changed from 'nullable' to 'required'
+//         'roll_no' => 'nullable|string|max:11',
+//         'class_id' => 'required|integer',
+//         'section_id' => 'required|integer', // Changed from 'nullable' to 'required'
+//         'religion' => 'required|string|max:255', // Changed from 'nullable' to 'required'
+//         'caste' => 'nullable|string|max:100',
+//         'subcaste' => 'required|string|max:255', // Changed from 'nullable' to 'required'
+//         'vehicle_no' => 'nullable|string|max:13',
+//         'emergency_name' => 'nullable|string|max:100',
+//         'emergency_contact' => 'nullable|string|max:11',
+//         'emergency_add' => 'nullable|string|max:200',
+//         'height' => 'nullable|numeric|max:4.1',
+//         'weight' => 'nullable|numeric|max:4.1',
+//         'allergies' => 'nullable|string|max:200',
+//         'nationality' => 'required|string|max:100', // Changed from 'nullable' to 'required'
+//         'pincode' => 'nullable|string|max:11',
+//         'image_name' => 'nullable|string|max:255',
+
+//         // Parent model fields
+//         'father_name' => 'required|string|max:100',
+//         'father_occupation' => 'nullable|string|max:100',
+//         'f_office_add' => 'nullable|string|max:200',
+//         'f_office_tel' => 'nullable|string|max:11',
+//         'f_mobile' => 'required|string|max:10', // Changed from 'nullable' to 'required'
+//         'f_email' => 'required|string|max:50', // Changed from 'nullable' to 'required'
+//         'father_adhar_card' => 'required|string|max:14',
+//         'mother_name' => 'required|string|max:100',
+//         'mother_occupation' => 'nullable|string|max:100',
+//         'm_office_add' => 'nullable|string|max:200',
+//         'm_office_tel' => 'nullable|string|max:11',
+//         'm_mobile' => 'required|string|max:10', // Changed from 'nullable' to 'required'
+//         'm_emailid' => 'required|string|max:50', // Changed from 'nullable' to 'required'
+//         'mother_adhar_card' => 'required|string|max:14',
+
+//         // Preferences for SMS and email as username
+//         'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
+//         'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother',
+//     ]);
+
+//     // Retrieve the token payload
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     // Find the student by ID
+//     $student = Student::find($studentId);
+
+//     if (!$student) {
+//         return response()->json(['error' => 'Student not found'], 404);
+//     }
+
+//     // Handle student image if provided
+//     if ($request->has('student_image')) {
+//         $base64Image = $request->input('student_image');
+//         $imageParts = explode(';', $base64Image);
+//         $imageType = explode(':', $imageParts[0])[1];
+//         $imageExtension = str_replace('image/', '', $imageType);
+//         $image = str_replace('data:image/' . $imageExtension . ';base64,', '', $base64Image);
+//         $image = str_replace(' ', '+', $image);
+//         $imageName = $studentId . '.' . $imageExtension;
+//         $imagePath = public_path('uploads/student_image');
+
+//         // Create directory if it doesn't exist
+//         if (!file_exists($imagePath)) {
+//             mkdir($imagePath, 0755, true);
+//         }
+
+//         // Save the image
+//         file_put_contents($imagePath . '/' . $imageName, base64_decode($image));
+//         $validatedData['image_name'] = $imageName;
+//     }
+
+//     // Include academic year in the update data
+//     $validatedData['academic_yr'] = $academicYr;
+
+//     // Update student information
+//     $student->update($validatedData);
+
+//     // Handle parent details if provided
+//     $parent = Parents::find($student->parent_id);
+
+//     if ($parent) {
+//         $parentData = $request->only([
+//             'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
+//             'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
+//             'parent_adhar_no', 'm_adhar_no', 'father_adhar_card', 'mother_adhar_card',
+//         ]);
+
+//         // Update SMS contact preference
+//         $contactDetails = ContactDetails::where('id', $student->parent_id)->first();
+//         if ($request->input('SetToReceiveSMS') == 'Father') {
+//             $contactDetails->update(['phone_no' => $parent->f_mobile]);
+//         } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
+//             $contactDetails->update(['phone_no' => $parent->m_mobile]);
+//         }
+
+//         // Update email ID as username preference
+//         $user = UserMaster::where('reg_id', $student->parent_id)->first();
+//         if ($request->input('SetEmailIDAsUsername') == 'Father') {  
+//             $user->update(['user_id' => $parent->f_email]);
+//         } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
+//             $user->update(['user_id' => $parent->m_emailid]);
+//         }
+
+//         $parent->update($parentData);
+//     }
+
+//     return response()->json([
+//         "status" => "success",
+//         "message" => "Student and parent information updated successfully",
+//         "data" => $student
+//     ]);
+// }
+
+
+// public function updateStudentAndParent(Request $request, $studentId)
+// {
+//     // Validate the incoming request for all fields
+//     $validatedData = $request->validate([
+//         // Student model fields
+//         'first_name' => 'required|string|max:100',
+//         'mid_name' => 'nullable|string|max:100',
+//         'last_name' => 'required|string|max:100',
+//         'house' => 'nullable|string|max:100',
+//         'student_name' => 'required|string|max:100',
+//         'dob' => 'required|date',
+//         'admission_date' => 'required|date',
+//         'stud_id_no' => 'nullable|string|max:25',
+//         'stu_aadhaar_no' => 'required|string|max:14',
+//         'gender' => 'required|string',
+//         'mother_tongue' => 'required|string|max:20',
+//         'birth_place' => 'nullable|string|max:50',
+//         'admission_class' => 'required|string|max:255',
+//         'city' => 'required|string|max:100',
+//         'state' => 'required|string|max:100',
+//         'roll_no' => 'nullable|string|max:11',
+//         'class_id' => 'required|integer',
+//         'section_id' => 'required|integer',
+//         'religion' => 'required|string|max:255',
+//         'caste' => 'nullable|string|max:100',
+//         'subcaste' => 'required|string|max:255',
+//         'vehicle_no' => 'nullable|string|max:13',
+//         'emergency_name' => 'nullable|string|max:100',
+//         'emergency_contact' => 'nullable|string|max:11',
+//         'emergency_add' => 'nullable|string|max:200',
+//         'height' => 'nullable|numeric|max:4.1',
+//         'weight' => 'nullable|numeric|max:4.1',
+//         'allergies' => 'nullable|string|max:200',
+//         'nationality' => 'required|string|max:100',
+//         'pincode' => 'nullable|string|max:11',
+//         'image_name' => 'nullable|string|max:255',
+
+//         // Parent model fields
+//         'father_name' => 'required|string|max:100',
+//         'father_occupation' => 'nullable|string|max:100',
+//         'f_office_add' => 'nullable|string|max:200',
+//         'f_office_tel' => 'nullable|string|max:11',
+//         'f_mobile' => 'required|string|max:10',
+//         'f_email' => 'required|string|max:50',
+//         'father_adhar_card' => 'required|string|max:14',
+//         'mother_name' => 'required|string|max:100',
+//         'mother_occupation' => 'nullable|string|max:100',
+//         'm_office_add' => 'nullable|string|max:200',
+//         'm_office_tel' => 'nullable|string|max:11',
+//         'm_mobile' => 'required|string|max:10',
+//         'm_emailid' => 'required|string|max:50',
+//         'mother_adhar_card' => 'required|string|max:14',
+
+//         // Preferences for SMS and email as username
+//         'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
+//         'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother',
+//     ]);
+
+//     // Retrieve the token payload
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     // Find the student by ID
+//     $student = Student::find($studentId);
+//     if (!$student) {
+//         return response()->json(['error' => 'Student not found'], 404);
+//     }
+
+//     // Check if specified fields have changed
+//     $fieldsToCheck = ['first_name', 'mid_name', 'last_name', 'class_id', 'section_id', 'roll_no'];
+//     $isModified = false;
+
+//     foreach ($fieldsToCheck as $field) {
+//         if ($student->$field != $validatedData[$field]) {
+//             $isModified = true;
+//             break;
+//         }
+//     }
+
+//     // If any of the fields are modified, set 'is_modify' to 'Y'
+//     if ($isModified) {
+//         $validatedData['is_modify'] = 'Y';
+//     }
+
+//     // Handle student image if provided
+//     if ($request->has('student_image')) {
+//         $base64Image = $request->input('student_image');
+//         $imageParts = explode(';', $base64Image);
+//         $imageType = explode(':', $imageParts[0])[1];
+//         $imageExtension = str_replace('image/', '', $imageType);
+//         $image = str_replace('data:image/' . $imageExtension . ';base64,', '', $base64Image);
+//         $image = str_replace(' ', '+', $image);
+//         $imageName = $studentId . '.' . $imageExtension;
+//         $imagePath = public_path('uploads/student_image');
+
+//         if (!file_exists($imagePath)) {
+//             mkdir($imagePath, 0755, true);
+//         }
+
+//         file_put_contents($imagePath . '/' . $imageName, base64_decode($image));
+//         $validatedData['image_name'] = $imageName;
+//     }
+
+//     // Include academic year in the update data
+//     $validatedData['academic_yr'] = $academicYr;
+
+//     // Update student information
+//     $student->update($validatedData);
+
+//     // Handle parent details if provided
+//     $parent = Parents::find($student->parent_id);
+//     if ($parent) {
+//         $parentData = $request->only([
+//             'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
+//             'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
+//             'parent_adhar_no', 'm_adhar_no', 'father_adhar_card', 'mother_adhar_card',
+//         ]);
+
+//         // Update SMS contact preference
+//         $contactDetails = ContactDetails::where('id', $student->parent_id)->first();
+//         if ($request->input('SetToReceiveSMS') == 'Father') {
+//             $contactDetails->update(['phone_no' => $parent->f_mobile]);
+//         } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
+//             $contactDetails->update(['phone_no' => $parent->m_mobile]);
+//         }
+
+//         // Update email ID as username preference
+//         $user = UserMaster::where('reg_id', $student->parent_id)->first();
+//         if ($request->input('SetEmailIDAsUsername') == 'Father') {
+//             $user->update(['user_id' => $parent->f_email]);
+//         } elseif ($request->input('SetEmailIDAsUsername') == 'Mother') {
+//             $user->update(['user_id' => $parent->m_emailid]);
+//         }
+
+        
+
+//         $parent->update($parentData);
+//     }
+
+//     return response()->json([
+//         "status" => "success",
+//         "message" => "Student and parent information updated successfully",
+//         "data" => $student
+//     ]);
+// }
 
 
 
