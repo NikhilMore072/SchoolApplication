@@ -2036,7 +2036,8 @@ public function updateStaff(Request $request, $id)
             'blood_group' => 'nullable|string|max:10',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
-            'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+            // 'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+            'email' => 'required|string|email',
             'designation' => 'nullable|string|max:255',
             'academic_qual' => 'nullable|array',
             'academic_qual.*' => 'nullable|string|max:255',
@@ -2044,7 +2045,7 @@ public function updateStaff(Request $request, $id)
             'special_sub' => 'nullable|string|max:255',
             'trained' => 'nullable|string|max:255',
             'experience' => 'nullable|string|max:255',
-            'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
+            'aadhar_card_no' => 'nullable|string',
             'teacher_image_name' => 'nullable|string', // Base64 string
             // 'role' => 'required|string|max:255',
         ], $messages);
