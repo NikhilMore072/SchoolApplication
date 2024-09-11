@@ -2046,7 +2046,7 @@ public function updateStaff(Request $request, $id)
             'experience' => 'nullable|string|max:255',
             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no,' . $id . ',teacher_id',
             'teacher_image_name' => 'nullable|string', // Base64 string
-            'role' => 'required|string|max:255',
+            // 'role' => 'required|string|max:255',
         ], $messages);
 
         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
