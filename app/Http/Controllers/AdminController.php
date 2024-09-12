@@ -2942,12 +2942,51 @@ public function updateStudentAndParent(Request $request, $studentId)
             ]);
 
             // Update SMS contact preference
-            $contactDetails = ContactDetails::where('id', $student->parent_id)->first();
+            // $contactDetails = ContactDetails::where('id', $student->parent_id)->first();
+            // if ($request->input('SetToReceiveSMS') == 'Father') {
+            //     $contactDetails->update(['phone_no' => $parent->f_mobile]);
+            // } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
+            //     $contactDetails->update(['phone_no' => $parent->m_mobile]);
+            // }
+
+            $contactDetails = ContactDetails::find($student->parent_id);
+
+          // Determine the phone number based on the 'SetToReceiveSMS' input
             if ($request->input('SetToReceiveSMS') == 'Father') {
-                $contactDetails->update(['phone_no' => $parent->f_mobile]);
+                $phoneNo = $parent->f_mobile;
             } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
-                $contactDetails->update(['phone_no' => $parent->m_mobile]);
+                $phoneNo = $parent->m_mobile;
+            } else {
+                $phoneNo = null; // Handle invalid selection
             }
+
+            // Check if a record already exists with parent_id as the id
+            $contactDetails = ContactDetails::find($student->parent_id);
+
+            if ($contactDetails) {
+                // If the record exists, update the contact details
+                $contactDetails->update([
+                    'phone_no' => $phoneNo,
+                    'alternate_phone_no' => $parent->f_mobile, // Assuming alternate phone is Father's mobile number
+                    'email_id' => $parent->f_email, // Father's email
+                    'm_emailid' => $parent->m_emailid, // Mother's email
+                    'sms_consent' => 'y', // Store consent for SMS
+                ]);
+            } else {
+                // If the record doesn't exist, create a new one with parent_id as the id
+                DB::insert('INSERT INTO contact_details (id, phone_no, alternate_phone_no, email_id, m_emailid, sms_consent) VALUES (?, ?, ?, ?, ?, ?)', [
+                    $student->parent_id,
+                    $phoneNo,
+                    $parent->f_mobile,
+                    $parent->f_email,
+                    $parent->m_emailid,
+                    'y', // sms_consent
+                ]);
+            }
+
+
+            
+
 
             // Update email ID as username preference
             $user = UserMaster::where('reg_id', $student->parent_id)->first();
