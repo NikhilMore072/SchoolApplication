@@ -3029,6 +3029,58 @@ public function updateStudentAndParent(Request $request, $studentId)
 }
 
 
+public function checkUserId($studentId, $userId)
+{
+    try {
+        // Log the start of the request
+        Log::info("Checking user ID: {$userId} for student ID: {$studentId}");
+
+        // Retrieve the student record to get the parent_id
+        $student = Student::find($studentId);
+        if (!$student) {
+            Log::error("Student not found: ID {$studentId}");
+            return response()->json(['error' => 'Student not found'], 404);
+        }
+
+        $parentId = $student->parent_id;
+        
+        // Retrieve the user_id associated with this parent_id
+        $parentUser = UserMaster::where('role_id', 'P')
+            ->where('reg_id', $parentId)
+            ->first();
+
+          
+
+            // return response()->json($parentUser);
+
+        if (!$parentUser) {
+            Log::error("User not found for parent_id: {$parentId}");
+            return response()->json(['error' => 'User not found for the given parent ID'], 404);
+        }
+
+        $excludedUserId = $parentUser->user_id;
+
+        $userExists = UserMaster::where('reg_id',$parentId)
+            ->where('user_id', $userId)
+            ->where('role_id','P')
+            ->where('user_id', '=', $excludedUserId) 
+            ->exists();
+
+        if ($userExists) {
+            Log::info("User ID exists and is not excluded for student ID: {$studentId}");
+            return response()->json(['exists' => true], 200);
+        } else {
+            Log::info("User ID does not exist or is excluded for student ID: {$studentId}");
+            return response()->json(['exists' => false], 200);
+        }
+    } catch (\Exception $e) {
+        Log::error("Error checking user ID: " . $e->getMessage());
+        return response()->json([
+            'error' => 'Failed to check user ID.',
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
 
 
 

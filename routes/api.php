@@ -270,6 +270,8 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::delete('/students/{studentId}', [AdminController::class, 'deleteStudent']);
         Route::patch('/students/{studentId}/deactivate', [AdminController::class, 'toggleActiveStudent']); // Done.
         Route::put('/students/{studentId}', [AdminController::class, 'updateStudentAndParent']);
+        Route::get('/check-user-id/{studentId}/{userId}', [AdminController::class, 'checkUserId']);  // API for the User_id unique check 
+
       
 
         //routes for the SubjectForReportCard
