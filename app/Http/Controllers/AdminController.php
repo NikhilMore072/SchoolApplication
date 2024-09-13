@@ -3839,13 +3839,6 @@ public function updateTeacherAllotment(Request $request, $classId, $sectionId)
     ]);
 }
 
-
-
-
-
-
-
-
 private function determineSubjectId($academicYr, $smId, $teacherId, $existingTeacherRecords)
 {
     Log::info('Determining subject_id', [
@@ -3925,9 +3918,6 @@ public function getSubjectsbyDivision(Request $request, $sectionId)
     ]);
 }
 
-
-
-
 public function getPresignSubjectByDivision(Request $request, $classId)
 {
     $payload = getTokenPayload($request);
@@ -3961,10 +3951,6 @@ public function getPresignSubjectByDivision(Request $request, $classId)
         'count' => $count
     ]);
 }
-
-
-
-
 
 public function getPresignSubjectByTeacher(Request $request,$classID, $sectionId,$teacherID)
 {
@@ -4105,9 +4091,6 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
     return response()->json(['success' => 'Subject allotments updated or created successfully']);
 }
 
-
-
-
 // Metods for the Subject for report card  
 public function getSubjectsForReportCard(Request $request)
 {
@@ -4123,8 +4106,9 @@ public function checkSubjectNameForReportCard(Request $request)
         'name' => 'required|string|max:30',
     ]);
 
-    $name = $validatedData['name'];
-    $exists = SubjectForReportCard::where(DB::raw('LOWER(name)'), strtolower($name))->exists();
+    $sequence = $validatedData['sequence'];
+    // $exists = SubjectForReportCard::where(DB::raw('LOWER(sequence)'), strtolower($name))->exists();
+    $exists = SubjectForReportCard::where('sequence', $sequence)->exists();
     return response()->json(['exists' => $exists]);
 }
 
@@ -4271,7 +4255,7 @@ public function getSubjectAllotmentForReportCard(Request $request,$class_id)
 
     $subjectAllotments = SubjectAllotmentForReportCard::where('academic_yr',$academicYr)
                                 ->where('class_id', $class_id)
-                                ->with('getSubjectsForReportCard')
+                                ->with('getSubjectsForReportCard','getClases')
                                 ->get();
 
     return response()->json([
@@ -4482,23 +4466,6 @@ public function createOrUpdateSubjectAllotment(Request $request, $class_id)
 
     return response()->json(['message' => 'Subject allotments updated successfully']);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
 
