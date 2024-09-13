@@ -18,5 +18,8 @@ class SubjectAllotmentForReportCard extends Model
     public function getSubjectsForReportCard(){
         return $this->belongsTo(SubjectForReportCard::class,'sub_rc_master_id');
     }
-
+     
+    public function getClases(){
+        return $this->belongsTo(Classes::class,'class_id');
+    }
 }
