@@ -17,6 +17,7 @@ use App\Models\Division;
 use App\Mail\WelcomeEmail;
 use App\Models\Attendence;
 use App\Models\UserMaster;
+use App\Models\MarkHeading;
 use App\Models\StaffNotice;
 use Illuminate\Http\Request;
 use App\Models\SubjectMaster;
@@ -4309,12 +4310,12 @@ public function deleteSubjectAllotmentforReportcard($sub_reportcard_id)
         return response()->json(['error' => 'Subject Allotment not found'], 404);
     }
 
-    // Check if the subject allotment is associated with any MarkHeading
-    $isAssociatedWithMarkHeading = MarkHeading::where('sub_reportcard_id', $sub_reportcard_id)->exists();
+    // // Check if the subject allotment is associated with any MarkHeading
+    // $isAssociatedWithMarkHeading = MarkHeading::where('sub_reportcard_id', $sub_reportcard_id)->exists();
 
-    if ($isAssociatedWithMarkHeading) {
-        return response()->json(['error' => 'Cannot delete: Subject allotment is associated with a Mark Heading'], 400);
-    }
+    // if ($isAssociatedWithMarkHeading) {
+    //     return response()->json(['error' => 'Cannot delete: Subject allotment is associated with a Mark Heading'], 400);
+    // }
 
     // Hard delete the subject allotment
     $subjectAllotment->delete();
@@ -4344,53 +4345,166 @@ public function editSubjectAllotmentforReportCard(Request $request, $class_id, $
     ]);
 }
 
+// public function createOrUpdateSubjectAllotment(Request $request, $class_id)
+// {
+//     // Validate the request parameters
+//     $request->validate([
+//         'subject_type'     => 'required|string',
+//         'subject_ids'      => 'required|array', // Input: array of subject IDs (sub_rc_master_id)
+//         'subject_ids.*'    => 'integer',        // Each subject ID must be an integer
+//     ]);
+
+//     // Log incoming request data
+//     Log::info('Received request to create/update subject allotment', [
+//         'class_id' => $class_id,
+//         'subject_type' => $request->input('subject_type'),
+//         'subject_ids' => $request->input('subject_ids')
+//     ]);
+
+//     // Fetch the existing subject allotments for the class and subject_type
+//     $existingAllotments = SubjectAllotmentForReportCard::where('class_id', $class_id)
+//                                     ->where('subject_type', $request->input('subject_type'))
+//                                     ->get();
+
+//     // Log existing subject allotments
+//     Log::info('Fetched existing subject allotments', ['existingAllotments' => $existingAllotments]);
+
+//     // Extract the existing sub_rc_master_id values
+//     $existingSubjectIds = $existingAllotments->pluck('sub_rc_master_id')->toArray();
+
+//     // Input subject IDs to be compared with existing records
+//     $inputSubjectIds = $request->input('subject_ids'); 
+
+//     // Find subjects that need to be added (in input but not in existing)
+//     $newSubjectIds = array_diff($inputSubjectIds, $existingSubjectIds);
+
+//     // Find subjects that need to be deallocated (in existing but not in input)
+//     $deallocateSubjectIds = array_diff($existingSubjectIds, $inputSubjectIds);
+
+//     // Find subjects that need to be updated (in both input and existing)
+//     $updateSubjectIds = array_intersect($inputSubjectIds, $existingSubjectIds);
+
+//     // Log comparison results
+//     Log::info('Subject comparison results', [
+//         'newSubjectIds' => $newSubjectIds,
+//         'updateSubjectIds' => $updateSubjectIds,
+//         'deallocateSubjectIds' => $deallocateSubjectIds
+//     ]);
+
+//     // Create new allotments for the new subjects
+//     foreach ($newSubjectIds as $subjectId) {
+//         SubjectAllotmentForReportCard::create([
+//             'class_id'         => $class_id,
+//             'sub_rc_master_id' => $subjectId,
+//             'subject_type'     => $request->input('subject_type'),
+//             'academic_yr'      => $request->input('academic_yr', now()->year),
+//         ]);
+
+//         // Log the new subject creation
+//         Log::info('Created new subject allotment', [
+//             'class_id' => $class_id,
+//             'sub_rc_master_id' => $subjectId,
+//             'subject_type' => $request->input('subject_type')
+//         ]);
+//     }
+
+//     // Update the existing records for subjects that are in both the input and existing
+//     foreach ($updateSubjectIds as $subjectId) {
+//         $allotment = SubjectAllotmentForReportCard::where('class_id', $class_id)
+//                             ->where('subject_type', $request->input('subject_type'))
+//                             ->where('sub_rc_master_id', $subjectId)
+//                             ->first();
+
+//         if ($allotment) {
+//             $allotment->sub_rc_master_id = $subjectId;
+//             $allotment->save();
+
+//             // Log the update
+//             Log::info('Updated subject allotment', [
+//                 'class_id' => $class_id,
+//                 'sub_rc_master_id' => $subjectId,
+//                 'subject_type' => $request->input('subject_type')
+//             ]);
+//         } else {
+//             Log::warning('Subject allotment not found for updating', [
+//                 'class_id' => $class_id,
+//                 'sub_rc_master_id' => $subjectId,
+//                 'subject_type' => $request->input('subject_type')
+//             ]);
+//             return response()->json(['error' => 'Subject Allotment not found'], 404);
+//         }
+//     }
+
+//     // Deallocate the subjects that are no longer in the input (set sub_rc_master_id to null)
+//     foreach ($deallocateSubjectIds as $subjectId) {
+//         $allotment = SubjectAllotmentForReportCard::where('class_id', $class_id)
+//                             ->where('subject_type', $request->input('subject_type'))
+//                             ->where('sub_rc_master_id', $subjectId)
+//                             ->first();
+
+//         if ($allotment) {
+//             $allotment->sub_rc_master_id = null; // Set to null to deallocate
+//             $allotment->save();
+
+//             // Log the deallocation
+//             Log::info('Deallocated subject', [
+//                 'class_id' => $class_id,
+//                 'sub_rc_master_id' => $subjectId,
+//                 'subject_type' => $request->input('subject_type')
+//             ]);
+//         } else {
+//             Log::warning('Subject allotment not found for deallocation', [
+//                 'class_id' => $class_id,
+//                 'sub_rc_master_id' => $subjectId,
+//                 'subject_type' => $request->input('subject_type')
+//             ]);
+//             return response()->json(['error' => 'Subject Allotment not found'], 404);
+//         }
+//     }
+
+//     // Log completion
+//     Log::info('Subject allotments updated successfully for class_id', ['class_id' => $class_id]);
+
+//     return response()->json(['message' => 'Subject allotments updated successfully']);
+// }
+
 public function createOrUpdateSubjectAllotment(Request $request, $class_id)
 {
     // Validate the request parameters
     $request->validate([
         'subject_type'     => 'required|string',
-        'subject_ids'      => 'required|array', // Input: array of subject IDs (sub_rc_master_id)
-        'subject_ids.*'    => 'integer',        // Each subject ID must be an integer
+        'subject_ids'      => 'required|array',
+        'subject_ids.*'    => 'integer',
     ]);
 
-    // Log incoming request data
+    // Log the incoming request
     Log::info('Received request to create/update subject allotment', [
         'class_id' => $class_id,
         'subject_type' => $request->input('subject_type'),
         'subject_ids' => $request->input('subject_ids')
     ]);
 
-    // Fetch the existing subject allotments for the class and subject_type
+    // Fetch existing subject allotments
     $existingAllotments = SubjectAllotmentForReportCard::where('class_id', $class_id)
                                     ->where('subject_type', $request->input('subject_type'))
                                     ->get();
 
-    // Log existing subject allotments
     Log::info('Fetched existing subject allotments', ['existingAllotments' => $existingAllotments]);
 
-    // Extract the existing sub_rc_master_id values
     $existingSubjectIds = $existingAllotments->pluck('sub_rc_master_id')->toArray();
+    $inputSubjectIds = $request->input('subject_ids');
 
-    // Input subject IDs to be compared with existing records
-    $inputSubjectIds = $request->input('subject_ids'); 
-
-    // Find subjects that need to be added (in input but not in existing)
     $newSubjectIds = array_diff($inputSubjectIds, $existingSubjectIds);
-
-    // Find subjects that need to be deallocated (in existing but not in input)
     $deallocateSubjectIds = array_diff($existingSubjectIds, $inputSubjectIds);
-
-    // Find subjects that need to be updated (in both input and existing)
     $updateSubjectIds = array_intersect($inputSubjectIds, $existingSubjectIds);
 
-    // Log comparison results
-    Log::info('Subject comparison results', [
+    Log::info('Comparison results', [
         'newSubjectIds' => $newSubjectIds,
         'updateSubjectIds' => $updateSubjectIds,
         'deallocateSubjectIds' => $deallocateSubjectIds
     ]);
 
-    // Create new allotments for the new subjects
+    // Create new allotments
     foreach ($newSubjectIds as $subjectId) {
         SubjectAllotmentForReportCard::create([
             'class_id'         => $class_id,
@@ -4399,7 +4513,6 @@ public function createOrUpdateSubjectAllotment(Request $request, $class_id)
             'academic_yr'      => $request->input('academic_yr', now()->year),
         ]);
 
-        // Log the new subject creation
         Log::info('Created new subject allotment', [
             'class_id' => $class_id,
             'sub_rc_master_id' => $subjectId,
@@ -4407,25 +4520,28 @@ public function createOrUpdateSubjectAllotment(Request $request, $class_id)
         ]);
     }
 
-    // Update the existing records for subjects that are in both the input and existing
+    // Update existing allotments
     foreach ($updateSubjectIds as $subjectId) {
         $allotment = SubjectAllotmentForReportCard::where('class_id', $class_id)
-                            ->where('subject_type', $request->input('subject_type'))
-                            ->where('sub_rc_master_id', $subjectId)
-                            ->first();
+                        ->where('subject_type', $request->input('subject_type'))
+                        ->where('sub_rc_master_id', $subjectId)
+                        ->first();
+
+        Log::info('Fetched allotment for update', [
+            'allotment' => $allotment
+        ]);
 
         if ($allotment) {
             $allotment->sub_rc_master_id = $subjectId;
             $allotment->save();
 
-            // Log the update
             Log::info('Updated subject allotment', [
                 'class_id' => $class_id,
                 'sub_rc_master_id' => $subjectId,
                 'subject_type' => $request->input('subject_type')
             ]);
         } else {
-            Log::warning('Subject allotment not found for updating', [
+            Log::warning('Subject allotment not found for update', [
                 'class_id' => $class_id,
                 'sub_rc_master_id' => $subjectId,
                 'subject_type' => $request->input('subject_type')
@@ -4434,19 +4550,22 @@ public function createOrUpdateSubjectAllotment(Request $request, $class_id)
         }
     }
 
-    // Deallocate the subjects that are no longer in the input (set sub_rc_master_id to null)
+    // Deallocate subjects
     foreach ($deallocateSubjectIds as $subjectId) {
         $allotment = SubjectAllotmentForReportCard::where('class_id', $class_id)
-                            ->where('subject_type', $request->input('subject_type'))
-                            ->where('sub_rc_master_id', $subjectId)
-                            ->first();
+                        ->where('subject_type', $request->input('subject_type'))
+                        ->where('sub_rc_master_id', $subjectId)
+                        ->first();
+
+        Log::info('Fetched allotment for deallocation', [
+            'allotment' => $allotment
+        ]);
 
         if ($allotment) {
-            $allotment->sub_rc_master_id = null; // Set to null to deallocate
+            $allotment->sub_rc_master_id = null;
             $allotment->save();
 
-            // Log the deallocation
-            Log::info('Deallocated subject', [
+            Log::info('Deallocated subject allotment', [
                 'class_id' => $class_id,
                 'sub_rc_master_id' => $subjectId,
                 'subject_type' => $request->input('subject_type')
@@ -4461,11 +4580,12 @@ public function createOrUpdateSubjectAllotment(Request $request, $class_id)
         }
     }
 
-    // Log completion
     Log::info('Subject allotments updated successfully for class_id', ['class_id' => $class_id]);
 
     return response()->json(['message' => 'Subject allotments updated successfully']);
 }
+
+
 
 }
 

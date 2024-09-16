@@ -288,7 +288,9 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::put('/get_sub_report_allotted/{sub_reportcard_id}', [AdminController::class, 'updateSubjectType']);
         Route::delete('/get_sub_report_allotted/{sub_reportcard_id}', [AdminController::class, 'deleteSubjectAllotmentforReportcard']);
         Route::get('/get_sub_report_allotted/{class_id}/{subject_type}', [AdminController::class, 'editSubjectAllotmentforReportCard']);
-        Route::put('/get_sub_report_allotted/{class_id}', [AdminController::class, 'createOrUpdateSubjectAllotment']);
+        // Route::put('/get_sub_report_allotted/{class_id}', [AdminController::class, 'createOrUpdateSubjectAllotment']);
+        Route::post('/subject-allotments-reportcard/{class_id}', [AdminController::class, 'createOrUpdateSubjectAllotment']);
+
 
 
 });
