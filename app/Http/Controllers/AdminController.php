@@ -2473,8 +2473,7 @@ public function getStudentByGRN($reg_no)
 public function deleteStudent( Request $request , $studentId)
 {
     // Find the student by ID
-    $student = Student::find($studentId);
-    
+    $student = Student::find($studentId);    
     if (!$student) {
         return response()->json(['error' => 'Student not found'], 404);
     }
@@ -2522,17 +2521,18 @@ public function deleteStudent( Request $request , $studentId)
             ContactDetails::where('id', $student->parent_id)->delete();
         }
     }
-
+    $parent1 = Parents::find($student->parent_id);
+    
     // After deletion, check if the deleted information exists in the deleted_contact_details table
-    $deletedContact = ContactDetails::where('id', $parent)->first();
+    $deletedContact = ContactDetails::where('id', $parent1)->first();
     if (!$deletedContact) {
         // Insert deleted contact details into the deleted_contact_details table
         DeletedContactDetails::create([
             'student_id' => $studentId,
             'parent_id' => $student->parent_id,
             'phone_no' => $student->parents->m_mobile, 
-            'email_id' => $student->parents->f_emailid, 
-            'm_emailid' => $student->parents->m_emailid 
+            'email_id' => $parent1->f_email, 
+            'm_emailid' => $parent1->m_emailid 
         ]);
     }
 
@@ -2589,213 +2589,217 @@ public function toggleActiveStudent($studentId)
 
 public function updateStudentAndParent(Request $request, $studentId)
 {
-    try {
-        // Log the start of the request
-        Log::info("Starting updateStudentAndParent for student ID: {$studentId}");
+    // try {
+    //     // Log the start of the request
+    //     Log::info("Starting updateStudentAndParent for student ID: {$studentId}");
 
-        // Validate the incoming request for all fields
-        $validatedData = $request->validate([
-            // Student model fields
-            'first_name' => 'nullable|string|max:100',
-            'mid_name' => 'nullable|string|max:100',
-            'last_name' => 'nullable|string|max:100',
-            'house' => 'nullable|string|max:100',
-            'student_name' => 'nullable|string|max:100',
-            'dob' => 'nullable|date',
-            'admission_date' => 'nullable|date',
-            'stud_id_no' => 'nullable|string|max:25',
-            'stu_aadhaar_no' => 'nullable|string|max:14',
-            'gender' => 'nullable|string',
-            'mother_tongue' => 'nullable|string|max:20',
-            'birth_place' => 'nullable|string|max:50',
-            'admission_class' => 'nullable|string|max:255',
-            'city' => 'nullable|string|max:100',
-            'state' => 'nullable|string|max:100',
-            'roll_no' => 'nullable|string|max:11',
-            'class_id' => 'nullable|integer',
-            'section_id' => 'nullable|integer',
-            'religion' => 'nullable|string|max:255',
-            'caste' => 'nullable|string|max:100',
-            'subcaste' => 'nullable|string|max:255',
-            'vehicle_no' => 'nullable|string|max:13',
-            'emergency_name' => 'nullable|string|max:100',
-            'emergency_contact' => 'nullable|string|max:11',
-            'emergency_add' => 'nullable|string|max:200',
-            'height' => 'nullable|numeric|max:4.1',
-            'weight' => 'nullable|numeric|max:4.1',
-            'allergies' => 'nullable|string|max:200',
-            'nationality' => 'nullable|string|max:100',
-            'pincode' => 'nullable|string|max:11',
-            'image_name' => 'nullable|string',
+    //     // Validate the incoming request for all fields
+    //     $validatedData = $request->validate([
+    //         // Student model fields
+    //         'first_name' => 'nullable|string|max:100',
+    //         'mid_name' => 'nullable|string|max:100',
+    //         'last_name' => 'nullable|string|max:100',
+    //         'house' => 'nullable|string|max:100',
+    //         'student_name' => 'nullable|string|max:100',
+    //         'dob' => 'nullable|date',
+    //         'admission_date' => 'nullable|date',
+    //         'stud_id_no' => 'nullable|string|max:25',
+    //         'stu_aadhaar_no' => 'nullable|string|max:14',
+    //         'gender' => 'nullable|string',
+    //         'mother_tongue' => 'nullable|string|max:20',
+    //         'birth_place' => 'nullable|string|max:50',
+    //         'admission_class' => 'nullable|string|max:255',
+    //         'city' => 'nullable|string|max:100',
+    //         'state' => 'nullable|string|max:100',
+    //         'roll_no' => 'nullable|string|max:11',
+    //         'class_id' => 'nullable|integer',
+    //         'section_id' => 'nullable|integer',
+    //         'religion' => 'nullable|string|max:255',
+    //         'caste' => 'nullable|string|max:100',
+    //         'subcaste' => 'nullable|string|max:255',
+    //         'vehicle_no' => 'nullable|string|max:13',
+    //         'emergency_name' => 'nullable|string|max:100',
+    //         'emergency_contact' => 'nullable|string|max:11',
+    //         'emergency_add' => 'nullable|string|max:200',
+    //         'height' => 'nullable|numeric|max:4.1',
+    //         'weight' => 'nullable|numeric|max:4.1',
+    //         'allergies' => 'nullable|string|max:200',
+    //         'nationality' => 'nullable|string|max:100',
+    //         'pincode' => 'nullable|string|max:11',
+    //         'image_name' => 'nullable|string',
         
-            // Parent model fields
-            'father_name' => 'nullable|string|max:100',
-            'father_occupation' => 'nullable|string|max:100',
-            'f_office_add' => 'nullable|string|max:200',
-            'f_office_tel' => 'nullable|string|max:11',
-            'f_mobile' => 'nullable|string|max:10',
-            'f_email' => 'nullable|string|max:50',
-            'father_adhar_card' => 'nullable|string|max:14',
-            'mother_name' => 'nullable|string|max:100',
-            'mother_occupation' => 'nullable|string|max:100',
-            'm_office_add' => 'nullable|string|max:200',
-            'm_office_tel' => 'nullable|string|max:11',
-            'm_mobile' => 'nullable|string|max:10',
-            'm_emailid' => 'nullable|string|max:50',
-            'mother_adhar_card' => 'nullable|string|max:14',
+    //         // Parent model fields
+    //         'father_name' => 'nullable|string|max:100',
+    //         'father_occupation' => 'nullable|string|max:100',
+    //         'f_office_add' => 'nullable|string|max:200',
+    //         'f_office_tel' => 'nullable|string|max:11',
+    //         'f_mobile' => 'nullable|string|max:10',
+    //         'f_email' => 'nullable|string|max:50',
+    //         'father_adhar_card' => 'nullable|string|max:14',
+    //         'mother_name' => 'nullable|string|max:100',
+    //         'mother_occupation' => 'nullable|string|max:100',
+    //         'm_office_add' => 'nullable|string|max:200',
+    //         'm_office_tel' => 'nullable|string|max:11',
+    //         'm_mobile' => 'nullable|string|max:10',
+    //         'm_emailid' => 'nullable|string|max:50',
+    //         'mother_adhar_card' => 'nullable|string|max:14',
         
-            // Preferences for SMS and email as username
-            'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
-            'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother,FatherMob,MotherMob',
-        ]);
+    //         // Preferences for SMS and email as username
+    //         'SetToReceiveSMS' => 'nullable|string|in:Father,Mother',
+    //         'SetEmailIDAsUsername' => 'nullable|string|in:Father,Mother,FatherMob,MotherMob',
+    //     ]);
 
-        Log::info("Validation passed for student ID: {$studentId}");
+    //     Log::info("Validation passed for student ID: {$studentId}");
 
-        // Convert relevant fields to uppercase
-        $fieldsToUpper = [
-            'first_name', 'mid_name', 'last_name', 'house', 'emergency_name', 
-            'emergency_contact', 'nationality', 'city', 'state', 'birth_place', 
-            'mother_tongue', 'father_name', 'mother_name', 'vehicle_no', 'caste'
-        ];
+    //     // Convert relevant fields to uppercase
+    //     $fieldsToUpper = [
+    //         'first_name', 'mid_name', 'last_name', 'house', 'emergency_name', 
+    //         'emergency_contact', 'nationality', 'city', 'state', 'birth_place', 
+    //         'mother_tongue', 'father_name', 'mother_name', 'vehicle_no', 'caste'
+    //     ];
 
-        foreach ($fieldsToUpper as $field) {
-            if (isset($validatedData[$field])) {
-                $validatedData[$field] = strtoupper(trim($validatedData[$field]));
-            }
-        }
+    //     foreach ($fieldsToUpper as $field) {
+    //         if (isset($validatedData[$field])) {
+    //             $validatedData[$field] = strtoupper(trim($validatedData[$field]));
+    //         }
+    //     }
 
-        // Additional fields for parent model that need to be converted to uppercase
-        $parentFieldsToUpper = [
-            'father_name', 'mother_name', 'f_blood_group', 'm_blood_group', 'student_blood_group'
-        ];
+    //     // Additional fields for parent model that need to be converted to uppercase
+    //     $parentFieldsToUpper = [
+    //         'father_name', 'mother_name', 'f_blood_group', 'm_blood_group', 'student_blood_group'
+    //     ];
 
-        foreach ($parentFieldsToUpper as $field) {
-            if (isset($validatedData[$field])) {
-                $validatedData[$field] = strtoupper(trim($validatedData[$field]));
-            }
-        }
+    //     foreach ($parentFieldsToUpper as $field) {
+    //         if (isset($validatedData[$field])) {
+    //             $validatedData[$field] = strtoupper(trim($validatedData[$field]));
+    //         }
+    //     }
 
-        // Retrieve the token payload
-        $payload = getTokenPayload($request);
-        $academicYr = $payload->get('academic_year');
+    //     // Retrieve the token payload
+    //     $payload = getTokenPayload($request);
+    //     $academicYr = $payload->get('academic_year');
 
-        Log::info("Academic year: {$academicYr} for student ID: {$studentId}");
+    //     Log::info("Academic year: {$academicYr} for student ID: {$studentId}");
 
-        // Find the student by ID
-        $student = Student::find($studentId);
-        if (!$student) {
-            Log::error("Student not found: ID {$studentId}");
-            return response()->json(['error' => 'Student not found'], 404);
-        }
+    //     // Find the student by ID
+    //     $student = Student::find($studentId);
+    //     if (!$student) {
+    //         Log::error("Student not found: ID {$studentId}");
+    //         return response()->json(['error' => 'Student not found'], 404);
+    //     }
 
-        // Check if specified fields have changed
-        $fieldsToCheck = ['first_name', 'mid_name', 'last_name', 'class_id', 'section_id', 'roll_no'];
-        $isModified = false;
+    //     // Check if specified fields have changed
+    //     $fieldsToCheck = ['first_name', 'mid_name', 'last_name', 'class_id', 'section_id', 'roll_no'];
+    //     $isModified = false;
 
-        foreach ($fieldsToCheck as $field) {
-            if (isset($validatedData[$field]) && $student->$field != $validatedData[$field]) {
-                $isModified = true;
-                break;
-            }
-        }
+    //     foreach ($fieldsToCheck as $field) {
+    //         if (isset($validatedData[$field]) && $student->$field != $validatedData[$field]) {
+    //             $isModified = true;
+    //             break;
+    //         }
+    //     }
 
-        // If any of the fields are modified, set 'is_modify' to 'Y'
-        if ($isModified) {
-            $validatedData['is_modify'] = 'Y';
-        }
+    //     // If any of the fields are modified, set 'is_modify' to 'Y'
+    //     if ($isModified) {
+    //         $validatedData['is_modify'] = 'Y';
+    //     }
 
-        // Handle student image if provided
-        if ($request->hasFile('student_image')) {
-            $image = $request->file('student_image');
-            $imageExtension = $image->getClientOriginalExtension();
-            $imageName = $studentId . '.' . $imageExtension;
-            $imagePath = public_path('uploads/student_image');
+    //     // Handle student image if provided
+    //     if ($request->hasFile('student_image')) {
+    //         $image = $request->file('student_image');
+    //         $imageExtension = $image->getClientOriginalExtension();
+    //         $imageName = $studentId . '.' . $imageExtension;
+    //         $imagePath = public_path('uploads/student_image');
 
-            if (!file_exists($imagePath)) {
-                mkdir($imagePath, 0755, true);
-            }
+    //         if (!file_exists($imagePath)) {
+    //             mkdir($imagePath, 0755, true);
+    //         }
 
-            $image->move($imagePath, $imageName);
-            $validatedData['image_name'] = $imageName;
-            Log::info("Image uploaded for student ID: {$studentId}");
-        }
+    //         $image->move($imagePath, $imageName);
+    //         $validatedData['image_name'] = $imageName;
+    //         Log::info("Image uploaded for student ID: {$studentId}");
+    //     }
 
-        // Include academic year in the update data
-        $validatedData['academic_yr'] = $academicYr;
+    //     // Include academic year in the update data
+    //     $validatedData['academic_yr'] = $academicYr;
 
-        // Update student information
-        $student->update($validatedData);
-        Log::info("Student information updated for student ID: {$studentId}");
+    //     // Update student information
+    //     $student->update($validatedData);
+    //     Log::info("Student information updated for student ID: {$studentId}");
 
-        // Handle parent details if provided
-        $parent = Parents::find($student->parent_id);
-        if ($parent) {
-            $parentData = $request->only([
-                'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
-                'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
-                'parent_adhar_no', 'm_adhar_no', 'father_adhar_card', 'mother_adhar_card',
-            ]);
+    //     // Handle parent details if provided
+    //     $parent = Parents::find($student->parent_id);
+    //     if ($parent) {
+    //         $parentData = $request->only([
+    //             'father_name', 'father_occupation', 'f_office_add', 'f_office_tel', 'f_mobile', 'f_email',
+    //             'mother_name', 'mother_occupation', 'm_office_add', 'm_office_tel', 'm_mobile', 'm_emailid',
+    //             'parent_adhar_no', 'm_adhar_no', 'father_adhar_card', 'mother_adhar_card',
+    //         ]);
 
-            // Determine the phone number based on the 'SetToReceiveSMS' input
-            $phoneNo = null;
-            if ($request->input('SetToReceiveSMS') == 'Father') {
-                $phoneNo = $parent->f_mobile;
-            } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
-                $phoneNo = $parent->m_mobile;
-            }
+    //         // Determine the phone number based on the 'SetToReceiveSMS' input
+    //         $phoneNo = null;
+    //         if ($request->input('SetToReceiveSMS') == 'Father') {
+    //             $phoneNo = $parent->f_mobile;
+    //         } elseif ($request->input('SetToReceiveSMS') == 'Mother') {
+    //             $phoneNo = $parent->m_mobile;
+    //         }
 
-            // Check if a record already exists with parent_id as the id
-            $contactDetails = ContactDetails::find($student->parent_id);
+    //         // Check if a record already exists with parent_id as the id
+    //         $contactDetails = ContactDetails::find($student->parent_id);
 
-            if ($contactDetails) {
-                // If the record exists, update the contact details
-                $contactDetails->update([
-                    'phone_no' => $phoneNo,
-                    'alternate_phone_no' => $parent->f_mobile, // Assuming alternate phone is Father's mobile number
-                    'email_id' => $parent->f_email, // Father's email
-                    'm_emailid' => $parent->m_emailid, // Mother's email
-                    'sms_consent' => 'y', // Store consent for SMS
-                ]);
-            } else {
-                // If the record doesn't exist, create a new one with parent_id as the id
-                DB::insert('INSERT INTO contact_details (id, phone_no, alternate_phone_no, email_id, m_emailid, sms_consent) VALUES (?, ?, ?, ?, ?, ?)', [
-                    $student->parent_id,
-                    $phoneNo,
-                    $parent->f_mobile,
-                    $parent->f_email,
-                    $parent->m_emailid,
-                    'y', // sms_consent
-                ]);
-            }
+    //         if ($contactDetails) {
+    //             // If the record exists, update the contact details
+    //             $contactDetails->update([
+    //                 'phone_no' => $phoneNo,
+    //                 'alternate_phone_no' => $parent->f_mobile, // Assuming alternate phone is Father's mobile number
+    //                 'email_id' => $parent->f_email, // Father's email
+    //                 'm_emailid' => $parent->m_emailid, // Mother's email
+    //                 'sms_consent' => 'y', // Store consent for SMS
+    //             ]);
+    //         } else {
+    //             // If the record doesn't exist, create a new one with parent_id as the id
+    //             DB::insert('INSERT INTO contact_details (id, phone_no, alternate_phone_no, email_id, m_emailid, sms_consent) VALUES (?, ?, ?, ?, ?, ?)', [
+    //                 $student->parent_id,
+    //                 $phoneNo,
+    //                 $parent->f_mobile,
+    //                 $parent->f_email,
+    //                 $parent->m_emailid,
+    //                 'y', // sms_consent
+    //             ]);
+    //         }
 
-            // Update email ID as username preference
-            $user = UserMaster::where('reg_id', $student->parent_id)->first();
-            $apiData = [
-                'user_id' => '',
-                'short_name' => 'SACS',
-            ];
+    //         // Update email ID as username preference
+    //         $user = UserMaster::where('reg_id', $student->parent_id)->first();
+    //         $apiData = [
+    //             'user_id' => '',
+    //             'short_name' => 'SACS',
+    //         ];
 
-            $oldEmailPreference = $user->user_id; // Store old email preference for comparison
+    //         $oldEmailPreference = $user->user_id; // Store old email preference for comparison
 
-            // Check if the email preference changed
-            if ($oldEmailPreference != $apiData['user_id']) {
-                // Call the external API only if the email preference has changed
-                $response = Http::post('http://aceventura.in/demo/evolvuUserService/user_create_new', $apiData);
-                if ($response->successful()) {
-                    Log::info("API call successful for student ID: {$studentId}");
-                } else {
-                    Log::error("API call failed for student ID: {$studentId}");
-                }
-            } else {
-                Log::info("Email preference unchanged for student ID: {$studentId}");
-            }
-        }
+    //         // Check if the email preference changed
+    //         if ($oldEmailPreference != $apiData['user_id']) {
+    //             // Call the external API only if the email preference has changed
+    //             $response = Http::post('http://aceventura.in/demo/evolvuUserService/user_create_new', $apiData);
+    //             if ($response->successful()) {
+    //                 Log::info("API call successful for student ID: {$studentId}");
+    //             } else {
+    //                 Log::error("API call failed for student ID: {$studentId}");
+    //             }
+    //         } else {
+    //             Log::info("Email preference unchanged for student ID: {$studentId}");
+    //         }
+    //     }
 
-        return response()->json(['success' => 'Student and parent information updated successfully']);
-    } catch (Exception $e) {
-        Log::error("Exception occurred for student ID: {$studentId} - " . $e->getMessage());
-        return response()->json(['error' => 'An error occurred while updating information'], 500);
-    }
+    //     return response()->json(['success' => 'Student and parent information updated successfully']);
+    // } catch (Exception $e) {
+    //     Log::error("Exception occurred for student ID: {$studentId} - " . $e->getMessage());
+    //     return response()->json(['error' => 'An error occurred while updating information'], 500);
+    // }
+   
+
+    return response()->json($request->all());
+
 }
 
 
