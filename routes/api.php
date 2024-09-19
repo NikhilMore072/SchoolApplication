@@ -275,7 +275,7 @@ Route::middleware(['jwt.auth'])->group(function () {
       
 
         //routes for the SubjectForReportCard
-        Route::post('/check_subject_name', [AdminController::class, 'checkSubjectName']);
+        Route::post('/check_subject_name', [AdminController::class, 'checkSubjectNameForReportCard']);
         Route::get('/subject_for_reportcard', [AdminController::class, 'getSubjectsForReportCard']);
         Route::post('/subject_for_reportcard', [AdminController::class, 'storeSubjectForReportCard']);
         Route::get('/subject_for_reportcard/{sub_rc_master_id}', [AdminController::class, 'editSubjectForReportCard']);

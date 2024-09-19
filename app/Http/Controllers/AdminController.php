@@ -3906,11 +3906,12 @@ public function getSubjectsForReportCard(Request $request)
 public function checkSubjectNameForReportCard(Request $request)
 {
     $validatedData = $request->validate([
-        'name' => 'required|string|max:30',
+        'sequence' => 'required|string|max:30',
     ]);
 
     $sequence = $validatedData['sequence'];
-    // $exists = SubjectForReportCard::where(DB::raw('LOWER(sequence)'), strtolower($name))->exists();
+    // return response()->json($sequence);
+    $exists = SubjectForReportCard::where(DB::raw('LOWER(sequence)'), strtolower($sequence))->exists();
     $exists = SubjectForReportCard::where('sequence', $sequence)->exists();
     return response()->json(['exists' => $exists]);
 }
@@ -3933,8 +3934,8 @@ public function storeSubjectForReportCard(Request $request)
             ],
             'sequence' => [
                 'required',
-                'Integer',
-                'max:5',
+                'Integer'
+               
             ],
         ], $messages);
     } catch (ValidationException $e) {
@@ -3974,8 +3975,8 @@ public function updateSubjectForReportCard(Request $request, $sub_rc_master_id)
                 ],
                 'sequence' => [
                     'required',
-                    'Integer',
-                    'max:5'
+                    'Integer'
+                    
                 ],
             ], $messages);
         } catch (\Illuminate\Validation\ValidationException $e) {
