@@ -3930,7 +3930,7 @@ public function storeSubjectForReportCard(Request $request)
                 'required',
                 'string',
                 'max:30',
-                // Rule::unique('subject_master', 'name')
+                
             ],
             'sequence' => [
                 'required',
@@ -3956,54 +3956,104 @@ public function storeSubjectForReportCard(Request $request)
     ], 201);
 }
 
-public function updateSubjectForReportCard(Request $request, $sub_rc_master_id)
-    {
-        $messages = [
-            'name.required' => 'The name field is required.',
-            // 'name.unique' => 'The name has already been taken.',
-            'sequence.required' => 'The sequence field is required.',
-            // 'subject_type.unique' => 'The subject type has already been taken.',
-        ];
+// public function updateSubjectForReportCard(Request $request, $sub_rc_master_id)
+//     {
+//         $messages = [
+//             'name.required' => 'The name field is required.',
+//             // 'name.unique' => 'The name has already been taken.',
+//             'sequence.required' => 'The sequence field is required.',
+//             // 'subject_type.unique' => 'The subject type has already been taken.',
+//         ];
 
-        try {
-            $validatedData = $request->validate([
-                'name' => [
-                    'required',
-                    'string',
-                    'max:30',
-                    // Rule::unique('subject_master', 'name')->ignore($id, 'sm_id')
-                ],
-                'sequence' => [
-                    'required',
-                    'Integer'
+//         try {
+//             $validatedData = $request->validate([
+//                 'name' => [
+//                     'required',
+//                     'string',
+//                     'max:30',
+//                 ],
+//                 'sequence' => [
+//                     'required',
+//                     'Integer'
                     
-                ],
-            ], $messages);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'status' => 422,
-                'errors' => $e->errors(),
-            ], 422);
-        }
+//                 ],
+//             ], $messages);
+//         } catch (\Illuminate\Validation\ValidationException $e) {
+//             return response()->json([
+//                 'status' => 422,
+//                 'errors' => $e->errors(),
+//             ], 422);
+//         }
 
-        $subject = SubjectForReportCard::find($sub_rc_master_id);
+//         $subject = SubjectForReportCard::find($sub_rc_master_id);
 
-        if (!$subject) {
-            return response()->json([
-                'status' => 404,
-                'message' => 'Subject not found',
-            ], 404);
-        }
+//         if (!$subject) {
+//             return response()->json([
+//                 'status' => 404,
+//                 'message' => 'Subject not found',
+//             ], 404);
+//         }
 
-        $subject->name = $validatedData['name'];
-        $subject->sequence = $validatedData['sequence'];
-        $subject->save();
+//         $subject->name = $validatedData['name'];
+//         $subject->sequence = $validatedData['sequence'];
+//         $subject->save();
 
+//         return response()->json([
+//             'status' => 200,
+//             'message' => 'Subject updated successfully',
+//         ], 200);
+//     }
+
+public function updateSubjectForReportCard(Request $request, $sub_rc_master_id)
+{
+    $messages = [
+        'name.required' => 'The name field is required.',
+        'sequence.required' => 'The sequence field is required.',
+        'sequence.unique' => 'The sequence has already been taken.',
+    ];
+
+    try {
+        $validatedData = $request->validate([
+            'name' => [
+                'required',
+                'string',
+                'max:30',
+            ],
+            'sequence' => [
+                'required',
+                'integer',
+                // Ensures the sequence is unique, but ignores the current record's sequence
+                Rule::unique('subjects_on_report_card_master', 'sequence')->ignore($sub_rc_master_id, 'sub_rc_master_id')
+            ],
+        ], $messages);
+    } catch (\Illuminate\Validation\ValidationException $e) {
         return response()->json([
-            'status' => 200,
-            'message' => 'Subject updated successfully',
-        ], 200);
+            'status' => 422,
+            'errors' => $e->errors(),
+        ], 422);
     }
+
+    // Find the subject by sub_rc_master_id
+    $subject = SubjectForReportCard::find($sub_rc_master_id);
+
+    if (!$subject) {
+        return response()->json([
+            'status' => 404,
+            'message' => 'Subject not found',
+        ], 404);
+    }
+
+    // Update the subject with validated data
+    $subject->name = $validatedData['name'];
+    $subject->sequence = $validatedData['sequence'];
+    $subject->save();
+
+    return response()->json([
+        'status' => 200,
+        'message' => 'Subject updated successfully',
+    ], 200);
+}
+
 
     
 
