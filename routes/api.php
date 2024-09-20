@@ -1,122 +1,21 @@
     <?php
 
-    // use Illuminate\Http\Request;
-    // use Illuminate\Support\Facades\Route;
-    // use App\Http\Controllers\LoginController;
-    // use App\Http\Controllers\AdminController;
-    // use App\Http\Controllers\StudentController;
-    // use Illuminate\Session\Middleware\StartSession;
+    use Illuminate\Http\Request;
+    use Illuminate\Support\Facades\Route;
+    use App\Http\Controllers\AuthController;
+    use App\Http\Controllers\RoleController;
+    use App\Http\Controllers\AdminController;
+    use App\Http\Controllers\LoginController;
 
-
-
-
-    // Route::middleware([StartSession::class])->post('/login', [LoginController::class, 'login'])->name('login');
-    // Route::middleware(['auth:sanctum', StartSession::class,])->group(function () {
-    //     Route::get('/getAuthUser', [AdminController::class, 'getAuthUser']);
-    //     Route::put('/updateauthacademicyear', [AdminController::class, 'updateAcademicYearForAuthUser']);
-    //     Route::get('/someControllerMethod', [LoginController::class, 'someControllerMethod']);
-
-        
-    //     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-    //     Route::get('/session-data', [LoginController::class, 'getSessionData']);
-    //     // Route::get('/getAcademicyear', [LoginController::class, 'getAcademicyear']);
-    //     Route::put('/updateAcademicYear', [LoginController::class, 'updateAcademicYear']);
-    //     Route::post('/clearData', [LoginController::class, 'clearData'])->name('clearData');
-    //     Route::put('/update_password', [LoginController::class, 'updatePassword']);
-    //     Route::get('/editprofile', [LoginController::class, 'editUser']);
-    //     Route::put('/update_profile', [LoginController::class, 'updateUser']);
-
-
-
-    //     //Master and its sub module routes  Module Routes 
-    //     //Section model Routes 
-    //     Route::get('/sections', [AdminController::class, 'listSections']);
-    //     Route::post('/sections', [AdminController::class, 'storeSection']);
-    //     Route::get('/sections/{id}/edit', [AdminController::class, 'editSection']);
-    //     Route::put('/sections/{id}', [AdminController::class, 'updateSection']);
-    //     Route::delete('/sections/{id}', [AdminController::class, 'deleteSection']);
-
-    //     //Classes Module Route  
-    //     Route::get('/classes', [AdminController::class, 'getClass']);
-    //     Route::post('/classes', [AdminController::class, 'storeClass']);
-    //     Route::get('/classes/{id}', [AdminController::class, 'showClass']);
-    //     Route::put('/classes/{id}', [AdminController::class, 'updateClass']);
-    //     Route::delete('/classes/{id}', [AdminController::class, 'destroyClass']);
-
-    //     // Division Module Routes 
-    //     Route::get('/getDivision', [AdminController::class, 'getDivision']);
-
-    //     // Dashboard API   
-    //     Route::get('/studentss', [AdminController::class, 'getStudentData']);
-    //     Route::get('/staff', [AdminController::class, 'staff']);
-    //     Route::get('/getbirthday', [AdminController::class, 'getbirthday']);
-    //     Route::get('/events', [AdminController::class, 'getEvents']);
-    //     Route::get('/parent-notices', [AdminController::class, 'getParentNotices']);
-    //     Route::get('/staff-notices', [AdminController::class, 'getNoticesForTeachers']);
-    //     Route::get('/getClassDivisionTotalStudents', [AdminController::class, 'getClassDivisionTotalStudents']);
-    //     Route::get('/getHouseViseStudent', [AdminController::class, 'getHouseViseStudent']);
-    //     Route::get('/staffbirthdaycount', [AdminController::class, 'staffBirthdaycount']);
-    //     Route::get('/staffbirthdaylist', [AdminController::class, 'staffBirthdayList']);
-    //     Route::get('/send_teacher_birthday_email', [AdminController::class, 'sendTeacherBirthdayEmail']);
-    //     Route::get('/ticketcount', [AdminController::class, 'ticketCount']);
-    //     Route::get('/ticketlist', [AdminController::class, 'getTicketList']);
-    //     Route::get('/feecollection', [AdminController::class, 'feeCollection']);
-    //     Route::get('/fee_collection_list', [AdminController::class, 'feeCollectionList']);
-    //     Route::get('/get_bank_accountName', [AdminController::class, 'getBankAccountName']);  
-    //     Route::get('/getAcademicYear', [AdminController::class, 'getAcademicYears']);
-    //     Route::get('/pending_collected_fee_data', [AdminController::class, 'pendingCollectedFeeData']);
-    //     Route::get('/pending_collected_fee_data_list', [AdminController::class, 'pendingCollectedFeeDatalist']);
-    //     Route::get('/collected_fee_list', [AdminController::class, 'collectedFeeList']);
-
-
-    //     //Students Module Routes 
-    //     Route::get('students', [StudentController::class, 'index']); 
-    //     Route::post('students', [StudentController::class, 'store']); 
-    //     Route::get('students/{id}/edit', [StudentController::class, 'show']); 
-    //     Route::put('students/{id}/update', [StudentController::class, 'update']); 
-    //     Route::delete('/students/{id}/delete', [StudentController::class, 'destroy']);
-
-
-    //     // Staff Module API 
-    //     Route::get('/staff_list', [AdminController::class, 'getStaffList']);
-    //     Route::post('/store_staff', [AdminController::class, 'storeStaff']);
-    //     Route::get('/teachers/{id}', [AdminController::class, 'editStaff']);
-    //     Route::put('/teachers/{id}', [AdminController::class, 'updateStaff']);
-    //     Route::delete('/teachers/{id}', [AdminController::class, 'deleteStaff']);
-
-    // });
-
-    // Route::middleware([StartSession::class])->get('/session-data', function (Request $request) {
-    //     $sessionData = Session::get('sessionData');
-    
-    //     // Log retrieved session data for debugging
-    //     Log::info('Retrieved Session Data:', [$sessionData]); // Wrap $sessionData in an array
-        
-    //     if (!$sessionData) {
-    //         return response()->json(['message' => 'No session data found', 'success' => false], 404);
-    //     }
-    
-    //     return response()->json(['sessionData' => $sessionData, 'success' => true], 200);
-    // });
-
-
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\LoginController;
-
-// Public routes
-Route::post('login', [AuthController::class, 'login']);
-Route::post('register', [AuthController::class, 'register']);
+    // Public routes
+    Route::post('login', [AuthController::class, 'login']);
+    Route::post('register', [AuthController::class, 'register']);
 
 // Protected routes
-Route::middleware(['jwt.auth'])->group(function () {
-    Route::post('logout', [AuthController::class, 'logout']);
-    Route::get('sessionData', [AuthController::class, 'getUserDetails']);
-    Route::post('update_academic_year', [AuthController::class, 'updateAcademicYear']);
+    Route::middleware(['jwt.auth'])->group(function () {
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::get('sessionData', [AuthController::class, 'getUserDetails']);
+        Route::post('update_academic_year', [AuthController::class, 'updateAcademicYear']);
 
 
 
