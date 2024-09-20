@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Setting;
+use App\Models\Student;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\Sanctum;
 use Illuminate\Support\Facades\Log;
@@ -163,6 +164,185 @@ public function getSessionData(Request $request)
 
         return response()->json(['academic_yr' => $academicYr, 'success' => true], 200);
     }
+
+    public function getStudentListbysectionforregister(Request $request , $section_id){         
+        $studentList = Student::where('section_id',$section_id)
+                                ->where('parent_id','0')
+                                ->distinct()
+                                ->get();
+
+        return response()->json($studentList);                        
+    }
+
+    public function downloadCsvTemplateWithData(Request $request, $section_id)
+    {
+        // Extract the academic year from the token payload
+        //  $payload = getTokenPayload($request);    
+        $academicYear = "2023-2024";
+        // Fetch only the necessary fields from the Student model where academic year and section_id match
+        $students = Student::select(
+            'student_id as *Code',
+            'first_name as *First Name',
+            'mid_name as Mid name',
+            'last_name as last name',
+            'gender as *Gender',
+            'dob as *DOB(in dd/mm/yyyy format)',
+            'stu_aadhaar_no as Student Aadhaar No.',
+            'mother_tongue as Mother Tongue',
+            'religion as Religion',
+            'blood_group as *Blood Group',
+            'caste as caste',
+            'subcaste as Sub Caste',
+            'class_id as Class',
+            'section_id as Division',
+            'permant_add as *Address',
+            'city as *City',
+            'state as *State',
+            'admission_date as *DOA(in dd/mm/yyyy format)',
+            'reg_no as *GRN No'
+        )
+        ->leftJoin('parent', 'student.parent_id', '=', 'parent.parent_id')  
+        ->where('student.parent_id','=','0')
+        ->where('academic_yr', $academicYear)  
+        ->where('section_id', $section_id)
+        ->get()
+        ->toArray();
+        
+    
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="students_template.csv"',
+        ];
+    
+        $columns = [
+            '*Code', 
+            '*First Name', 
+            'Mid name', 
+            'last name', 
+            '*Gender', 
+            '*DOB(in dd/mm/yyyy format)', 
+            'Student Aadhaar No.', 
+            'Mother Tongue', 
+            'Religion', 
+            '*Blood Group', 
+            'caste', 
+            'Sub Caste', 
+            'Class', 
+            'Division', 
+            '*Mother Name', 
+            'Mother Occupation', 
+            '*Mother Mobile No.(Only Indian Numbers)', 
+            '*Mother Email-Id', 
+            '*Father Name', 
+            'Father Occupation', 
+            '*Father Mobile No.(Only Indian Numbers)', 
+            '*Father Email-Id', 
+            'Mother Aadhaar No.', 
+            'Father Aadhaar No.', 
+            '*Address', 
+            '*City', 
+            '*State', 
+            '*DOA(in dd/mm/yyyy format)', 
+            '*GRN No',
+        ];
+    
+        $callback = function() use ($columns, $students) {
+            $file = fopen('php://output', 'w');
+    
+            // Write the header row
+            fputcsv($file, $columns);
+    
+            // Write each student's data below the headers
+            foreach ($students as $student) {
+                fputcsv($file, $student);
+            }
+    
+            fclose($file);
+        };
+    
+        // Return the CSV file as a response
+        return response()->stream($callback, 200, $headers);
+    }
+    
+    
+    public function updateCsvData(Request $request)
+    {
+        // Validate that a CSV file is uploaded
+        $request->validate([
+            'file' => 'required|mimes:csv,txt',
+        ]);
+    
+        // Read the uploaded CSV file
+        $file = $request->file('file');
+        $csvData = file_get_contents($file);
+        $rows = array_map('str_getcsv', explode("\n", $csvData));
+        $header = array_shift($rows); // Extract the header row
+    
+        // Define a map for CSV columns to database fields
+        $columnMap = [
+            '*Code' => 'student_id',
+            '*First Name' => 'first_name',
+            'Mid name' => 'mid_name',
+            'last name' => 'last_name',
+            '*Gender' => 'gender',
+            '*DOB(in dd/mm/yyyy format)' => 'dob',
+            'Student Aadhaar No.' => 'stu_aadhaar_no',
+            'Mother Tongue' => 'mother_tongue',
+            'Religion' => 'religion',
+            '*Blood Group' => 'blood_group',
+            'caste' => 'caste',
+            'Sub Caste' => 'subcaste',
+            'Class' => 'class_id',
+            'Division' => 'section_id',
+            '*Mother Name' => 'mother_name',
+            'Mother Occupation' => 'mother_occupation',
+            '*Mother Mobile No.(Only Indian Numbers)' => 'mother_mobile',
+            '*Mother Email-Id' => 'mother_email',
+            '*Father Name' => 'father_name',
+            'Father Occupation' => 'father_occupation',
+            '*Father Mobile No.(Only Indian Numbers)' => 'father_mobile',
+            '*Father Email-Id' => 'father_email',
+            'Mother Aadhaar No.' => 'mother_aadhaar_no',
+            'Father Aadhaar No.' => 'father_aadhaar_no',
+            '*Address' => 'permant_add',
+            '*City' => 'city',
+            '*State' => 'state',
+            '*DOA(in dd/mm/yyyy format)' => 'admission_date',
+            '*GRN No' => 'reg_no',
+        ];
+    
+        // Loop through each row of data
+        foreach ($rows as $row) {
+            // Map CSV columns to database fields
+            $studentData = [];
+            foreach ($header as $index => $columnName) {
+                if (isset($columnMap[$columnName])) {
+                    $dbField = $columnMap[$columnName];
+                    $studentData[$dbField] = $row[$index] ?? null;
+                }
+            }
+    
+            // Validate that `student_id` exists
+            if (!isset($studentData['student_id'])) {
+                continue; // Skip rows without a valid `student_id`
+            }
+    
+            // Find the student by `student_id`
+            $student = Student::where('student_id', $studentData['student_id'])->first();
+    
+            if ($student) {
+                // Update the student's data
+                $student->update($studentData);
+            }
+        }
+    
+        // Return a success response
+        return response()->json(['message' => 'Student data updated successfully.'], 200);
+    }
+    
+    
+
+
 
     
     // public function editUser(Request $request)

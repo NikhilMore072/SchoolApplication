@@ -2582,9 +2582,7 @@ public function toggleActiveStudent($studentId)
                       ]
                       );
      }
-     
-
-
+   
 
 
 public function updateStudentAndParent(Request $request, $studentId)

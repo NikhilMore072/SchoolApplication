@@ -106,6 +106,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\LoginController;
 
 // Public routes
 Route::post('login', [AuthController::class, 'login']);
@@ -269,8 +270,10 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::get('/student_by_reg_no/{reg_no}', [AdminController::class, 'getStudentByGRN']); // Student By GRN .
         Route::delete('/students/{studentId}', [AdminController::class, 'deleteStudent']);
         Route::patch('/students/{studentId}/deactivate', [AdminController::class, 'toggleActiveStudent']); // Done.
-        Route::put('/students/{studentId}', [AdminController::class, 'updateStudentAndParent']);
+        Route::put('/students/{studentId}', [AdminController::class, 'updateStudentAndParent']);  
         Route::get('/check-user-id/{studentId}/{userId}', [AdminController::class, 'checkUserId']);  // API for the User_id unique check 
+        Route::put('/resetPasssword/{user_id}', [AdminController::class, 'resetPasssword']);  
+
 
       
 
@@ -295,6 +298,9 @@ Route::middleware(['jwt.auth'])->group(function () {
 
 });
 
+Route::get('/students/download-template/{section_id}', [LoginController::class, 'downloadCsvTemplateWithData']);
+Route::post('/update-students-csv', [LoginController::class, 'updateCsvData']);
+Route::get('/get_student_by_sectionId/{section_id}', [LoginController::class, 'getStudentListbysectionforregister']);
 
 
 // Optionally, if you need to refresh tokens
