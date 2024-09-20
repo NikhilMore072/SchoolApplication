@@ -166,7 +166,17 @@ public function getSessionData(Request $request)
     }
 
     public function getStudentListbysectionforregister(Request $request , $section_id){         
-        $studentList = Student::where('section_id',$section_id)
+        $studentList = Student::with('getClass', 'getDivision')
+                                ->where('section_id',$section_id)
+                                ->where('parent_id','0')
+                                ->distinct()
+                                ->get();
+
+        return response()->json($studentList);                        
+    }
+
+    public function getAllStudentListForRegister(Request $request){                 
+        $studentList = Student::with('getClass', 'getDivision')
                                 ->where('parent_id','0')
                                 ->distinct()
                                 ->get();
