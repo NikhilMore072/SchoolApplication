@@ -2568,7 +2568,7 @@ public function toggleActiveStudent($studentId)
      public function resetPasssword($user_id){  
             
         $user = UserMaster::find($user_id);
-        if(!$user_id){
+        if(!$user){
             return response()->json("User ID not found");
         }
         $password = "arnolds";

@@ -200,6 +200,7 @@
 Route::get('/students/download-template/{section_id}', [LoginController::class, 'downloadCsvTemplateWithData']);
 Route::post('/update-students-csv', [LoginController::class, 'updateCsvData']);
 Route::get('/get_student_by_sectionId/{section_id}', [LoginController::class, 'getStudentListbysectionforregister']);
+Route::get('/get_all_studentlist', [LoginController::class, 'getAllStudentListForRegister']);
 
 
 // Optionally, if you need to refresh tokens
