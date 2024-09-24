@@ -171,10 +171,7 @@
         Route::patch('/students/{studentId}/deactivate', [AdminController::class, 'toggleActiveStudent']); // Done.
         Route::put('/students/{studentId}', [AdminController::class, 'updateStudentAndParent']);  
         Route::get('/check-user-id/{studentId}/{userId}', [AdminController::class, 'checkUserId']);  // API for the User_id unique check 
-        Route::put('/resetPasssword/{user_id}', [AdminController::class, 'resetPasssword']);  
-
-
-      
+        Route::put('/resetPasssword/{user_id}', [AdminController::class, 'resetPasssword']);        
 
         //routes for the SubjectForReportCard
         Route::post('/check_subject_name', [AdminController::class, 'checkSubjectNameForReportCard']);
@@ -198,9 +195,9 @@
 });
 
 Route::get('/students/download-template/{section_id}', [LoginController::class, 'downloadCsvTemplateWithData']);
-Route::post('/update-students-csv', [LoginController::class, 'updateCsvData']);
+Route::put('/update-students-csv', [LoginController::class, 'updateCsvData']);
 Route::get('/get_student_by_sectionId/{section_id}', [LoginController::class, 'getStudentListbysectionforregister']);
-Route::get('/get_all_studentlist', [LoginController::class, 'getAllStudentListForRegister']);
+Route::get('/get_all_studentlist', [LoginController::class, 'getAllStudentListForRegister']);   
 
 
 // Optionally, if you need to refresh tokens

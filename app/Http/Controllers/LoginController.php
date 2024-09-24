@@ -275,80 +275,273 @@ public function getSessionData(Request $request)
     }
     
     
+    // public function updateCsvData(Request $request)
+    // {
+    //     // Validate that a CSV file is uploaded
+    //     $request->validate([
+    //         'file' => 'required|file|mimes:csv,txt|max:2048',
+    //     ]);
+        
+    
+    //     // Read the uploaded CSV file
+    //     $file = $request->file('file');
+    //     $csvData = file_get_contents($file);
+    //     $rows = array_map('str_getcsv', explode("\n", $csvData));
+    //     $header = array_shift($rows); // Extract the header row
+    
+    //     // Define a map for CSV columns to database fields
+    //     $columnMap = [
+    //         '*Code' => 'student_id',
+    //         '*First Name' => 'first_name',
+    //         'Mid name' => 'mid_name',
+    //         'last name' => 'last_name',
+    //         '*Gender' => 'gender',
+    //         '*DOB(in dd/mm/yyyy format)' => 'dob',
+    //         'Student Aadhaar No.' => 'stu_aadhaar_no',
+    //         'Mother Tongue' => 'mother_tongue',
+    //         'Religion' => 'religion',
+    //         '*Blood Group' => 'blood_group',
+    //         'caste' => 'caste',
+    //         'Sub Caste' => 'subcaste',
+    //         'Class' => 'class_id',
+    //         'Division' => 'section_id',
+    //         '*Mother Name' => 'mother_name',
+    //         'Mother Occupation' => 'mother_occupation',
+    //         '*Mother Mobile No.(Only Indian Numbers)' => 'mother_mobile',
+    //         '*Mother Email-Id' => 'mother_email',
+    //         '*Father Name' => 'father_name',
+    //         'Father Occupation' => 'father_occupation',
+    //         '*Father Mobile No.(Only Indian Numbers)' => 'father_mobile',
+    //         '*Father Email-Id' => 'father_email',
+    //         'Mother Aadhaar No.' => 'mother_aadhaar_no',
+    //         'Father Aadhaar No.' => 'father_aadhaar_no',
+    //         '*Address' => 'permant_add',
+    //         '*City' => 'city',
+    //         '*State' => 'state',
+    //         '*DOA(in dd/mm/yyyy format)' => 'admission_date',
+    //         '*GRN No' => 'reg_no',
+    //     ];
+    
+    //     // Prepare an array to collect invalid rows for reporting
+    //     $invalidRows = [];
+    
+    //     // Loop through each row of data
+    //     foreach ($rows as $rowIndex => $row) {
+    //         // Skip empty rows
+    //         if (empty($row)) {
+    //             continue;
+    //         }
+    
+    //         // Map CSV columns to database fields
+    //         $studentData = [];
+    //         foreach ($header as $index => $columnName) {
+    //             if (isset($columnMap[$columnName])) {
+    //                 $dbField = $columnMap[$columnName];
+    //                 $studentData[$dbField] = $row[$index] ?? null;
+    //             }
+    //         }
+    
+    //         // Validate that `student_id` exists
+    //         if (empty($studentData['student_id'])) {
+    //             $invalidRows[] = [
+    //                 'row' => $rowIndex + 2, // Adding 2 to account for the header row and 0-based index
+    //                 'error' => 'Missing student ID',
+    //             ];
+    //             continue;
+    //         }
+    
+    //         // Find the student by `student_id`
+    //         $student = Student::where('student_id', $studentData['student_id'])->first();
+    
+    //         // If student exists, update the data
+    //         if ($student) {
+    //             // Handle date format for 'dob' and 'admission_date' if provided in 'dd/mm/yyyy' format
+    //             if (!empty($studentData['dob'])) {
+    //                 $dob = \DateTime::createFromFormat('d/m/Y', $studentData['dob']);
+    //                 if ($dob) {
+    //                     $studentData['dob'] = $dob->format('Y-m-d');
+    //                 } else {
+    //                     $invalidRows[] = [
+    //                         'row' => $rowIndex + 2,
+    //                         'error' => 'Invalid DOB format',
+    //                     ];
+    //                     continue;
+    //                 }
+    //             }
+    
+    //             if (!empty($studentData['admission_date'])) {
+    //                 $admissionDate = \DateTime::createFromFormat('d/m/Y', $studentData['admission_date']);
+    //                 if ($admissionDate) {
+    //                     $studentData['admission_date'] = $admissionDate->format('Y-m-d');
+    //                 } else {
+    //                     $invalidRows[] = [
+    //                         'row' => $rowIndex + 2,
+    //                         'error' => 'Invalid admission date format',
+    //                     ];
+    //                     continue;
+    //                 }
+    //             }
+    
+    //             // Update the student's data
+    //             $student->update($studentData);
+    //         } else {
+    //             // Collect error if student not found
+    //             $invalidRows[] = [
+    //                 'row' => $rowIndex + 2,
+    //                 'error' => 'Student not found',
+    //             ];
+    //         }
+    //     }
+    
+    //     // If there are invalid rows, return them in the response
+    //     if (!empty($invalidRows)) {
+    //         return response()->json([
+    //             'message' => 'Some rows contained errors.',
+    //             'invalid_rows' => $invalidRows,
+    //         ], 422);
+    //     }
+    
+    //     // Return a success response
+    //     return response()->json(['message' => 'Student data updated successfully.'], 200);
+    // }
+   
+
     public function updateCsvData(Request $request)
-    {
-        // Validate that a CSV file is uploaded
-        $request->validate([
-            'file' => 'required|mimes:csv,txt',
-        ]);
-    
-        // Read the uploaded CSV file
-        $file = $request->file('file');
-        $csvData = file_get_contents($file);
-        $rows = array_map('str_getcsv', explode("\n", $csvData));
-        $header = array_shift($rows); // Extract the header row
-    
-        // Define a map for CSV columns to database fields
-        $columnMap = [
-            '*Code' => 'student_id',
-            '*First Name' => 'first_name',
-            'Mid name' => 'mid_name',
-            'last name' => 'last_name',
-            '*Gender' => 'gender',
-            '*DOB(in dd/mm/yyyy format)' => 'dob',
-            'Student Aadhaar No.' => 'stu_aadhaar_no',
-            'Mother Tongue' => 'mother_tongue',
-            'Religion' => 'religion',
-            '*Blood Group' => 'blood_group',
-            'caste' => 'caste',
-            'Sub Caste' => 'subcaste',
-            'Class' => 'class_id',
-            'Division' => 'section_id',
-            '*Mother Name' => 'mother_name',
-            'Mother Occupation' => 'mother_occupation',
-            '*Mother Mobile No.(Only Indian Numbers)' => 'mother_mobile',
-            '*Mother Email-Id' => 'mother_email',
-            '*Father Name' => 'father_name',
-            'Father Occupation' => 'father_occupation',
-            '*Father Mobile No.(Only Indian Numbers)' => 'father_mobile',
-            '*Father Email-Id' => 'father_email',
-            'Mother Aadhaar No.' => 'mother_aadhaar_no',
-            'Father Aadhaar No.' => 'father_aadhaar_no',
-            '*Address' => 'permant_add',
-            '*City' => 'city',
-            '*State' => 'state',
-            '*DOA(in dd/mm/yyyy format)' => 'admission_date',
-            '*GRN No' => 'reg_no',
-        ];
-    
-        // Loop through each row of data
-        foreach ($rows as $row) {
-            // Map CSV columns to database fields
-            $studentData = [];
-            foreach ($header as $index => $columnName) {
-                if (isset($columnMap[$columnName])) {
-                    $dbField = $columnMap[$columnName];
-                    $studentData[$dbField] = $row[$index] ?? null;
-                }
-            }
-    
-            // Validate that `student_id` exists
-            if (!isset($studentData['student_id'])) {
-                continue; // Skip rows without a valid `student_id`
-            }
-    
-            // Find the student by `student_id`
-            $student = Student::where('student_id', $studentData['student_id'])->first();
-    
-            if ($student) {
-                // Update the student's data
-                $student->update($studentData);
+{
+    // Validate that a CSV file is uploaded
+    $request->validate([
+        'file' => 'required|file|mimes:csv,txt|max:2048',
+    ]);
+
+    // Read the uploaded CSV file
+    $file = $request->file('file');
+    if (!$file->isValid()) {
+        return response()->json(['message' => 'Invalid file upload'], 400);
+    }
+
+    // Get the contents of the uploaded file
+    $csvData = file_get_contents($file->getRealPath());
+    $rows = array_map('str_getcsv', explode("\n", $csvData));
+    $header = array_shift($rows); // Extract the header row
+
+    // Define a map for CSV columns to database fields
+    $columnMap = [
+        '*Code' => 'student_id',
+        '*First Name' => 'first_name',
+        'Mid name' => 'mid_name',
+        'last name' => 'last_name',
+        '*Gender' => 'gender',
+        '*DOB(in dd/mm/yyyy format)' => 'dob',
+        'Student Aadhaar No.' => 'stu_aadhaar_no',
+        'Mother Tongue' => 'mother_tongue',
+        'Religion' => 'religion',
+        '*Blood Group' => 'blood_group',
+        'caste' => 'caste',
+        'Sub Caste' => 'subcaste',
+        'Class' => 'class_id',
+        'Division' => 'section_id',
+        '*Mother Name' => 'mother_name',
+        'Mother Occupation' => 'mother_occupation',
+        '*Mother Mobile No.(Only Indian Numbers)' => 'mother_mobile',
+        '*Mother Email-Id' => 'mother_email',
+        '*Father Name' => 'father_name',
+        'Father Occupation' => 'father_occupation',
+        '*Father Mobile No.(Only Indian Numbers)' => 'father_mobile',
+        '*Father Email-Id' => 'father_email',
+        'Mother Aadhaar No.' => 'mother_aadhaar_no',
+        'Father Aadhaar No.' => 'father_aadhaar_no',
+        '*Address' => 'permant_add',
+        '*City' => 'city',
+        '*State' => 'state',
+        '*DOA(in dd/mm/yyyy format)' => 'admission_date',
+        '*GRN No' => 'reg_no',
+    ];
+
+    // Prepare an array to collect invalid rows for reporting
+    $invalidRows = [];
+
+    // Loop through each row of data
+    foreach ($rows as $rowIndex => $row) {
+        // Skip empty rows
+        if (empty(array_filter($row))) {
+            continue;
+        }
+
+        // Map CSV columns to database fields
+        $studentData = [];
+        foreach ($header as $index => $columnName) {
+            if (isset($columnMap[$columnName])) {
+                $dbField = $columnMap[$columnName];
+                $studentData[$dbField] = $row[$index] ?? null;
             }
         }
-    
-        // Return a success response
-        return response()->json(['message' => 'Student data updated successfully.'], 200);
+
+        // Validate that `student_id` exists
+        if (empty($studentData['student_id'])) {
+            $invalidRows[] = [
+                'row' => $rowIndex + 2, // Adding 2 to account for the header row and 0-based index
+                'error' => 'Missing student ID',
+            ];
+            continue;
+        }
+
+        // Find the student by `student_id`
+        $student = Student::where('student_id', $studentData['student_id'])->first();
+
+        // If student exists, update the data
+        if ($student) {
+            // Handle date format for 'dob' and 'admission_date'
+            if (!empty($studentData['dob'])) {
+                $dob = \DateTime::createFromFormat('d/m/Y', $studentData['dob']);
+                if ($dob) {
+                    $studentData['dob'] = $dob->format('Y-m-d');
+                } else {
+                    $invalidRows[] = [
+                        'row' => $rowIndex + 2,
+                        'error' => 'Invalid DOB format',
+                    ];
+                    continue;
+                }
+            }
+
+            if (!empty($studentData['admission_date'])) {
+                $admissionDate = \DateTime::createFromFormat('d/m/Y', $studentData['admission_date']);
+                if ($admissionDate) {
+                    $studentData['admission_date'] = $admissionDate->format('Y-m-d');
+                } else {
+                    $invalidRows[] = [
+                        'row' => $rowIndex + 2,
+                        'error' => 'Invalid admission date format',
+                    ];
+                    continue;
+                }
+            }
+
+            // Update the student's data
+            $student->update($studentData);
+        } else {
+            // Collect error if student not found
+            $invalidRows[] = [
+                'row' => $rowIndex + 2,
+                'error' => 'Student not found',
+            ];
+        }
     }
+
+    // If there are invalid rows, return them in the response
+    if (!empty($invalidRows)) {
+        return response()->json([
+            'message' => 'Some rows contained errors.',
+            'invalid_rows' => $invalidRows,
+        ], 422);
+    }
+
+    // Return a success response
+    return response()->json(['message' => 'Student data updated successfully.'], 200);
+}
+
+
+    
     
     
 

@@ -2009,6 +2009,327 @@ public function storeStaff(Request $request)
 // }
 
 
+// public function updateStaff(Request $request, $id)
+// {
+//     DB::beginTransaction(); // Start the transaction
+
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//             'teacher_image_name.string' => 'The file must be an image.',
+//             'role.required' => 'The role field is required.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             // 'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
+//             'email' => 'required|string|email',
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string',
+//             'teacher_image_name' => 'nullable|string', // Base64 string
+//             // 'role' => 'required|string|max:255',
+//         ], $messages);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+         
+
+//         $staff = Teacher::findOrFail($id);
+            
+//             // Get the existing image URL for comparison
+//             $existingImageUrl = Storage::url('teacher_images/' . $staff->teacher_image_name);
+//             // Handle base64 image
+//     if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+//         $newImageData = $request->input('teacher_image_name');
+
+//         // Check if the new image data matches the existing image URL
+//         if ($existingImageUrl !== $newImageData) {
+//             if (preg_match('/^data:image\/(\w+);base64,/', $newImageData, $type)) {
+//                 $newImageData = substr($newImageData, strpos($newImageData, ',') + 1);
+//                 $type = strtolower($type[1]); // jpg, png, gif
+
+//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+//                     throw new \Exception('Invalid image type');
+//                 }
+                
+//                 $newImageData = base64_decode($newImageData);
+//                 if ($newImageData === false) {
+//                     throw new \Exception('Base64 decode failed');
+//                 }
+                
+//                 // Generate a filename for the new image
+//                 $filename = 'teacher_' . time() . '.' . $type;
+//                 $filePath = storage_path('app/public/teacher_images/' . $filename);
+                
+//                 // Ensure directory exists
+//                 $directory = dirname($filePath);
+//                 if (!is_dir($directory)) {
+//                     mkdir($directory, 0755, true);
+//                 }
+
+//                 // Save the new image to file
+//                 if (file_put_contents($filePath, $newImageData) === false) {
+//                     throw new \Exception('Failed to save image file');
+//                 }
+
+//                 // Update the validated data with the new filename
+//                 $validatedData['teacher_image_name'] = $filename;
+//             } else {
+//                 throw new \Exception('Invalid image data');
+//             }
+//         } else {
+//             // If the image is the same, keep the existing filename
+//             $validatedData['teacher_image_name'] = $staff->teacher_image_name;
+//         }
+//     }
+            
+           
+
+
+       
+
+//         // Handle base64 image
+//         // if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+//         //     $imageData = $request->input('teacher_image_name');
+//         //     if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+//         //         $imageData = substr($imageData, strpos($imageData, ',') + 1);
+//         //         $type = strtolower($type[1]); // jpg, png, gif
+//         //         if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+//         //             throw new \Exception('Invalid image type');
+//         //         }
+//         //         $imageData = base64_decode($imageData);
+//         //         if ($imageData === false) {
+//         //             throw new \Exception('Base64 decode failed');
+//         //         }
+//         //         $filename = 'teacher_' . time() . '.' . $type;
+//         //         $filePath = storage_path('app/public/teacher_images/'.$filename);
+
+//         //         // Ensure directory exists
+//         //         $directory = dirname($filePath);
+//         //         if (!is_dir($directory)) {
+//         //             mkdir($directory, 0755, true);
+//         //         }
+
+//         //         // Save image to file
+//         //         if (file_put_contents($filePath, $imageData) === false) {
+//         //             throw new \Exception('Failed to save image file');
+//         //         }
+
+//         //         $validatedData['teacher_image_name'] = $filename;
+//         //     } else {
+//         //         throw new \Exception('Invalid image data');
+//         //     }
+//         // }
+
+//         // Find the teacher record by ID
+//         $teacher = Teacher::findOrFail($id);
+//         $teacher->fill($validatedData);
+
+//         if (!$teacher->save()) {
+//             DB::rollBack(); // Rollback the transaction
+//             return response()->json([
+//                 'message' => 'Failed to update teacher',
+//             ], 500);
+//         }
+
+//         // Update user associated with the teacher
+//         $user = User::where('reg_id', $teacher->teacher_id)->first();
+//         if ($user) {
+//             $user->name = $validatedData['name'];
+//             $user->email = strtolower(str_replace(' ', '.', trim($validatedData['name']))) . '@arnolds';
+
+//             if (!$user->save()) {
+//                 DB::rollBack(); // Rollback the transaction
+//                 return response()->json([
+//                     'message' => 'Failed to update user',
+//                 ], 500);
+//             }
+//         }
+
+//         DB::commit(); // Commit the transaction
+//         return response()->json([
+//             'message' => 'Teacher updated successfully!',
+//             'teacher' => $teacher,
+//             'user' => $user,
+//         ], 200);
+
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         DB::rollBack(); // Rollback the transaction on validation error
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         // Handle unexpected errors
+//         if (isset($teacher) && $teacher->exists) {
+//             // Keep teacher record but return an error
+//         }
+//         DB::rollBack(); // Rollback the transaction
+//         return response()->json([
+//             'message' => 'An error occurred while updating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+// public function updateStaff(Request $request, $id)
+// {
+//     DB::beginTransaction(); // Start the transaction
+
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//             'teacher_image_name.string' => 'The file must be an image.',
+//             'role.required' => 'The role field is required.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email',
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string',
+//             'teacher_image_name' => 'nullable|string', // Base64 string
+//         ], $messages);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         $staff = Teacher::findOrFail($id);
+
+//         // Update image only if new valid image data is provided
+//         $newImageData = $request->input('teacher_image_name');
+//         if ($newImageData && $newImageData !== 'null') {
+//             if (preg_match('/^data:image\/(\w+);base64,/', $newImageData, $type)) {
+//                 $newImageData = substr($newImageData, strpos($newImageData, ',') + 1);
+//                 $type = strtolower($type[1]); // jpg, png, gif
+
+//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+//                     throw new \Exception('Invalid image type');
+//                 }
+
+//                 $newImageData = base64_decode($newImageData);
+//                 if ($newImageData === false) {
+//                     throw new \Exception('Base64 decode failed');
+//                 }
+
+//                 // Generate a filename for the new image
+//                 $filename = 'teacher_' . time() . '.' . $type;
+//                 $filePath = storage_path('app/public/teacher_images/' . $filename);
+
+//                 // Ensure directory exists
+//                 $directory = dirname($filePath);
+//                 if (!is_dir($directory)) {
+//                     mkdir($directory, 0755, true);
+//                 }
+
+//                 // Save the new image to file
+//                 if (file_put_contents($filePath, $newImageData) === false) {
+//                     throw new \Exception('Failed to save image file');
+//                 }
+
+//                 // Update the validated data with the new filename
+//                 $validatedData['teacher_image_name'] = $filename;
+//             } else {
+//                 throw new \Exception('Invalid image data');
+//             }
+//         } else {
+//             // If no new valid image data is provided, keep the existing filename
+//             $validatedData['teacher_image_name'] = $staff->teacher_image_name;
+//         }
+
+//         // Update teacher record
+//         $staff->fill($validatedData);
+
+//         if (!$staff->save()) {
+//             DB::rollBack(); // Rollback the transaction
+//             return response()->json([
+//                 'message' => 'Failed to update teacher',
+//             ], 500);
+//         }
+
+//         // Update user associated with the teacher
+//         $user = User::where('reg_id', $staff->teacher_id)->first();
+//         if ($user) {
+//             $user->name = $validatedData['name'];
+//             $user->email = strtolower(str_replace(' ', '.', trim($validatedData['name']))) . '@arnolds';
+
+//             if (!$user->save()) {
+//                 DB::rollBack(); // Rollback the transaction
+//                 return response()->json([
+//                     'message' => 'Failed to update user',
+//                 ], 500);
+//             }
+//         }
+
+//         DB::commit(); // Commit the transaction
+//         return response()->json([
+//             'message' => 'Teacher updated successfully!',
+//             'teacher' => $staff,
+//             'user' => $user,
+//         ], 200);
+
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         DB::rollBack(); // Rollback the transaction on validation error
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         DB::rollBack(); // Rollback the transaction
+//         return response()->json([
+//             'message' => 'An error occurred while updating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
 public function updateStaff(Request $request, $id)
 {
     DB::beginTransaction(); // Start the transaction
@@ -2038,7 +2359,6 @@ public function updateStaff(Request $request, $id)
             'blood_group' => 'nullable|string|max:10',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
-            // 'email' => 'required|string|email|max:255|unique:teacher,email,' . $id . ',teacher_id',
             'email' => 'required|string|email',
             'designation' => 'nullable|string|max:255',
             'academic_qual' => 'nullable|array',
@@ -2049,28 +2369,33 @@ public function updateStaff(Request $request, $id)
             'experience' => 'nullable|string|max:255',
             'aadhar_card_no' => 'nullable|string',
             'teacher_image_name' => 'nullable|string', // Base64 string
-            // 'role' => 'required|string|max:255',
         ], $messages);
 
         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
         }
 
-        // Handle base64 image
-        if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
-            $imageData = $request->input('teacher_image_name');
-            if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-                $imageData = substr($imageData, strpos($imageData, ',') + 1);
+        $staff = Teacher::findOrFail($id);
+
+        // Handle image upload
+        $newImageData = $request->input('teacher_image_name');
+        if ($newImageData && $newImageData !== 'null') {
+            if (preg_match('/^data:image\/(\w+);base64,/', $newImageData, $type)) {
+                $newImageData = substr($newImageData, strpos($newImageData, ',') + 1);
                 $type = strtolower($type[1]); // jpg, png, gif
+
                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
                     throw new \Exception('Invalid image type');
                 }
-                $imageData = base64_decode($imageData);
-                if ($imageData === false) {
+
+                $newImageData = base64_decode($newImageData);
+                if ($newImageData === false) {
                     throw new \Exception('Base64 decode failed');
                 }
+
+                // Generate a filename for the new image
                 $filename = 'teacher_' . time() . '.' . $type;
-                $filePath = storage_path('app/public/teacher_images/'.$filename);
+                $filePath = storage_path('app/public/teacher_images/' . $filename);
 
                 // Ensure directory exists
                 $directory = dirname($filePath);
@@ -2078,46 +2403,37 @@ public function updateStaff(Request $request, $id)
                     mkdir($directory, 0755, true);
                 }
 
-                // Save image to file
-                if (file_put_contents($filePath, $imageData) === false) {
+                // Save the new image to file
+                if (file_put_contents($filePath, $newImageData) === false) {
                     throw new \Exception('Failed to save image file');
                 }
 
+                // Update validated data with the new filename
                 $validatedData['teacher_image_name'] = $filename;
             } else {
                 throw new \Exception('Invalid image data');
             }
+        } else {
+            // If no new valid image data is provided, keep the existing filename
+            $validatedData['teacher_image_name'] = $staff->teacher_image_name;
         }
 
-        // Find the teacher record by ID
-        $teacher = Teacher::findOrFail($id);
-        $teacher->fill($validatedData);
-
-        if (!$teacher->save()) {
-            DB::rollBack(); // Rollback the transaction
-            return response()->json([
-                'message' => 'Failed to update teacher',
-            ], 500);
-        }
+        // Update teacher record
+        $staff->fill($validatedData);
+        $staff->save();
 
         // Update user associated with the teacher
-        $user = User::where('reg_id', $teacher->teacher_id)->first();
+        $user = User::where('reg_id', $staff->teacher_id)->first();
         if ($user) {
             $user->name = $validatedData['name'];
             $user->email = strtolower(str_replace(' ', '.', trim($validatedData['name']))) . '@arnolds';
-
-            if (!$user->save()) {
-                DB::rollBack(); // Rollback the transaction
-                return response()->json([
-                    'message' => 'Failed to update user',
-                ], 500);
-            }
+            $user->save();
         }
 
         DB::commit(); // Commit the transaction
         return response()->json([
             'message' => 'Teacher updated successfully!',
-            'teacher' => $teacher,
+            'teacher' => $staff,
             'user' => $user,
         ], 200);
 
@@ -2128,17 +2444,16 @@ public function updateStaff(Request $request, $id)
             'errors' => $e->errors(),
         ], 422);
     } catch (\Exception $e) {
-        // Handle unexpected errors
-        if (isset($teacher) && $teacher->exists) {
-            // Keep teacher record but return an error
-        }
-        DB::rollBack(); // Rollback the transaction
+        DB::rollBack(); // Rollback the transaction on error
         return response()->json([
             'message' => 'An error occurred while updating the teacher',
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
         ], 500);
     }
 }
+
+
+
 
 
 public function deleteStaff($id)
@@ -2569,7 +2884,10 @@ public function toggleActiveStudent($studentId)
             
         $user = UserMaster::find($user_id);
         if(!$user){
-            return response()->json("User ID not found");
+            return response()->json( [
+                'Status' => 404 ,
+                 'Message' => "User Id not found"
+              ]);
         }
         $password = "arnolds";
         $user->password=$password;
