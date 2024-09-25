@@ -2791,6 +2791,7 @@ public function getSubjectAllotmentWithTeachersBySection(Request $request, $sect
     $subjectAllotments = SubjectAllotment::with(['getSubject', 'getTeacher'])
         ->where('section_id', $sectionId)
         ->where('academic_yr', $academicYr)
+        ->whereNotNull('sm_id')
         ->get()
         ->groupBy('sm_id');
 
