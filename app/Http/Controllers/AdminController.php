@@ -2533,6 +2533,7 @@ public function getDivisionsAndSubjects(Request $request, $classId)
     $divisionNames = Division::where('academic_yr', $academicYr)
         ->where('class_id', $classId)
         ->select('section_id', 'name')
+        ->orderBy('name', 'asc')
         ->distinct()
         ->get();
     
