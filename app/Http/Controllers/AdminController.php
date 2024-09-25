@@ -1814,8 +1814,8 @@ public function getallSectionsWithStudentCount(Request $request)
     $payload = getTokenPayload($request);
     $academicYr = $payload->get('academic_year');
     $divisions = Division::with('getClass')
-        ->withCount(['students' => function ($query) use ($academicYr) {
-            $query->where('academic_yr', $academicYr);
+            ->withCount(['students' => function ($query) use ($academicYr) {
+            $query->distinct()->where('academic_yr', $academicYr);
         }])
         ->where('academic_yr', $academicYr)
         ->get();
@@ -1823,62 +1823,6 @@ public function getallSectionsWithStudentCount(Request $request)
 }
 
 
-//  // get the student list by the section id 
-// public function getStudentListBySection(Request $request)
-// {
-//     $payload = getTokenPayload($request);    
-//     $academicYr = $payload->get('academic_year');    
-//     $sectionId = $request->query('section_id');    
-//     $query = Student::with(['parents','userMaster','getClass', 'getDivision',])->where('academic_yr', $academicYr)
-//         ->where('IsDelete','N');    
-//     if ($sectionId) {
-//         $query->where('section_id', $sectionId);
-//     }
-
-//     $students = $query->orderBy('roll_no')->get();    
-//     // $studentCount = $students->count();    
-    
-//     return response()->json([
-//         // 'count' => $studentCount,
-//         'students' => $students,
-      
-//     ]);
-// }
-
-
-// public function getStudentListBySection(Request $request)
-// {
-//     $payload = getTokenPayload($request);
-//     $academicYr = $payload->get('academic_year');
-//     $sectionId = $request->query('section_id');
-
-//     // Fetch the student list along with necessary relationships
-//     $query = Student::with(['parents', 'userMaster', 'getClass', 'getDivision'])
-//         ->where('academic_yr', $academicYr)
-//         ->where('IsDelete', 'N');
-
-//     if ($sectionId) {
-//         $query->where('section_id', $sectionId);
-//     }
-
-//     // Retrieve students with order by roll number
-//     $students = $query->orderBy('roll_no')->get();
-
-//     // Append image URLs for each student
-//     $students->each(function ($student) {
-//         if ($student->image_name) {
-//             // Generate the full URL for the student image
-//             $student->image_url = asset('storage/uploads/student_image/' . $student->image_name);
-//         } else {
-//             // Set a default image if no image is available
-//             $student->image_url = asset('storage/uploads/student_image/default.png');
-//         }
-//     });
-
-//     return response()->json([
-//         'students' => $students,
-//     ]);
-// }
 
 public function getStudentListBySection(Request $request)
 {
@@ -1889,6 +1833,7 @@ public function getStudentListBySection(Request $request)
     // Fetch the student list along with necessary relationships
     $query = Student::with(['parents', 'userMaster', 'getClass', 'getDivision'])
         ->where('academic_yr', $academicYr)
+        ->distinct()
         ->where('IsDelete', 'N');
 
     if ($sectionId) {
@@ -2223,49 +2168,42 @@ public function toggleActiveStudent($studentId)
             // }
 
 
-            if ($request->has('student_image_name')) {
-                $newImageData = $request->input('student_image_name');
-                $existingImageUrl = Storage::url('student_image/' . $student->image_name);
-    
-                // Check if the new image data is null
-                if ($newImageData === null || $newImageData === 'null') {
-                    // If the new image data is null, keep the existing filename
-                    $validatedData['image_name'] = $student->image_name;
-                } elseif (!empty($newImageData)) {
-                    // Check if the new image data matches the existing image URL
-                    if ($existingImageUrl !== $newImageData) {
-                        if (preg_match('/^data:image\/(\w+);base64,/', $newImageData, $type)) {
-                            $newImageData = substr($newImageData, strpos($newImageData, ',') + 1);
-                            $type = strtolower($type[1]); // jpg, png, gif
-    
-                            if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
-                                throw new \Exception('Invalid image type');
-                            }
-    
-                            // Decode the image data
-                            $newImageData = base64_decode($newImageData);
-                            if ($newImageData === false) {
-                                throw new \Exception('Base64 decode failed');
-                            }
-    
-                            // Generate a unique filename
-                            $imageName = $studentId . '.' . $type;
-                            $imagePath = public_path('uploads/student_image/' . $imageName);
-    
-                            // Store the image
-                            file_put_contents($imagePath, $newImageData);
-                            $validatedData['image_name'] = $imageName;
-    
-                            Log::info("Image uploaded for student ID: {$studentId}");
-                        } else {
-                            throw new \Exception('Invalid image data format');
+            if ($request->has('image_name')) {
+                $newImageData = $request->input('image_name');
+            
+                if (!empty($newImageData)) {
+                    if (preg_match('/^data:image\/(\w+);base64,/', $newImageData, $type)) {
+                        $newImageData = substr($newImageData, strpos($newImageData, ',') + 1);
+                        $type = strtolower($type[1]); // jpg, png, gif
+            
+                        if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+                            throw new \Exception('Invalid image type');
                         }
+            
+                        // Decode the image
+                        $newImageData = base64_decode($newImageData);
+                        if ($newImageData === false) {
+                            throw new \Exception('Base64 decode failed');
+                        }
+            
+                        // Generate a unique filename
+                        $imageName = $studentId . '.' . $type;
+                        $imagePath = public_path('storage/uploads/student_image/' . $imageName);
+            
+                        // Save the image file
+                        file_put_contents($imagePath, $newImageData);
+                        $validatedData['image_name'] = $imageName;
+            
+                        Log::info("Image uploaded for student ID: {$studentId}");
                     } else {
-                        // Keep the existing filename if the same image is submitted
-                        $validatedData['image_name'] = $student->image_name;
+                        throw new \Exception('Invalid image data format');
                     }
                 }
             }
+            
+
+
+
     
             // Include academic year in the update data
             $validatedData['academic_yr'] = $academicYr;
