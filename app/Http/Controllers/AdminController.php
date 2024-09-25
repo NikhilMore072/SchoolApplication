@@ -2276,25 +2276,25 @@ public function toggleActiveStudent($studentId)
                     }
                 
 
-                $apiData = [
-                    'user_id' => '',
-                    'short_name' => 'SACS',
-                ];
+                // $apiData = [
+                //     'user_id' => '',
+                //     'short_name' => 'SACS',
+                // ];
 
-                $oldEmailPreference = $user->user_id; // Store old email preference for comparison
+                // $oldEmailPreference = $user->user_id; // Store old email preference for comparison
 
-                // Check if the email preference changed
-                if ($oldEmailPreference != $apiData['user_id']) {
-                    // Call the external API only if the email preference has changed
-                    $response = Http::post('http://aceventura.in/demo/evolvuUserService/user_create_new', $apiData);
-                    if ($response->successful()) {
-                        Log::info("API call successful for student ID: {$studentId}");
-                    } else {
-                        Log::error("API call failed for student ID: {$studentId}");
-                    }
-                } else {
-                    Log::info("Email preference unchanged for student ID: {$studentId}");
-                }
+                // // Check if the email preference changed
+                // if ($oldEmailPreference != $apiData['user_id']) {
+                //     // Call the external API only if the email preference has changed
+                //     $response = Http::post('http://aceventura.in/demo/evolvuUserService/user_create_new', $apiData);
+                //     if ($response->successful()) {
+                //         Log::info("API call successful for student ID: {$studentId}");
+                //     } else {
+                //         Log::error("API call failed for student ID: {$studentId}");
+                //     }
+                // } else {
+                //     Log::info("Email preference unchanged for student ID: {$studentId}");
+                // }
             }
 
             return response()->json(['success' => 'Student and parent information updated successfully']);
