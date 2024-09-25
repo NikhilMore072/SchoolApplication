@@ -1549,17 +1549,23 @@ if ($request->has('teacher_image_name')) {
 
         // Update user associated with the teacher
         $user = User::where('reg_id', $teacher->teacher_id)->first();
-        if ($user) {
+        if($user){
             $user->name = $validatedData['name'];
-            $user->email = strtolower(str_replace(' ', '.', trim($validatedData['name']))) . '@arnolds';
-
-            if (!$user->save()) {
-                DB::rollBack(); // Rollback the transaction
-                return response()->json([
-                    'message' => 'Failed to update user',
-                ], 500);
-            }
+            $user->email = $validatedData['email'];
+            $user->save();
         }
+
+        // if ($user) {
+        //     $user->name = $validatedData['name'];
+        //     $user->email = strtolower(str_replace(' ', '.', trim($validatedData['name']))) . '@arnolds';
+
+        //     if (!$user->save()) {
+        //         DB::rollBack(); // Rollback the transaction
+        //         return response()->json([
+        //             'message' => 'Failed to update user',
+        //         ], 500);
+        //     }
+        // }
 
         DB::commit(); // Commit the transaction
         return response()->json([
@@ -2062,7 +2068,7 @@ public function toggleActiveStudent($studentId)
         if(!$user){
             return response()->json( [
                 'Status' => 404 ,
-                 'Message' => "User Id not found"
+                 'Error' => "User Id not found"
               ]);
         }
         $password = "arnolds";
@@ -2300,7 +2306,7 @@ public function toggleActiveStudent($studentId)
                     ]);
                 } else {
                     // If the record doesn't exist, create a new one with parent_id as the id
-                    DB::insert('INSERT INTO contact_details (id, phone_no, email_id, m_emailid, sms_consent) VALUES (?, ?, ?, ?, ?, ?)', [
+                    DB::insert('INSERT INTO contact_details (id, phone_no, email_id, m_emailid, sms_consent) VALUES (?, ?, ?, ?, ?)', [
                         $student->parent_id,                
                         $parent->f_mobile,
                         $parent->f_email,
