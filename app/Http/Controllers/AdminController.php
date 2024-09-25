@@ -1201,425 +1201,12 @@ public function editStaff($id)
 //     }
 // }
 
-// public function storeStaff(Request $request)
-// {
-//     try {
-//         $messages = [
-//             'name.required' => 'The name field is mandatory.',
-//             'birthday.required' => 'The birthday field is required.',
-//             'date_of_joining.required' => 'The date of joining is required.',
-//             'email.required' => 'The email field is required.',
-//             'email.email' => 'The email must be a valid email address.',
-//             'email.unique' => 'The email has already been taken.',
-//             'phone.required' => 'The phone number is required.',
-//             'phone.max' => 'The phone number cannot exceed 15 characters.',
-//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
-//             'teacher_image_name.string' => 'The file must be an image.',
-//             'role.required' => 'The role field is required.',
-//         ];
-
-//         $validatedData = $request->validate([
-//             'employee_id' => 'nullable|string|max:255',
-//             'name' => 'required|string|max:255',
-//             'birthday' => 'required|date',
-//             'date_of_joining' => 'required|date',
-//             'sex' => 'required|string|max:10',
-//             'religion' => 'nullable|string|max:255',
-//             'blood_group' => 'nullable|string|max:10',
-//             'address' => 'required|string|max:255',
-//             'phone' => 'required|string|max:15',
-//             'email' => 'required|string|email|max:255|unique:teacher,email',
-//             'designation' => 'nullable|string|max:255',
-//             'academic_qual' => 'nullable|array',
-//             'academic_qual.*' => 'nullable|string|max:255',
-//             'professional_qual' => 'nullable|string|max:255',
-//             'special_sub' => 'nullable|string|max:255',
-//             'trained' => 'nullable|string|max:255',
-//             'experience' => 'nullable|string|max:255',
-//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
-//             'teacher_image_name' => 'nullable|string', // Base64 string
-//             'role' => 'required|string|max:255',
-//         ], $messages);
-
-//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
-//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
-//         }
-
-//         // Handle base64 image
-//         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
-//             $imageData = $request->input('teacher_image_name');
-//             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-//                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
-//                 $type = strtolower($type[1]); // jpg, png, gif
-//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
-//                     throw new \Exception('Invalid image type');
-//                 }
-//                 $imageData = base64_decode($imageData);
-//                 if ($imageData === false) {
-//                     throw new \Exception('Base64 decode failed');
-//                 }
-//                 $filename = 'teacher_' . time() . '.' . $type;
-//                 $filePath = storage_path('app/public/teacher_images/'.$filename);
-
-//                 // Ensure directory exists
-//                 $directory = dirname($filePath);
-//                 if (!is_dir($directory)) {
-//                     mkdir($directory, 0755, true);
-//                 }
-
-//                 // Save image to file
-//                 if (file_put_contents($filePath, $imageData) === false) {
-//                     throw new \Exception('Failed to save image file');
-//                 }
-
-//                 $validatedData['teacher_image_name'] = $filename;
-//             } else {
-//                 throw new \Exception('Invalid image data');
-//             }
-//         }
-
-//         // Create Teacher record
-//         $teacher = new Teacher();
-//         $teacher->fill($validatedData);
-//         $teacher->IsDelete = 'N';
-
-//         if (!$teacher->save()) {
-//             return response()->json([
-//                 'message' => 'Failed to create teacher',
-//             ], 500);
-//         }
-
-//         // Create User record
-//         $user = User::create([
-//             'email' => $validatedData['email'],
-//             'name' => $validatedData['name'],
-//             'password' => Hash::make('arnolds'),
-//             'reg_id' => $teacher->teacher_id,
-//             'role_id' => $validatedData['role'],
-//             'IsDelete' => 'N',
-//         ]);
-
-//         if (!$user) {
-//             // Rollback by deleting the teacher record if user creation fails
-//             $teacher->delete();
-//             return response()->json([
-//                 'message' => 'Failed to create user',
-//             ], 500);
-//         }
-
-//         return response()->json([
-//             'message' => 'Teacher and user created successfully!',
-//             'teacher' => $teacher,
-//             'user' => $user,
-//         ], 201);
-//     } catch (\Illuminate\Validation\ValidationException $e) {
-//         return response()->json([
-//             'message' => 'Validation failed',
-//             'errors' => $e->errors(),
-//         ], 422);
-//     } catch (\Exception $e) {
-//         // Handle unexpected errors
-//         if (isset($teacher) && $teacher->exists) {
-//             // Rollback by deleting the teacher record if an unexpected error occurs
-//             $teacher->delete();
-//         }
-//         return response()->json([
-//             'message' => 'An error occurred while creating the teacher',
-//             'error' => $e->getMessage()
-//         ], 500);
-//     }
-// }
-
-// public function storeStaff(Request $request)
-// {
-//     try {
-//         $messages = [
-//             'name.required' => 'The name field is mandatory.',
-//             'birthday.required' => 'The birthday field is required.',
-//             'date_of_joining.required' => 'The date of joining is required.',
-//             'email.required' => 'The email field is required.',
-//             'email.email' => 'The email must be a valid email address.',
-//             'email.unique' => 'The email has already been taken.',
-//             'phone.required' => 'The phone number is required.',
-//             'phone.max' => 'The phone number cannot exceed 15 characters.',
-//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
-//             'teacher_image_name.string' => 'The file must be an image.',
-//             'role.required' => 'The role field is required.',
-//         ];
-
-//         $validatedData = $request->validate([
-//             'employee_id' => 'nullable|string|max:255',
-//             'name' => 'required|string|max:255',
-//             'birthday' => 'required|date',
-//             'date_of_joining' => 'required|date',
-//             'sex' => 'required|string|max:10',
-//             'religion' => 'nullable|string|max:255',
-//             'blood_group' => 'nullable|string|max:10',
-//             'address' => 'required|string|max:255',
-//             'phone' => 'required|string|max:15',
-//             // 'email' => 'required|string|email|max:255|unique:teacher,email',
-//             'email' => 'required|string|email|max:50',
-
-//             'designation' => 'nullable|string|max:255',
-//             'academic_qual' => 'nullable|array',
-//             'academic_qual.*' => 'nullable|string|max:255',
-//             'professional_qual' => 'nullable|string|max:255',
-//             'special_sub' => 'nullable|string|max:255',
-//             'trained' => 'nullable|string|max:255',
-//             'experience' => 'nullable|string|max:255',
-//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
-//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
-//             'teacher_image_name' => 'nullable|string', // Base64 string
-//             'role' => 'required|string|max:255',
-//         ], $messages);
-
-//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
-//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
-//         }
-
-//         // Handle base64 image
-//         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
-//             $imageData = $request->input('teacher_image_name');
-//             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-//                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
-//                 $type = strtolower($type[1]); // jpg, png, gif
-//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
-//                     throw new \Exception('Invalid image type');
-//                 }
-//                 $imageData = base64_decode($imageData);
-//                 if ($imageData === false) {
-//                     throw new \Exception('Base64 decode failed');
-//                 }
-//                 $filename = 'teacher_' . time() . '.' . $type;
-//                 $filePath = storage_path('app/public/teacher_images/'.$filename);
-
-//                 // Ensure directory exists
-//                 $directory = dirname($filePath);
-//                 if (!is_dir($directory)) {
-//                     mkdir($directory, 0755, true);
-//                 }
-
-//                 // Save image to file
-//                 if (file_put_contents($filePath, $imageData) === false) {
-//                     throw new \Exception('Failed to save image file');
-//                 }
-
-//                 $validatedData['teacher_image_name'] = $filename;
-//             } else {
-//                 throw new \Exception('Invalid image data');
-//             }
-//         }
-
-//         // Generate the user email
-//         $name = trim($validatedData['name']);
-//         $userEmail = strtolower(str_replace(' ', '.', $name)) . '@arnolds';
-
-//         // Create Teacher record
-//         $teacher = new Teacher();
-//         $teacher->fill($validatedData);
-//         $teacher->IsDelete = 'N';
-
-//         if (!$teacher->save()) {
-//             return response()->json([
-//                 'message' => 'Failed to create teacher',
-//             ], 500);
-//         }
-
-//         // Create User record
-//         $user = User::create([
-//             'email' => $userEmail,
-//             'name' => $validatedData['name'],
-//             'password' => Hash::make('arnolds'),
-//             'reg_id' => $teacher->teacher_id,
-//             'role_id' => $validatedData['role'],
-//             'IsDelete' => 'N',
-//         ]);
-
-//         if (!$user) {
-//             // Rollback by deleting the teacher record if user creation fails
-//             $teacher->delete();
-//             return response()->json([
-//                 'message' => 'Failed to create user',
-//             ], 500);
-//         }
-
-//         // Send welcome email
-//         Mail::to($validatedData['email'])->send(new WelcomeEmail($userEmail, 'arnolds'));
-
-//         return response()->json([
-//             'message' => 'Teacher and user created successfully!',
-//             'teacher' => $teacher,
-//             'user' => $user,
-//         ], 201);
-//     } catch (\Illuminate\Validation\ValidationException $e) {
-//         return response()->json([
-//             'message' => 'Validation failed',
-//             'errors' => $e->errors(),
-//         ], 422);
-//     } catch (\Exception $e) {
-//         // Handle unexpected errors
-//         if (isset($teacher) && $teacher->exists) {
-//             // Rollback by deleting the teacher record if an unexpected error occurs
-//             $teacher->delete();
-//         }
-//         return response()->json([
-//             'message' => 'An error occurred while creating the teacher',
-//             'error' => $e->getMessage()
-//         ], 500);
-//     }
-// }
-
-// public function storeStaff(Request $request)
-// {
-//     DB::beginTransaction(); // Start the transaction
-
-//     try {
-//         $messages = [
-//             'name.required' => 'The name field is mandatory.',
-//             'birthday.required' => 'The birthday field is required.',
-//             'date_of_joining.required' => 'The date of joining is required.',
-//             'email.required' => 'The email field is required.',
-//             'email.email' => 'The email must be a valid email address.',
-//             'email.unique' => 'The email has already been taken.',
-//             'phone.required' => 'The phone number is required.',
-//             'phone.max' => 'The phone number cannot exceed 15 characters.',
-//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
-//             'teacher_image_name.string' => 'The file must be an image.',
-//             'role.required' => 'The role field is required.',
-//         ];
-
-//         $validatedData = $request->validate([
-//             'employee_id' => 'nullable|string|max:255',
-//             'name' => 'required|string|max:255',
-//             'birthday' => 'required|date',
-//             'date_of_joining' => 'required|date',
-//             'sex' => 'required|string|max:10',
-//             'religion' => 'nullable|string|max:255',
-//             'blood_group' => 'nullable|string|max:10',
-//             'address' => 'required|string|max:255',
-//             'phone' => 'required|string|max:15',
-//             'email' => 'required|string|email|max:50',
-//             'designation' => 'nullable|string|max:255',
-//             'academic_qual' => 'nullable|array',
-//             'academic_qual.*' => 'nullable|string|max:255',
-//             'professional_qual' => 'nullable|string|max:255',
-//             'special_sub' => 'nullable|string|max:255',
-//             'trained' => 'nullable|string|max:255',
-//             'experience' => 'nullable|string|max:255',
-//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
-//             'teacher_image_name' => 'nullable|string', // Base64 string
-//             'role' => 'required|string|max:255',
-//         ], $messages);
-
-//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
-//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
-//         }
-
-//         // Handle base64 image
-//         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
-//             $imageData = $request->input('teacher_image_name');
-//             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
-//                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
-//                 $type = strtolower($type[1]); // jpg, png, gif
-//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
-//                     throw new \Exception('Invalid image type');
-//                 }
-//                 $imageData = base64_decode($imageData);
-//                 if ($imageData === false) {
-//                     throw new \Exception('Base64 decode failed');
-//                 }
-//                 $filename = 'teacher_' . time() . '.' . $type;
-//                 $filePath = storage_path('app/public/teacher_images/'.$filename);
-
-//                 // Ensure directory exists
-//                 $directory = dirname($filePath);
-//                 if (!is_dir($directory)) {
-//                     mkdir($directory, 0755, true);
-//                 }
-
-//                 // Save image to file
-//                 if (file_put_contents($filePath, $imageData) === false) {
-//                     throw new \Exception('Failed to save image file');
-//                 }
-
-//                 $validatedData['teacher_image_name'] = $filename;
-//             } else {
-//                 throw new \Exception('Invalid image data');
-//             }
-//         }
-
-//         // Generate the user email
-//         $name = trim($validatedData['name']);
-//         $userEmail = strtolower(str_replace(' ', '.', $name)) . '@arnolds';
-
-//         // Create Teacher record
-//         $teacher = new Teacher();
-//         $teacher->fill($validatedData);
-//         $teacher->IsDelete = 'N';
-
-//         if (!$teacher->save()) {
-//             DB::rollBack(); // Rollback the transaction
-//             return response()->json([
-//                 'message' => 'Failed to create teacher',
-//             ], 500);
-//         }
-
-//         // Create User record
-//         $user = User::create([
-//             'email' => $userEmail,
-//             'name' => $validatedData['name'],
-//             'password' => Hash::make('arnolds'),
-//             'reg_id' => $teacher->teacher_id,
-//             'role_id' => $validatedData['role'],
-//             'IsDelete' => 'N',
-//         ]);
-
-//         if (!$user) {
-//             // Rollback by deleting the teacher record if user creation fails
-//             $teacher->delete();
-//             DB::rollBack(); // Rollback the transaction
-//             return response()->json([
-//                 'message' => 'Failed to create user',
-//             ], 500);
-//         }
-
-//         // Send welcome email
-//         Mail::to($validatedData['email'])->send(new WelcomeEmail($userEmail, 'arnolds'));
-
-//         DB::commit(); // Commit the transaction
-
-//         return response()->json([
-//             'message' => 'Teacher and user created successfully!',
-//             'teacher' => $teacher,
-//             'user' => $user,
-//         ], 201);
-//     } catch (\Illuminate\Validation\ValidationException $e) {
-//         DB::rollBack(); // Rollback the transaction on validation error
-//         return response()->json([
-//             'message' => 'Validation failed',
-//             'errors' => $e->errors(),
-//         ], 422);
-//     } catch (\Exception $e) {
-//         // Handle unexpected errors
-//         if (isset($teacher) && $teacher->exists) {
-//             // Rollback by deleting the teacher record if an unexpected error occurs
-//             $teacher->delete();
-//         }
-//         DB::rollBack(); // Rollback the transaction
-//         return response()->json([
-//             'message' => 'An error occurred while creating the teacher',
-//             'error' => $e->getMessage()
-//         ], 500);
-//     }
-// }
-
-
-
 public function storeStaff(Request $request)
 {
     DB::beginTransaction(); // Start the transaction
 
     try {
+        // Validation rules and messages
         $messages = [
             'name.required' => 'The name field is mandatory.',
             'birthday.required' => 'The birthday field is required.',
@@ -1630,7 +1217,6 @@ public function storeStaff(Request $request)
             'phone.required' => 'The phone number is required.',
             'phone.max' => 'The phone number cannot exceed 15 characters.',
             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
-            'teacher_image_name.string' => 'The file must be an image.',
             'role.required' => 'The role field is required.',
         ];
 
@@ -1644,7 +1230,7 @@ public function storeStaff(Request $request)
             'blood_group' => 'nullable|string|max:10',
             'address' => 'required|string|max:255',
             'phone' => 'required|string|max:15',
-            'email' => 'required|string|email|max:50',
+            'email' => 'required|string|email|max:50|unique:users,email', // Ensure email uniqueness
             'designation' => 'nullable|string|max:255',
             'academic_qual' => 'nullable|array',
             'academic_qual.*' => 'nullable|string|max:255',
@@ -1653,50 +1239,58 @@ public function storeStaff(Request $request)
             'trained' => 'nullable|string|max:255',
             'experience' => 'nullable|string|max:255',
             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
-            'teacher_image_name' => 'nullable|string', // Base64 string
+            'teacher_image_name' => 'nullable|string', // Base64 string or null
             'role' => 'required|string|max:255',
         ], $messages);
 
+        // Concatenate academic qualifications into a string if they exist
         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
         }
 
-        // Handle base64 image
-        if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+        // Check if teacher_image_name is null or empty and skip image-saving process if true
+        if ($request->input('teacher_image_name') === 'null') {
+            // Set image field as null if no image is provided
+            $validatedData['teacher_image_name'] = null;
+        } else {
+            // Handle image saving logic when teacher_image_name is not null
             $imageData = $request->input('teacher_image_name');
             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
                 $type = strtolower($type[1]); // jpg, png, gif
+
+                // Validate image type
                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
                     throw new \Exception('Invalid image type');
                 }
+
+                // Base64 decode the image
                 $imageData = base64_decode($imageData);
                 if ($imageData === false) {
                     throw new \Exception('Base64 decode failed');
                 }
-                $filename = 'teacher_' . time() . '.' . $type;
-                $filePath = storage_path('app/public/teacher_images/'.$filename);
 
-                // Ensure directory exists
+                // Define the filename and path to store the image
+                $filename = 'teacher_' . time() . '.' . $type;
+                $filePath = storage_path('app/public/teacher_images/' . $filename);
+
+                // Ensure the directory exists
                 $directory = dirname($filePath);
                 if (!is_dir($directory)) {
                     mkdir($directory, 0755, true);
                 }
 
-                // Save image to file
+                // Save the image to the file system
                 if (file_put_contents($filePath, $imageData) === false) {
                     throw new \Exception('Failed to save image file');
                 }
 
+                // Store the filename in validated data
                 $validatedData['teacher_image_name'] = $filename;
             } else {
                 throw new \Exception('Invalid image data');
             }
         }
-
-        // Generate the user email
-        $name = trim($validatedData['name']);
-        $userEmail = strtolower(str_replace(' ', '.', $name)) . '@arnolds';
 
         // Create Teacher record
         $teacher = new Teacher();
@@ -1712,7 +1306,7 @@ public function storeStaff(Request $request)
 
         // Create User record
         $user = User::create([
-            'email' => $userEmail,
+            'email' => $validatedData['email'],
             'name' => $validatedData['name'],
             'password' => Hash::make('arnolds'),
             'reg_id' => $teacher->teacher_id,
@@ -1730,11 +1324,11 @@ public function storeStaff(Request $request)
         }
 
         // Send welcome email
-        Mail::to($validatedData['email'])->send(new WelcomeEmail($userEmail, 'arnolds'));
+        Mail::to($validatedData['email'])->send(new WelcomeEmail($user->email, 'arnolds'));
 
         // Call external API
         $response = Http::post('http://aceventura.in/demo/evolvuUserService/create_staff_userid', [
-            'user_id' => $userEmail,
+            'user_id' => $user->email,
             'role' => $validatedData['role'],
             'short_name' => 'SACS',
         ]);
@@ -1780,6 +1374,9 @@ public function storeStaff(Request $request)
         ], 500);
     }
 }
+
+
+
 
 
 // handle the existing image 
@@ -2363,63 +1960,6 @@ public function getStudentByGRN($reg_no)
     return response()->json(['student' => [$student]]);
 }
 
-// public function deleteStudent($studentId)
-// {
-//     // Find the student by ID
-//     $student = Student::find($studentId);
-    
-//     if (!$student) {
-//         return response()->json(['error' => 'Student not found'], 404);
-//     }
-
-//     // Update the student's isDelete and isModify status to 'Y'
-//     $student->isDelete = 'Y';
-//     $student->isModify = 'Y';
-//     $student->save();
-
-//     // Hard delete the student from the user_master table
-//     $userMaster = UserMaster::where('reg_id', $studentId)->first();
-//     if ($userMaster) {
-//         $userMaster->delete();
-//     }
-
-//     // Check if the student has siblings
-//     $siblingsCount = Student::where('parent_id', $student->parent_id)
-//         ->where('student_id', '!=', $studentId)
-//         ->where('isDelete', 'N')
-//         ->count();
-
-//     // If no siblings are present, mark the parent as deleted in the parent table
-//     if ($siblingsCount == 0) {
-//         $parent = Parents::find($student->parent_id);
-//         if ($parent) {
-//             $parent->isDelete = 'Y';
-//             $parent->save();
-
-//             // Hard delete parent information from the user_master table
-//             $userMasterParent = UserMaster::where('reg_id', $student->parent_id)->first();
-//             if ($userMasterParent) {
-//                 $userMasterParent->delete();
-//             }
-
-//             // Hard delete parent information from the contact_details table
-//             ContactDetails::where('id', $student->parent_id)->delete();
-//         }
-//     }
-
-//     // After deletion, check if the deleted information exists in the deleted_contact_details table
-//     $deletedContact = DeletedContactDetails::where('student_id', $studentId)->first();
-//     if (!$deletedContact) {
-//         // Insert deleted contact details into the deleted_contact_details table
-//         DeletedContactDetails::create([
-//             'student_id' => $studentId,
-//             'parent_id' => $student->parent_id,
-//             'contact_info' => $student->contact_details // Assuming the contact info is available in the student model
-//         ]);
-//     }
-
-//     return response()->json(['message' => 'Student deleted successfully']);
-// }
 
 public function deleteStudent( Request $request , $studentId)
 {
@@ -3289,235 +2829,6 @@ public function getSubjectAllotmentWithTeachersBySection(Request $request, $sect
 }
 
 
-
-// public function updateTeacherAllotment(Request $request, $classId, $sectionId)
-// {
-//     // Retrieve the incoming data
-//     $subjects = $request->input('subjects'); // Expecting an array of subjects with details
-//     $payload = getTokenPayload($request);
-
-//     if (!$payload) {
-//         return response()->json(['error' => 'Invalid or missing token'], 401);
-//     }
-//     $academicYr = $payload->get('academic_year');
-
-//     // Step 1: Fetch existing records
-//     $existingRecords = SubjectAllotment::where('class_id', $classId)
-//         ->where('section_id', $sectionId)
-//         ->where('academic_yr', $academicYr)
-//         ->get();
-
-//     // Collect IDs to keep
-//     $idsToKeep = [];
-
-//     // Step 2: Iterate through the subjects from the input and process updates
-//     foreach ($subjects as $sm_id => $subjectData) {
-//         foreach ($subjectData['details'] as $detail) {
-//             // If subject_id is null, get the max subject_id from the database and increment by 1
-//             if ($detail['subject_id'] === null) {
-//                 $maxSubjectId = SubjectAllotment::max('subject_id');
-//                 $detail['subject_id'] = $maxSubjectId ? $maxSubjectId + 1 : 1;
-//             }
-
-//             // Store the identifier in the list of IDs to keep
-//             $idsToKeep[] = [
-//                 'subject_id' => $detail['subject_id'],
-//                 'class_id' => $classId,
-//                 'section_id' => $sectionId,
-//                 'teacher_id' => $detail['teacher_id'],
-//                 'sm_id' => $sm_id
-//             ];
-
-//             // Check if the subject allotment exists based on subject_id, class_id, section_id, and academic_yr
-//             $subjectAllotment = SubjectAllotment::where('subject_id', $detail['subject_id'])
-//                 ->where('class_id', $classId)
-//                 ->where('section_id', $sectionId)
-//                 ->where('academic_yr', $academicYr)
-//                 ->first();
-
-//             if ($detail['teacher_id'] === null) {
-//                 // If teacher_id is null, delete the record 
-//                 if ($subjectAllotment) {
-//                     $subjectAllotment->delete();
-//                 }
-//             } else {
-//                 if ($subjectAllotment) {
-//                     // Update the existing record
-//                     $subjectAllotment->update([
-//                         'teacher_id' => $detail['teacher_id'],
-//                     ]);
-//                 } else {
-//                     // Create a new record if it doesn't exist
-//                     SubjectAllotment::create([
-//                         'subject_id' => $detail['subject_id'],
-//                         'class_id' => $classId,
-//                         'section_id' => $sectionId,
-//                         'teacher_id' => $detail['teacher_id'],
-//                         'academic_yr' => $academicYr,
-//                         'sm_id' => $sm_id // Use the sm_id from the subjects keys
-//                     ]);
-//                 }
-//             }
-//         }
-//     }
-
-//     // Step 3: Delete records not present in the input data
-//     $idsToKeepArray = array_map(function ($item) {
-//         return [
-//             'subject_id' => $item['subject_id'],
-//             'class_id' => $item['class_id'],
-//             'section_id' => $item['section_id'],
-//             'teacher_id' => $item['teacher_id'],
-//             'sm_id' => $item['sm_id'],
-//         ];
-//     }, $idsToKeep);
-
-//     $idsToKeepArray = array_map(function ($item) {
-//         return implode(',', [
-//             $item['subject_id'],
-//             $item['class_id'],
-//             $item['section_id'],
-//             $item['teacher_id'],
-//             $item['sm_id'],
-//         ]);
-//     }, $idsToKeepArray);
-
-//     $existingRecordsToDelete = $existingRecords->filter(function ($record) use ($idsToKeepArray) {
-//         $recordKey = implode(',', [
-//             $record->subject_id,
-//             $record->class_id,
-//             $record->section_id,
-//             $record->teacher_id,
-//             $record->sm_id,
-//         ]);
-
-//         return !in_array($recordKey, $idsToKeepArray);
-//     });
-
-//     foreach ($existingRecordsToDelete as $record) {
-//         $record->delete();
-//     }
-
-//     return response()->json([
-//         'status' => 'success',
-//         'message' => 'Subject allotments updated successfully.',
-//     ]);
-// }
-
-
-// public function updateTeacherAllotment(Request $request, $classId, $sectionId)
-// {
-//     // Retrieve the incoming data
-//     $subjects = $request->input('subjects'); // Expecting an array of subjects with details
-//     $payload = getTokenPayload($request);
-
-//     if (!$payload) {
-//         return response()->json(['error' => 'Invalid or missing token'], 401);
-//     }
-//     $academicYr = $payload->get('academic_year');
-
-//     // Step 1: Fetch existing records
-//     $existingRecords = SubjectAllotment::where('class_id', $classId)
-//         ->where('section_id', $sectionId)
-//         ->where('academic_yr', $academicYr)
-//         ->get();
-
-//     // Collect IDs to keep
-//     $idsToKeep = [];
-
-//     // Step 2: Iterate through the subjects from the input and process updates
-//     foreach ($subjects as $sm_id => $subjectData) {
-//         foreach ($subjectData['details'] as $detail) {
-//             // If subject_id is null, get the max subject_id from the database and increment by 1
-//             if ($detail['subject_id'] === null) {
-//                 $maxSubjectId = SubjectAllotment::max('subject_id');
-//                 $detail['subject_id'] = $maxSubjectId ? $maxSubjectId + 1 : 1;
-//             }
-
-//             // Store the identifier in the list of IDs to keep
-//             $idsToKeep[] = [
-//                 'subject_id' => $detail['subject_id'],
-//                 'class_id' => $classId,
-//                 'section_id' => $sectionId,
-//                 'teacher_id' => $detail['teacher_id'],
-//                 'sm_id' => $sm_id
-//             ];
-
-//             // Check if the subject allotment exists based on subject_id, class_id, section_id, and academic_yr
-//             $subjectAllotment = SubjectAllotment::where('subject_id', $detail['subject_id'])
-//                 ->where('class_id', $classId)
-//                 ->where('section_id', $sectionId)
-//                 ->where('academic_yr', $academicYr)
-//                 ->first();
-
-//             if ($detail['teacher_id'] === null) {
-//                 // If teacher_id is null, delete the record 
-//                 if ($subjectAllotment) {
-//                     $subjectAllotment->delete();
-//                 }
-//             } else {
-//                 if ($subjectAllotment) {
-//                     // Update the existing record
-//                     $subjectAllotment->update([
-//                         'teacher_id' => $detail['teacher_id'],
-//                     ]);
-//                 } else {
-//                     // Create a new record if it doesn't exist
-//                     SubjectAllotment::create([
-//                         'subject_id' => $detail['subject_id'],
-//                         'class_id' => $classId,
-//                         'section_id' => $sectionId,
-//                         'teacher_id' => $detail['teacher_id'],
-//                         'academic_yr' => $academicYr,
-//                         'sm_id' => $sm_id // Use the sm_id from the subjects keys
-//                     ]);
-//                 }
-//             }
-//         }
-//     }
-
-//     // Step 3: Delete records not present in the input data, but retain one record with null teacher_id if needed
-//     $idsToKeepArray = array_map(function ($item) {
-//         return implode(',', [
-//             $item['subject_id'],
-//             $item['class_id'],
-//             $item['section_id'],
-//             $item['teacher_id'],
-//             $item['sm_id'],
-//         ]);
-//     }, $idsToKeep);
-
-//     $groupedExistingRecords = $existingRecords->groupBy('sm_id');
-
-//     foreach ($groupedExistingRecords as $sm_id => $records) {
-//         $recordsToDelete = $records->filter(function ($record) use ($idsToKeepArray) {
-//             $recordKey = implode(',', [
-//                 $record->subject_id,
-//                 $record->class_id,
-//                 $record->section_id,
-//                 $record->teacher_id,
-//                 $record->sm_id,
-//             ]);
-//             return !in_array($recordKey, $idsToKeepArray);
-//         });
-
-//         $recordCount = $recordsToDelete->count();
-
-//         if ($recordCount > 1) {
-//             // Delete all but one, and set teacher_id to null on the remaining one
-//             $recordsToDelete->slice(1)->each->delete();
-//             $recordsToDelete->first()->update(['teacher_id' => null]);
-//         } elseif ($recordCount == 1) {
-//             // Just set teacher_id to null
-//             $recordsToDelete->first()->update(['teacher_id' => null]);
-//         }
-//     }
-
-//     return response()->json([
-//         'status' => 'success',
-//         'message' => 'Subject allotments updated successfully.',
-//     ]);
-// }
 
 public function updateTeacherAllotment(Request $request, $classId, $sectionId)
 {
@@ -6941,4 +6252,878 @@ public function createOrUpdateSubjectAllotment(Request $request, $class_id)
 //             'error' => $e->getMessage(),
 //         ], 500);
 //     }
+// }
+
+
+
+// public function storeStaff(Request $request)
+// {
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//             'teacher_image_name.string' => 'The file must be an image.',
+//             'role.required' => 'The role field is required.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:255|unique:teacher,email',
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+//             'teacher_image_name' => 'nullable|string', // Base64 string
+//             'role' => 'required|string|max:255',
+//         ], $messages);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         // Handle base64 image
+//         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+//             $imageData = $request->input('teacher_image_name');
+//             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+//                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
+//                 $type = strtolower($type[1]); // jpg, png, gif
+//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+//                     throw new \Exception('Invalid image type');
+//                 }
+//                 $imageData = base64_decode($imageData);
+//                 if ($imageData === false) {
+//                     throw new \Exception('Base64 decode failed');
+//                 }
+//                 $filename = 'teacher_' . time() . '.' . $type;
+//                 $filePath = storage_path('app/public/teacher_images/'.$filename);
+
+//                 // Ensure directory exists
+//                 $directory = dirname($filePath);
+//                 if (!is_dir($directory)) {
+//                     mkdir($directory, 0755, true);
+//                 }
+
+//                 // Save image to file
+//                 if (file_put_contents($filePath, $imageData) === false) {
+//                     throw new \Exception('Failed to save image file');
+//                 }
+
+//                 $validatedData['teacher_image_name'] = $filename;
+//             } else {
+//                 throw new \Exception('Invalid image data');
+//             }
+//         }
+
+//         // Create Teacher record
+//         $teacher = new Teacher();
+//         $teacher->fill($validatedData);
+//         $teacher->IsDelete = 'N';
+
+//         if (!$teacher->save()) {
+//             return response()->json([
+//                 'message' => 'Failed to create teacher',
+//             ], 500);
+//         }
+
+//         // Create User record
+//         $user = User::create([
+//             'email' => $validatedData['email'],
+//             'name' => $validatedData['name'],
+//             'password' => Hash::make('arnolds'),
+//             'reg_id' => $teacher->teacher_id,
+//             'role_id' => $validatedData['role'],
+//             'IsDelete' => 'N',
+//         ]);
+
+//         if (!$user) {
+//             // Rollback by deleting the teacher record if user creation fails
+//             $teacher->delete();
+//             return response()->json([
+//                 'message' => 'Failed to create user',
+//             ], 500);
+//         }
+
+//         return response()->json([
+//             'message' => 'Teacher and user created successfully!',
+//             'teacher' => $teacher,
+//             'user' => $user,
+//         ], 201);
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         // Handle unexpected errors
+//         if (isset($teacher) && $teacher->exists) {
+//             // Rollback by deleting the teacher record if an unexpected error occurs
+//             $teacher->delete();
+//         }
+//         return response()->json([
+//             'message' => 'An error occurred while creating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+// public function storeStaff(Request $request)
+// {
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//             'teacher_image_name.string' => 'The file must be an image.',
+//             'role.required' => 'The role field is required.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             // 'email' => 'required|string|email|max:255|unique:teacher,email',
+//             'email' => 'required|string|email|max:50',
+
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+//             'teacher_image_name' => 'nullable|string', // Base64 string
+//             'role' => 'required|string|max:255',
+//         ], $messages);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         // Handle base64 image
+//         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+//             $imageData = $request->input('teacher_image_name');
+//             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+//                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
+//                 $type = strtolower($type[1]); // jpg, png, gif
+//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+//                     throw new \Exception('Invalid image type');
+//                 }
+//                 $imageData = base64_decode($imageData);
+//                 if ($imageData === false) {
+//                     throw new \Exception('Base64 decode failed');
+//                 }
+//                 $filename = 'teacher_' . time() . '.' . $type;
+//                 $filePath = storage_path('app/public/teacher_images/'.$filename);
+
+//                 // Ensure directory exists
+//                 $directory = dirname($filePath);
+//                 if (!is_dir($directory)) {
+//                     mkdir($directory, 0755, true);
+//                 }
+
+//                 // Save image to file
+//                 if (file_put_contents($filePath, $imageData) === false) {
+//                     throw new \Exception('Failed to save image file');
+//                 }
+
+//                 $validatedData['teacher_image_name'] = $filename;
+//             } else {
+//                 throw new \Exception('Invalid image data');
+//             }
+//         }
+
+//         // Generate the user email
+//         $name = trim($validatedData['name']);
+//         $userEmail = strtolower(str_replace(' ', '.', $name)) . '@arnolds';
+
+//         // Create Teacher record
+//         $teacher = new Teacher();
+//         $teacher->fill($validatedData);
+//         $teacher->IsDelete = 'N';
+
+//         if (!$teacher->save()) {
+//             return response()->json([
+//                 'message' => 'Failed to create teacher',
+//             ], 500);
+//         }
+
+//         // Create User record
+//         $user = User::create([
+//             'email' => $userEmail,
+//             'name' => $validatedData['name'],
+//             'password' => Hash::make('arnolds'),
+//             'reg_id' => $teacher->teacher_id,
+//             'role_id' => $validatedData['role'],
+//             'IsDelete' => 'N',
+//         ]);
+
+//         if (!$user) {
+//             // Rollback by deleting the teacher record if user creation fails
+//             $teacher->delete();
+//             return response()->json([
+//                 'message' => 'Failed to create user',
+//             ], 500);
+//         }
+
+//         // Send welcome email
+//         Mail::to($validatedData['email'])->send(new WelcomeEmail($userEmail, 'arnolds'));
+
+//         return response()->json([
+//             'message' => 'Teacher and user created successfully!',
+//             'teacher' => $teacher,
+//             'user' => $user,
+//         ], 201);
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         // Handle unexpected errors
+//         if (isset($teacher) && $teacher->exists) {
+//             // Rollback by deleting the teacher record if an unexpected error occurs
+//             $teacher->delete();
+//         }
+//         return response()->json([
+//             'message' => 'An error occurred while creating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+// public function storeStaff(Request $request)
+// {
+//     DB::beginTransaction(); // Start the transaction
+
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//             'teacher_image_name.string' => 'The file must be an image.',
+//             'role.required' => 'The role field is required.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:50',
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+//             'teacher_image_name' => 'nullable|string', // Base64 string
+//             'role' => 'required|string|max:255',
+//         ], $messages);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         // Handle base64 image
+//         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+//             $imageData = $request->input('teacher_image_name');
+//             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+//                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
+//                 $type = strtolower($type[1]); // jpg, png, gif
+//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+//                     throw new \Exception('Invalid image type');
+//                 }
+//                 $imageData = base64_decode($imageData);
+//                 if ($imageData === false) {
+//                     throw new \Exception('Base64 decode failed');
+//                 }
+//                 $filename = 'teacher_' . time() . '.' . $type;
+//                 $filePath = storage_path('app/public/teacher_images/'.$filename);
+
+//                 // Ensure directory exists
+//                 $directory = dirname($filePath);
+//                 if (!is_dir($directory)) {
+//                     mkdir($directory, 0755, true);
+//                 }
+
+//                 // Save image to file
+//                 if (file_put_contents($filePath, $imageData) === false) {
+//                     throw new \Exception('Failed to save image file');
+//                 }
+
+//                 $validatedData['teacher_image_name'] = $filename;
+//             } else {
+//                 throw new \Exception('Invalid image data');
+//             }
+//         }
+
+//         // Generate the user email
+//         $name = trim($validatedData['name']);
+//         $userEmail = strtolower(str_replace(' ', '.', $name)) . '@arnolds';
+
+//         // Create Teacher record
+//         $teacher = new Teacher();
+//         $teacher->fill($validatedData);
+//         $teacher->IsDelete = 'N';
+
+//         if (!$teacher->save()) {
+//             DB::rollBack(); // Rollback the transaction
+//             return response()->json([
+//                 'message' => 'Failed to create teacher',
+//             ], 500);
+//         }
+
+//         // Create User record
+//         $user = User::create([
+//             'email' => $userEmail,
+//             'name' => $validatedData['name'],
+//             'password' => Hash::make('arnolds'),
+//             'reg_id' => $teacher->teacher_id,
+//             'role_id' => $validatedData['role'],
+//             'IsDelete' => 'N',
+//         ]);
+
+//         if (!$user) {
+//             // Rollback by deleting the teacher record if user creation fails
+//             $teacher->delete();
+//             DB::rollBack(); // Rollback the transaction
+//             return response()->json([
+//                 'message' => 'Failed to create user',
+//             ], 500);
+//         }
+
+//         // Send welcome email
+//         Mail::to($validatedData['email'])->send(new WelcomeEmail($userEmail, 'arnolds'));
+
+//         DB::commit(); // Commit the transaction
+
+//         return response()->json([
+//             'message' => 'Teacher and user created successfully!',
+//             'teacher' => $teacher,
+//             'user' => $user,
+//         ], 201);
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         DB::rollBack(); // Rollback the transaction on validation error
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         // Handle unexpected errors
+//         if (isset($teacher) && $teacher->exists) {
+//             // Rollback by deleting the teacher record if an unexpected error occurs
+//             $teacher->delete();
+//         }
+//         DB::rollBack(); // Rollback the transaction
+//         return response()->json([
+//             'message' => 'An error occurred while creating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
+
+// public function storeStaff(Request $request)
+// {
+//     DB::beginTransaction(); // Start the transaction
+
+//     try {
+//         $messages = [
+//             'name.required' => 'The name field is mandatory.',
+//             'birthday.required' => 'The birthday field is required.',
+//             'date_of_joining.required' => 'The date of joining is required.',
+//             'email.required' => 'The email field is required.',
+//             'email.email' => 'The email must be a valid email address.',
+//             'email.unique' => 'The email has already been taken.',
+//             'phone.required' => 'The phone number is required.',
+//             'phone.max' => 'The phone number cannot exceed 15 characters.',
+//             'aadhar_card_no.unique' => 'The Aadhar card number has already been taken.',
+//             'teacher_image_name.string' => 'The file must be an image.',
+//             'role.required' => 'The role field is required.',
+//         ];
+
+//         $validatedData = $request->validate([
+//             'employee_id' => 'nullable|string|max:255',
+//             'name' => 'required|string|max:255',
+//             'birthday' => 'required|date',
+//             'date_of_joining' => 'required|date',
+//             'sex' => 'required|string|max:10',
+//             'religion' => 'nullable|string|max:255',
+//             'blood_group' => 'nullable|string|max:10',
+//             'address' => 'required|string|max:255',
+//             'phone' => 'required|string|max:15',
+//             'email' => 'required|string|email|max:50',
+//             'designation' => 'nullable|string|max:255',
+//             'academic_qual' => 'nullable|array',
+//             'academic_qual.*' => 'nullable|string|max:255',
+//             'professional_qual' => 'nullable|string|max:255',
+//             'special_sub' => 'nullable|string|max:255',
+//             'trained' => 'nullable|string|max:255',
+//             'experience' => 'nullable|string|max:255',
+//             'aadhar_card_no' => 'nullable|string|max:20|unique:teacher,aadhar_card_no',
+//             'teacher_image_name' => 'nullable|string', // Base64 string
+//             'role' => 'required|string|max:255',
+//         ], $messages);
+
+//         if (isset($validatedData['academic_qual']) && is_array($validatedData['academic_qual'])) {
+//             $validatedData['academic_qual'] = implode(',', $validatedData['academic_qual']);
+//         }
+
+//         // Handle base64 image
+//         if ($request->has('teacher_image_name') && !empty($request->input('teacher_image_name'))) {
+//             $imageData = $request->input('teacher_image_name');
+//             if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+//                 $imageData = substr($imageData, strpos($imageData, ',') + 1);
+//                 $type = strtolower($type[1]); // jpg, png, gif
+//                 if (!in_array($type, ['jpg', 'jpeg', 'png'])) {
+//                     throw new \Exception('Invalid image type');
+//                 }
+//                 $imageData = base64_decode($imageData);
+//                 if ($imageData === false) {
+//                     throw new \Exception('Base64 decode failed');
+//                 }
+//                 $filename = 'teacher_' . time() . '.' . $type;
+//                 $filePath = storage_path('app/public/teacher_images/'.$filename);
+
+//                 // Ensure directory exists
+//                 $directory = dirname($filePath);
+//                 if (!is_dir($directory)) {
+//                     mkdir($directory, 0755, true);
+//                 }
+
+//                 // Save image to file
+//                 if (file_put_contents($filePath, $imageData) === false) {
+//                     throw new \Exception('Failed to save image file');
+//                 }
+
+//                 $validatedData['teacher_image_name'] = $filename;
+//             } else {
+//                 throw new \Exception('Invalid image data');
+//             }
+//         }
+
+//         // Generate the user email
+//         $name = trim($validatedData['name']);
+//         $userEmail = strtolower(str_replace(' ', '.', $name)) . '@arnolds';
+
+//         // Create Teacher record
+//         $teacher = new Teacher();
+//         $teacher->fill($validatedData);
+//         $teacher->IsDelete = 'N';
+
+//         if (!$teacher->save()) {
+//             DB::rollBack(); // Rollback the transaction
+//             return response()->json([
+//                 'message' => 'Failed to create teacher',
+//             ], 500);
+//         }
+
+//         // Create User record
+//         $user = User::create([
+//             'email' => $userEmail,
+//             'name' => $validatedData['name'],
+//             'password' => Hash::make('arnolds'),
+//             'reg_id' => $teacher->teacher_id,
+//             'role_id' => $validatedData['role'],
+//             'IsDelete' => 'N',
+//         ]);
+
+//         if (!$user) {
+//             // Rollback by deleting the teacher record if user creation fails
+//             $teacher->delete();
+//             DB::rollBack(); // Rollback the transaction
+//             return response()->json([
+//                 'message' => 'Failed to create user',
+//             ], 500);
+//         }
+
+//         // Send welcome email
+//         Mail::to($validatedData['email'])->send(new WelcomeEmail($userEmail, 'arnolds'));
+
+//         // Call external API
+//         $response = Http::post('http://aceventura.in/demo/evolvuUserService/create_staff_userid', [
+//             'user_id' => $userEmail,
+//             'role' => $validatedData['role'],
+//             'short_name' => 'SACS',
+//         ]);
+
+//         // Log the API response
+//         Log::info('External API response:', [
+//             'url' => 'http://aceventura.in/demo/evolvuUserService/create_staff_userid',
+//             'status' => $response->status(),
+//             'response_body' => $response->body(),
+//         ]);
+
+//         if ($response->successful()) {
+//             DB::commit(); // Commit the transaction
+//             return response()->json([
+//                 'message' => 'Teacher and user created successfully!',
+//                 'teacher' => $teacher,
+//                 'user' => $user,
+//                 'external_api_response' => $response->json(),
+//             ], 201);
+//         } else {
+//             DB::rollBack(); // Rollback the transaction
+//             return response()->json([
+//                 'message' => 'Teacher and user created, but external API call failed',
+//                 'external_api_error' => $response->body(),
+//             ], 500);
+//         }
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         DB::rollBack(); // Rollback the transaction on validation error
+//         return response()->json([
+//             'message' => 'Validation failed',
+//             'errors' => $e->errors(),
+//         ], 422);
+//     } catch (\Exception $e) {
+//         // Handle unexpected errors
+//         if (isset($teacher) && $teacher->exists) {
+//             // Rollback by deleting the teacher record if an unexpected error occurs
+//             $teacher->delete();
+//         }
+//         DB::rollBack(); // Rollback the transaction
+//         return response()->json([
+//             'message' => 'An error occurred while creating the teacher',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
+
+
+
+// public function updateTeacherAllotment(Request $request, $classId, $sectionId)
+// {
+//     // Retrieve the incoming data
+//     $subjects = $request->input('subjects'); // Expecting an array of subjects with details
+//     $payload = getTokenPayload($request);
+
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     // Step 1: Fetch existing records
+//     $existingRecords = SubjectAllotment::where('class_id', $classId)
+//         ->where('section_id', $sectionId)
+//         ->where('academic_yr', $academicYr)
+//         ->get();
+
+//     // Collect IDs to keep
+//     $idsToKeep = [];
+
+//     // Step 2: Iterate through the subjects from the input and process updates
+//     foreach ($subjects as $sm_id => $subjectData) {
+//         foreach ($subjectData['details'] as $detail) {
+//             // If subject_id is null, get the max subject_id from the database and increment by 1
+//             if ($detail['subject_id'] === null) {
+//                 $maxSubjectId = SubjectAllotment::max('subject_id');
+//                 $detail['subject_id'] = $maxSubjectId ? $maxSubjectId + 1 : 1;
+//             }
+
+//             // Store the identifier in the list of IDs to keep
+//             $idsToKeep[] = [
+//                 'subject_id' => $detail['subject_id'],
+//                 'class_id' => $classId,
+//                 'section_id' => $sectionId,
+//                 'teacher_id' => $detail['teacher_id'],
+//                 'sm_id' => $sm_id
+//             ];
+
+//             // Check if the subject allotment exists based on subject_id, class_id, section_id, and academic_yr
+//             $subjectAllotment = SubjectAllotment::where('subject_id', $detail['subject_id'])
+//                 ->where('class_id', $classId)
+//                 ->where('section_id', $sectionId)
+//                 ->where('academic_yr', $academicYr)
+//                 ->first();
+
+//             if ($detail['teacher_id'] === null) {
+//                 // If teacher_id is null, delete the record 
+//                 if ($subjectAllotment) {
+//                     $subjectAllotment->delete();
+//                 }
+//             } else {
+//                 if ($subjectAllotment) {
+//                     // Update the existing record
+//                     $subjectAllotment->update([
+//                         'teacher_id' => $detail['teacher_id'],
+//                     ]);
+//                 } else {
+//                     // Create a new record if it doesn't exist
+//                     SubjectAllotment::create([
+//                         'subject_id' => $detail['subject_id'],
+//                         'class_id' => $classId,
+//                         'section_id' => $sectionId,
+//                         'teacher_id' => $detail['teacher_id'],
+//                         'academic_yr' => $academicYr,
+//                         'sm_id' => $sm_id // Use the sm_id from the subjects keys
+//                     ]);
+//                 }
+//             }
+//         }
+//     }
+
+//     // Step 3: Delete records not present in the input data
+//     $idsToKeepArray = array_map(function ($item) {
+//         return [
+//             'subject_id' => $item['subject_id'],
+//             'class_id' => $item['class_id'],
+//             'section_id' => $item['section_id'],
+//             'teacher_id' => $item['teacher_id'],
+//             'sm_id' => $item['sm_id'],
+//         ];
+//     }, $idsToKeep);
+
+//     $idsToKeepArray = array_map(function ($item) {
+//         return implode(',', [
+//             $item['subject_id'],
+//             $item['class_id'],
+//             $item['section_id'],
+//             $item['teacher_id'],
+//             $item['sm_id'],
+//         ]);
+//     }, $idsToKeepArray);
+
+//     $existingRecordsToDelete = $existingRecords->filter(function ($record) use ($idsToKeepArray) {
+//         $recordKey = implode(',', [
+//             $record->subject_id,
+//             $record->class_id,
+//             $record->section_id,
+//             $record->teacher_id,
+//             $record->sm_id,
+//         ]);
+
+//         return !in_array($recordKey, $idsToKeepArray);
+//     });
+
+//     foreach ($existingRecordsToDelete as $record) {
+//         $record->delete();
+//     }
+
+//     return response()->json([
+//         'status' => 'success',
+//         'message' => 'Subject allotments updated successfully.',
+//     ]);
+// }
+
+
+// public function updateTeacherAllotment(Request $request, $classId, $sectionId)
+// {
+//     // Retrieve the incoming data
+//     $subjects = $request->input('subjects'); // Expecting an array of subjects with details
+//     $payload = getTokenPayload($request);
+
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+
+//     // Step 1: Fetch existing records
+//     $existingRecords = SubjectAllotment::where('class_id', $classId)
+//         ->where('section_id', $sectionId)
+//         ->where('academic_yr', $academicYr)
+//         ->get();
+
+//     // Collect IDs to keep
+//     $idsToKeep = [];
+
+//     // Step 2: Iterate through the subjects from the input and process updates
+//     foreach ($subjects as $sm_id => $subjectData) {
+//         foreach ($subjectData['details'] as $detail) {
+//             // If subject_id is null, get the max subject_id from the database and increment by 1
+//             if ($detail['subject_id'] === null) {
+//                 $maxSubjectId = SubjectAllotment::max('subject_id');
+//                 $detail['subject_id'] = $maxSubjectId ? $maxSubjectId + 1 : 1;
+//             }
+
+//             // Store the identifier in the list of IDs to keep
+//             $idsToKeep[] = [
+//                 'subject_id' => $detail['subject_id'],
+//                 'class_id' => $classId,
+//                 'section_id' => $sectionId,
+//                 'teacher_id' => $detail['teacher_id'],
+//                 'sm_id' => $sm_id
+//             ];
+
+//             // Check if the subject allotment exists based on subject_id, class_id, section_id, and academic_yr
+//             $subjectAllotment = SubjectAllotment::where('subject_id', $detail['subject_id'])
+//                 ->where('class_id', $classId)
+//                 ->where('section_id', $sectionId)
+//                 ->where('academic_yr', $academicYr)
+//                 ->first();
+
+//             if ($detail['teacher_id'] === null) {
+//                 // If teacher_id is null, delete the record 
+//                 if ($subjectAllotment) {
+//                     $subjectAllotment->delete();
+//                 }
+//             } else {
+//                 if ($subjectAllotment) {
+//                     // Update the existing record
+//                     $subjectAllotment->update([
+//                         'teacher_id' => $detail['teacher_id'],
+//                     ]);
+//                 } else {
+//                     // Create a new record if it doesn't exist
+//                     SubjectAllotment::create([
+//                         'subject_id' => $detail['subject_id'],
+//                         'class_id' => $classId,
+//                         'section_id' => $sectionId,
+//                         'teacher_id' => $detail['teacher_id'],
+//                         'academic_yr' => $academicYr,
+//                         'sm_id' => $sm_id // Use the sm_id from the subjects keys
+//                     ]);
+//                 }
+//             }
+//         }
+//     }
+
+//     // Step 3: Delete records not present in the input data, but retain one record with null teacher_id if needed
+//     $idsToKeepArray = array_map(function ($item) {
+//         return implode(',', [
+//             $item['subject_id'],
+//             $item['class_id'],
+//             $item['section_id'],
+//             $item['teacher_id'],
+//             $item['sm_id'],
+//         ]);
+//     }, $idsToKeep);
+
+//     $groupedExistingRecords = $existingRecords->groupBy('sm_id');
+
+//     foreach ($groupedExistingRecords as $sm_id => $records) {
+//         $recordsToDelete = $records->filter(function ($record) use ($idsToKeepArray) {
+//             $recordKey = implode(',', [
+//                 $record->subject_id,
+//                 $record->class_id,
+//                 $record->section_id,
+//                 $record->teacher_id,
+//                 $record->sm_id,
+//             ]);
+//             return !in_array($recordKey, $idsToKeepArray);
+//         });
+
+//         $recordCount = $recordsToDelete->count();
+
+//         if ($recordCount > 1) {
+//             // Delete all but one, and set teacher_id to null on the remaining one
+//             $recordsToDelete->slice(1)->each->delete();
+//             $recordsToDelete->first()->update(['teacher_id' => null]);
+//         } elseif ($recordCount == 1) {
+//             // Just set teacher_id to null
+//             $recordsToDelete->first()->update(['teacher_id' => null]);
+//         }
+//     }
+
+//     return response()->json([
+//         'status' => 'success',
+//         'message' => 'Subject allotments updated successfully.',
+//     ]);
+// }
+
+
+// public function deleteStudent($studentId)
+// {
+//     // Find the student by ID
+//     $student = Student::find($studentId);
+    
+//     if (!$student) {
+//         return response()->json(['error' => 'Student not found'], 404);
+//     }
+
+//     // Update the student's isDelete and isModify status to 'Y'
+//     $student->isDelete = 'Y';
+//     $student->isModify = 'Y';
+//     $student->save();
+
+//     // Hard delete the student from the user_master table
+//     $userMaster = UserMaster::where('reg_id', $studentId)->first();
+//     if ($userMaster) {
+//         $userMaster->delete();
+//     }
+
+//     // Check if the student has siblings
+//     $siblingsCount = Student::where('parent_id', $student->parent_id)
+//         ->where('student_id', '!=', $studentId)
+//         ->where('isDelete', 'N')
+//         ->count();
+
+//     // If no siblings are present, mark the parent as deleted in the parent table
+//     if ($siblingsCount == 0) {
+//         $parent = Parents::find($student->parent_id);
+//         if ($parent) {
+//             $parent->isDelete = 'Y';
+//             $parent->save();
+
+//             // Hard delete parent information from the user_master table
+//             $userMasterParent = UserMaster::where('reg_id', $student->parent_id)->first();
+//             if ($userMasterParent) {
+//                 $userMasterParent->delete();
+//             }
+
+//             // Hard delete parent information from the contact_details table
+//             ContactDetails::where('id', $student->parent_id)->delete();
+//         }
+//     }
+
+//     // After deletion, check if the deleted information exists in the deleted_contact_details table
+//     $deletedContact = DeletedContactDetails::where('student_id', $studentId)->first();
+//     if (!$deletedContact) {
+//         // Insert deleted contact details into the deleted_contact_details table
+//         DeletedContactDetails::create([
+//             'student_id' => $studentId,
+//             'parent_id' => $student->parent_id,
+//             'contact_info' => $student->contact_details // Assuming the contact info is available in the student model
+//         ]);
+//     }
+
+//     return response()->json(['message' => 'Student deleted successfully']);
 // }
