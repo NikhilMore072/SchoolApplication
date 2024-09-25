@@ -3056,6 +3056,7 @@ public function getPresignSubjectByDivision(Request $request, $classId)
     ->select('sm_id', DB::raw('MAX(subject_id) as subject_id')) // Aggregate subject_id if needed
     ->where('academic_yr', $academicYr)
     ->where('class_id', $classId)
+    ->whereNotNull('sm_id')
     ->whereIn('section_id', $sectionIds)
     ->groupBy('sm_id')
     ->get();
