@@ -3268,7 +3268,7 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
 // Metods for the Subject for report card  
 public function getSubjectsForReportCard(Request $request)
 {
-    $subjects = SubjectForReportCard::orderBy('sequence','asc')->all();
+    $subjects = SubjectForReportCard::orderBy('sequence','asc')->get();
     return response()->json(
         ['subjects'=>$subjects]
     );
