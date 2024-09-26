@@ -2201,9 +2201,6 @@ public function toggleActiveStudent($studentId)
                 }
             }
             
-
-
-
     
             // Include academic year in the update data
             $validatedData['academic_yr'] = $academicYr;
@@ -3271,7 +3268,7 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
 // Metods for the Subject for report card  
 public function getSubjectsForReportCard(Request $request)
 {
-    $subjects = SubjectForReportCard::all();
+    $subjects = SubjectForReportCard::orderBy('sequence','asc')->all();
     return response()->json(
         ['subjects'=>$subjects]
     );
