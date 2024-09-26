@@ -3258,9 +3258,9 @@ public function updateOrCreateSubjectAllotments($class_id, $section_id, Request 
 
     // Handle extra records in the existing allotments that are not in the input
     $extraSmIds = array_diff($existingSmIds, $inputSmIds);
-    foreach ($extraSmIds as $extraSmId) {
-        $existingAllotments[$extraSmId]->update(['teacher_id' => null]);
-    }
+    // foreach ($extraSmIds as $extraSmId) {
+    //     $existingAllotments[$extraSmId]->update(['teacher_id' => null]);
+    // }
 
     return response()->json(['success' => 'Subject allotments updated or created successfully']);
 }
