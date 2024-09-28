@@ -189,13 +189,11 @@
         Route::get('/get_sub_report_allotted/{class_id}/{subject_type}', [AdminController::class, 'editSubjectAllotmentforReportCard']);
         // Route::put('/get_sub_report_allotted/{class_id}', [AdminController::class, 'createOrUpdateSubjectAllotment']);
         Route::post('/subject-allotments-reportcard/{class_id}', [AdminController::class, 'createOrUpdateSubjectAllotment']);
-
-
-
 });
 
 Route::get('/students/download-template/{section_id}', [LoginController::class, 'downloadCsvTemplateWithData']);
-Route::put('/update-students-csv', [LoginController::class, 'updateCsvData']);
+// Route::post('/update-students-csv', [LoginController::class, 'updateCsvData']);
+Route::post('/update-students-csv/{section_id}', [LoginController::class, 'updateCsvData']);
 Route::get('/get_student_by_sectionId/{section_id}', [LoginController::class, 'getStudentListbysectionforregister']);
 Route::get('/get_all_studentlist', [LoginController::class, 'getAllStudentListForRegister']);   
 
