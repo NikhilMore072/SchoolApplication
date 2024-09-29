@@ -382,160 +382,337 @@ public function getSessionData(Request $request)
         return response()->stream($callback, 200, $headers);
     }
     
+//   working functionality 
+// public function updateCsvData(Request $request, $section_id)
+// {
+//     // Validate that a CSV file is uploaded
+//     $request->validate([
+//         'file' => 'required|file|mimes:csv,txt|max:2048',
+//     ]);
+
+//     // Read the uploaded CSV file
+//     $file = $request->file('file');
+//     if (!$file->isValid()) {
+//         return response()->json(['message' => 'Invalid file upload'], 400);
+//     }
+
+//     // Get the contents of the uploaded file
+//     $csvData = file_get_contents($file->getRealPath());
+//     $rows = array_map('str_getcsv', explode("\n", $csvData));
+//     $header = array_shift($rows); // Extract the header row
+
+//     // Define a map for CSV columns to database fields
+//     $columnMap = [
+//         'student_id' => 'student_id',
+//         '*First Name' => 'first_name',
+//         'Mid name' => 'mid_name',
+//         'last name' => 'last_name',
+//         '*Gender' => 'gender',
+//         '*DOB(in dd/mm/yyyy format)' => 'dob',
+//         'Student Aadhaar No.' => 'stu_aadhaar_no',
+//         'Mother Tongue' => 'mother_tongue',
+//         'Religion' => 'religion',
+//         '*Blood Group' => 'blood_group',
+//         'caste' => 'caste',
+//         'Sub Caste' => 'subcaste',
+//         '*Mother Name' => 'mother_name',
+//         'Mother Occupation' => 'mother_occupation',
+//         '*Mother Mobile No.(Only Indian Numbers)' => 'mother_mobile',
+//         '*Mother Email-Id' => 'mother_email',
+//         '*Father Name' => 'father_name',
+//         'Father Occupation' => 'father_occupation',
+//         '*Father Mobile No.(Only Indian Numbers)' => 'father_mobile',
+//         '*Father Email-Id' => 'father_email',
+//         'Mother Aadhaar No.' => 'mother_aadhaar_no',
+//         'Father Aadhaar No.' => 'father_aadhaar_no',
+//         '*Address' => 'permant_add',
+//         '*City' => 'city',
+//         '*State' => 'state',
+//         '*DOA(in dd/mm/yyyy format)' => 'admission_date',
+//         '*GRN No' => 'reg_no',
+//     ];
+
+//     // Prepare an array to collect invalid rows for reporting
+//     $invalidRows = [];
+
+//     // Fetch the class_id using the provided section_id
+//     $division = Division::find($section_id);
+//     $class_id = $division->class_id;
+//     \Log::info('Division Data:', [
+//         'section_id' => $section_id,
+//         'division' => $division,
+//         'class_id' => $class_id,
+//     ]);
+
+//     // Loop through each row of data
+//     foreach ($rows as $rowIndex => $row) {
+//         // Skip empty rows
+//         if (empty(array_filter($row))) {
+//             continue;
+//         }
+
+//         // Map CSV columns to database fields
+//         $studentData = [];
+//         foreach ($header as $index => $columnName) {
+//             if (isset($columnMap[$columnName])) {
+//                 $dbField = $columnMap[$columnName];
+//                 $studentData[$dbField] = $row[$index] ?? null;
+//             }
+//         }
+
+//         // Log the mapped student data
+//         \Log::info('Mapped Student Data for Row ' . ($rowIndex + 2) . ': ', $studentData);
+
+//         // Validate that `student_id` exists
+//         if (empty($studentData['student_id'])) {
+//             $invalidRows[] = [
+//                 'row' => $rowIndex + 2, // Adding 2 to account for the header row and 0-based index
+//                 'error' => 'Missing student ID',
+//                 'data' => $studentData, // Include the invalid data for better debugging
+//             ];
+//             continue;
+//         }
+
+//         // Find the student by `student_id`
+//         $student = Student::where('student_id', $studentData['student_id'])->first();
+
+//         // If student exists, update the data
+//         if ($student) {
+//             // Handle parent creation or update
+//             $parentData = [
+//                 'father_name' => $studentData['father_name'] ?? null,
+//                 'father_occupation' => $studentData['father_occupation'] ?? null,
+//                 'f_mobile' => $studentData['father_mobile'] ?? null,
+//                 'f_email' => $studentData['father_email'] ?? null,
+//                 'mother_name' => $studentData['mother_name'] ?? null,
+//                 'mother_occupation' => $studentData['mother_occupation'] ?? null,
+//                 'm_mobile' => $studentData['mother_mobile'] ?? null,
+//                 'm_emailid' => $studentData['mother_email'] ?? null,
+//                 'parent_adhar_no' => $studentData['Father Aadhaar No.'] ?? null,
+//                 'm_adhar_no' => $studentData['Mother Aadhaar No.'] ?? null,
+//                 'f_dob' => $studentData['dob'] ?? null, // Use dob directly
+//                 'm_dob' => $studentData['dob'] ?? null, // You might want to separate these based on your logic
+//             ];
+
+//             // Check if the parent already exists based on mobile number or Aadhaar
+//             $parent = Parents::where('f_mobile', $parentData['f_mobile'])->orWhere('m_mobile', $parentData['m_mobile'])->first();
+
+//             if (!$parent) {
+//                 // Create a new parent if not found
+//                 $parent = Parents::create($parentData);
+//             }
+
+//             // Update the student's parent_id
+//             $student->parent_id = $parent->parent_id;
+
+//             // Set the class_id for the student
+//             $student->class_id = $class_id;  // Assign the class_id from the section_id
+
+//             // Save the student record
+//             $student->save();
+
+//             // Update the student's data (excluding parent fields)
+//             unset($studentData['father_name'], $studentData['father_occupation'], $studentData['father_mobile'], $studentData['father_email']);
+//             unset($studentData['mother_name'], $studentData['mother_occupation'], $studentData['mother_mobile'], $studentData['mother_email']);
+//             $student->update($studentData);
+//         } else {
+//             // Collect error if student not found
+//             $invalidRows[] = [
+//                 'row' => $rowIndex + 2,
+//                 'error' => 'Student not found',
+//                 'data' => $studentData,
+//             ];
+//         }
+//     }
+
+//     // If there are invalid rows, return them in the response
+//     if (!empty($invalidRows)) {
+//         return response()->json([
+//             'message' => 'Some rows contained errors.',
+//             'invalid_rows' => $invalidRows,
+//         ], 422);
+//     }
+
+//     // Return a success response
+//     return response()->json(['message' => 'Student data updated successfully.'], 200);
+// }
 
 public function updateCsvData(Request $request, $section_id)
 {
-    // Validate that a CSV file is uploaded
-    $request->validate([
-        'file' => 'required|file|mimes:csv,txt|max:2048',
-    ]);
+    try {
+        // Validate that a CSV file is uploaded
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:2048',
+        ]);
 
-    // Read the uploaded CSV file
-    $file = $request->file('file');
-    if (!$file->isValid()) {
-        return response()->json(['message' => 'Invalid file upload'], 400);
-    }
-
-    // Get the contents of the uploaded file
-    $csvData = file_get_contents($file->getRealPath());
-    $rows = array_map('str_getcsv', explode("\n", $csvData));
-    $header = array_shift($rows); // Extract the header row
-
-    // Define a map for CSV columns to database fields
-    $columnMap = [
-        'student_id' => 'student_id',
-        '*First Name' => 'first_name',
-        'Mid name' => 'mid_name',
-        'last name' => 'last_name',
-        '*Gender' => 'gender',
-        '*DOB(in dd/mm/yyyy format)' => 'dob',
-        'Student Aadhaar No.' => 'stu_aadhaar_no',
-        'Mother Tongue' => 'mother_tongue',
-        'Religion' => 'religion',
-        '*Blood Group' => 'blood_group',
-        'caste' => 'caste',
-        'Sub Caste' => 'subcaste',
-        '*Mother Name' => 'mother_name',
-        'Mother Occupation' => 'mother_occupation',
-        '*Mother Mobile No.(Only Indian Numbers)' => 'mother_mobile',
-        '*Mother Email-Id' => 'mother_email',
-        '*Father Name' => 'father_name',
-        'Father Occupation' => 'father_occupation',
-        '*Father Mobile No.(Only Indian Numbers)' => 'father_mobile',
-        '*Father Email-Id' => 'father_email',
-        'Mother Aadhaar No.' => 'mother_aadhaar_no',
-        'Father Aadhaar No.' => 'father_aadhaar_no',
-        '*Address' => 'permant_add',
-        '*City' => 'city',
-        '*State' => 'state',
-        '*DOA(in dd/mm/yyyy format)' => 'admission_date',
-        '*GRN No' => 'reg_no',
-    ];
-
-    // Prepare an array to collect invalid rows for reporting
-    $invalidRows = [];
-
-    // Fetch the class_id using the provided section_id
-    $division = Division::find($section_id);
-    $class_id = $division->class_id;
-    \Log::info('Division Data:', [
-        'section_id' => $section_id,
-        'division' => $division,
-        'class_id' => $class_id,
-    ]);
-
-    // Loop through each row of data
-    foreach ($rows as $rowIndex => $row) {
-        // Skip empty rows
-        if (empty(array_filter($row))) {
-            continue;
+        // Read the uploaded CSV file
+        $file = $request->file('file');
+        if (!$file->isValid()) {
+            \Log::error('File upload failed: Invalid file', ['file' => $file]);
+            return response()->json(['message' => 'Invalid file upload'], 400);
         }
 
-        // Map CSV columns to database fields
-        $studentData = [];
-        foreach ($header as $index => $columnName) {
-            if (isset($columnMap[$columnName])) {
-                $dbField = $columnMap[$columnName];
-                $studentData[$dbField] = $row[$index] ?? null;
+        // Get the contents of the uploaded file
+        $csvData = file_get_contents($file->getRealPath());
+        $rows = array_map('str_getcsv', explode("\n", $csvData));
+        $header = array_shift($rows); // Extract the header row
+
+        // Define a map for CSV columns to database fields
+        $columnMap = [
+            'student_id' => 'student_id',
+            '*First Name' => 'first_name',
+            'Mid name' => 'mid_name',
+            'last name' => 'last_name',
+            '*Gender' => 'gender',
+            '*DOB(in dd/mm/yyyy format)' => 'dob',
+            'Student Aadhaar No.' => 'stu_aadhaar_no',
+            'Mother Tongue' => 'mother_tongue',
+            'Religion' => 'religion',
+            '*Blood Group' => 'blood_group',
+            'caste' => 'caste',
+            'Sub Caste' => 'subcaste',
+            '*Mother Name' => 'mother_name',
+            'Mother Occupation' => 'mother_occupation',
+            '*Mother Mobile No.(Only Indian Numbers)' => 'mother_mobile',
+            '*Mother Email-Id' => 'mother_email',
+            '*Father Name' => 'father_name',
+            'Father Occupation' => 'father_occupation',
+            '*Father Mobile No.(Only Indian Numbers)' => 'father_mobile',
+            '*Father Email-Id' => 'father_email',
+            'Mother Aadhaar No.' => 'mother_aadhaar_no',
+            'Father Aadhaar No.' => 'father_aadhaar_no',
+            '*Address' => 'permant_add',
+            '*City' => 'city',
+            '*State' => 'state',
+            '*DOA(in dd/mm/yyyy format)' => 'admission_date',
+            '*GRN No' => 'reg_no',
+        ];
+
+        // Prepare an array to collect invalid rows for reporting
+        $invalidRows = [];
+
+        // Fetch the class_id using the provided section_id
+        $division = Division::find($section_id);
+        if (!$division) {
+            \Log::error('Division not found for section_id', ['section_id' => $section_id]);
+            return response()->json(['message' => 'Division not found'], 404);
+        }
+        $class_id = $division->class_id;
+
+        \Log::info('Division Data:', [
+            'section_id' => $section_id,
+            'division' => $division,
+            'class_id' => $class_id,
+        ]);
+
+        // Loop through each row of data
+        foreach ($rows as $rowIndex => $row) {
+            // Skip empty rows
+            if (empty(array_filter($row))) {
+                continue;
+            }
+
+            // Map CSV columns to database fields
+            $studentData = [];
+            foreach ($header as $index => $columnName) {
+                if (isset($columnMap[$columnName])) {
+                    $dbField = $columnMap[$columnName];
+                    $studentData[$dbField] = $row[$index] ?? null;
+                }
+            }
+
+            // Log the mapped student data
+            \Log::info('Mapped Student Data for Row ' . ($rowIndex + 2) . ': ', $studentData);
+
+            // Validate that `student_id` exists
+            if (empty($studentData['student_id'])) {
+                $invalidRows[] = [
+                    'row' => $rowIndex + 2,
+                    'error' => 'Missing student ID',
+                    'data' => $studentData, // Include the invalid data for better debugging
+                ];
+                \Log::error('Missing student ID for row ' . ($rowIndex + 2));
+                continue;
+            }
+
+            // Find the student by `student_id`
+            $student = Student::where('student_id', $studentData['student_id'])->first();
+
+            if ($student) {
+                // Handle parent creation or update
+                $parentData = [
+                    'father_name' => $studentData['father_name'] ?? null,
+                    'father_occupation' => $studentData['father_occupation'] ?? null,
+                    'f_mobile' => $studentData['father_mobile'] ?? null,
+                    'f_email' => $studentData['father_email'] ?? null,
+                    'mother_name' => $studentData['mother_name'] ?? null,
+                    'mother_occupation' => $studentData['mother_occupation'] ?? null,
+                    'm_mobile' => $studentData['mother_mobile'] ?? null,
+                    'm_emailid' => $studentData['mother_email'] ?? null,
+                    'parent_adhar_no' => $studentData['Father Aadhaar No.'] ?? null,
+                    'm_adhar_no' => $studentData['Mother Aadhaar No.'] ?? null,
+                    'f_dob' => $studentData['dob'] ?? null, // Use dob directly
+                    'm_dob' => $studentData['dob'] ?? null, // You might want to separate these based on your logic
+                ];
+
+                // Check if the parent already exists based on mobile number or Aadhaar
+                $parent = Parents::where('f_mobile', $parentData['f_mobile'])->orWhere('m_mobile', $parentData['m_mobile'])->first();
+
+                if (!$parent) {
+                    // Create a new parent if not found
+                    $parent = Parents::create($parentData);
+                }
+
+                // Update the student's parent_id
+                $student->parent_id = $parent->parent_id;
+
+                // Set the class_id for the student
+                $student->class_id = $class_id;  // Assign the class_id from the section_id
+
+                // Save the student record
+                $student->save();
+
+                // Update the student's data (excluding parent fields)
+                unset($studentData['father_name'], $studentData['father_occupation'], $studentData['father_mobile'], $studentData['father_email']);
+                unset($studentData['mother_name'], $studentData['mother_occupation'], $studentData['mother_mobile'], $studentData['mother_email']);
+                $student->update($studentData);
+            } else {
+                // Log error if student not found
+                $invalidRows[] = [
+                    'row' => $rowIndex + 2,
+                    'error' => 'Student not found',
+                    'data' => $studentData,
+                ];
+                \Log::error('Student not found for row ' . ($rowIndex + 2));
             }
         }
 
-        // Log the mapped student data
-        \Log::info('Mapped Student Data for Row ' . ($rowIndex + 2) . ': ', $studentData);
-
-        // Validate that `student_id` exists
-        if (empty($studentData['student_id'])) {
-            $invalidRows[] = [
-                'row' => $rowIndex + 2, // Adding 2 to account for the header row and 0-based index
-                'error' => 'Missing student ID',
-                'data' => $studentData, // Include the invalid data for better debugging
-            ];
-            continue;
+        // If there are invalid rows, return them in the response
+        if (!empty($invalidRows)) {
+            \Log::error('Invalid rows found', ['invalid_rows' => $invalidRows]);
+            return response()->json([
+                'message' => 'Some rows contained errors.',
+                'invalid_rows' => $invalidRows,
+            ], 422);
         }
 
-        // Find the student by `student_id`
-        $student = Student::where('student_id', $studentData['student_id'])->first();
+        // Return a success response
+        return response()->json(['message' => 'Student data updated successfully.'], 200);
+    } catch (\Exception $e) {
+        // Log the exception
+        \Log::error('Error updating CSV data', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
 
-        // If student exists, update the data
-        if ($student) {
-            // Handle parent creation or update
-            $parentData = [
-                'father_name' => $studentData['father_name'] ?? null,
-                'father_occupation' => $studentData['father_occupation'] ?? null,
-                'f_mobile' => $studentData['father_mobile'] ?? null,
-                'f_email' => $studentData['father_email'] ?? null,
-                'mother_name' => $studentData['mother_name'] ?? null,
-                'mother_occupation' => $studentData['mother_occupation'] ?? null,
-                'm_mobile' => $studentData['mother_mobile'] ?? null,
-                'm_emailid' => $studentData['mother_email'] ?? null,
-                'parent_adhar_no' => $studentData['Father Aadhaar No.'] ?? null,
-                'm_adhar_no' => $studentData['Mother Aadhaar No.'] ?? null,
-                'f_dob' => $studentData['dob'] ?? null, // Use dob directly
-                'm_dob' => $studentData['dob'] ?? null, // You might want to separate these based on your logic
-            ];
-
-            // Check if the parent already exists based on mobile number or Aadhaar
-            $parent = Parents::where('f_mobile', $parentData['f_mobile'])->orWhere('m_mobile', $parentData['m_mobile'])->first();
-
-            if (!$parent) {
-                // Create a new parent if not found
-                $parent = Parents::create($parentData);
-            }
-
-            // Update the student's parent_id
-            $student->parent_id = $parent->parent_id;
-
-            // Set the class_id for the student
-            $student->class_id = $class_id;  // Assign the class_id from the section_id
-
-            // Save the student record
-            $student->save();
-
-            // Update the student's data (excluding parent fields)
-            unset($studentData['father_name'], $studentData['father_occupation'], $studentData['father_mobile'], $studentData['father_email']);
-            unset($studentData['mother_name'], $studentData['mother_occupation'], $studentData['mother_mobile'], $studentData['mother_email']);
-            $student->update($studentData);
-        } else {
-            // Collect error if student not found
-            $invalidRows[] = [
-                'row' => $rowIndex + 2,
-                'error' => 'Student not found',
-                'data' => $studentData,
-            ];
-        }
-    }
-
-    // If there are invalid rows, return them in the response
-    if (!empty($invalidRows)) {
+        // Return a 500 response with the error message
         return response()->json([
-            'message' => 'Some rows contained errors.',
-            'invalid_rows' => $invalidRows,
-        ], 422);
+            'message' => 'An error occurred while updating CSV data.',
+            'error' => $e->getMessage(),
+        ], 500);
     }
-
-    // Return a success response
-    return response()->json(['message' => 'Student data updated successfully.'], 200);
 }
+
 
 
 
