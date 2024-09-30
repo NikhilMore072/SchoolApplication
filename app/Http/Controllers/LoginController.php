@@ -705,9 +705,22 @@ public function updateCsvData(Request $request, $section_id)
                 $parent = Parents::create($parentData);
             }
 
+
+           
             // Update the student's parent_id and class_id
             $student->parent_id = $parent->parent_id;
             $student->class_id = $class_id;
+            $student->gender = $studentData['gender'];
+            $student->first_name = $studentData['first_name'];
+            $student->mid_name = $studentData['mid_name'];
+            $student->last_name = $studentData['last_name'];
+            $student->dob = $studentData['dob'];
+            $student->admission_date = $studentData['admission_date'];
+            $student->stu_aadhaar_no = $studentData['stu_aadhaar_no'];
+            $student->mother_tongue = $studentData['mother_tongue'];
+            $student->religion = $studentData['religion'];
+            $student->caste = $studentData['caste'];
+            $student->subcaste = $studentData['subcaste'];
             $student->IsDelete = 'N';
             $student->save();
 
