@@ -708,6 +708,7 @@ public function updateCsvData(Request $request, $section_id)
             // Update the student's parent_id and class_id
             $student->parent_id = $parent->parent_id;
             $student->class_id = $class_id;
+            $student->IsDelete = 'N';
             $student->save();
 
             // Insert data into user_master table (skip if already exists)
