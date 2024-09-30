@@ -879,20 +879,45 @@ public function deleteSection($id)
  }
  
 
+// public function getClass(Request $request)
+// {   
+//     $payload = getTokenPayload($request);    
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+//     $classes = Classes::with('getDepartment')
+//         ->withCount('students')
+//         ->where('academic_yr', $academicYr)
+//         ->orderBy('name','asc')
+//         ->get();
+//     return response()->json($classes);
+// }
+
 public function getClass(Request $request)
 {   
     $payload = getTokenPayload($request);    
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+    
     $academicYr = $payload->get('academic_year');
+
     $classes = Classes::with('getDepartment')
         ->withCount('students')
         ->where('academic_yr', $academicYr)
-        ->orderBy('name','asc')
+        ->orderByRaw("CASE 
+            WHEN name REGEXP '^[0-9]' THEN 1 
+            ELSE 0 
+        END, 
+        name REGEXP '^[0-9]', 
+        CAST(name AS SIGNED) ASC, 
+        name ASC") // Ensure alphabetical first, then numeric
         ->get();
+        
     return response()->json($classes);
 }
+
 
 public function storeClass(Request $request)
 {
