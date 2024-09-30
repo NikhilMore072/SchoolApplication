@@ -889,6 +889,7 @@ public function getClass(Request $request)
     $classes = Classes::with('getDepartment')
         ->withCount('students')
         ->where('academic_yr', $academicYr)
+        ->orderBy('name','asc')
         ->get();
     return response()->json($classes);
 }
@@ -930,43 +931,93 @@ public function storeClass(Request $request)
     ]);
 }
 
+// public function updateClass(Request $request, $id)
+// {
+//     $validator = \Validator::make($request->all(), [
+//         'name' => ['required', 'string', 'max:30'],
+//         'department_id' => ['required', 'integer'],
+//     ], [
+//         'name.required' => 'The name field is required.',
+//         'name.string' => 'The name field must be a string.',
+//         'name.max' => 'The name field must not exceed 255 characters.',
+//         'department_id.required' => 'The department ID is required.',
+//         'department_id.integer' => 'The department ID must be an integer.',
+//     ]);
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status' => 422,
+//             'errors' => $validator->errors(),
+//         ], 422);
+//     }
+//     $class = Classes::find($id);
+//     if (!$class) {
+//         return response()->json(['message' => 'Class not found', 'success' => false], 404);
+//     }
+//     $payload = getTokenPayload($request);
+//     if (!$payload) {
+//         return response()->json(['error' => 'Invalid or missing token'], 401);
+//     }
+//     $academicYr = $payload->get('academic_year');
+//     $class->name = $request->name;
+//     $class->department_id = $request->department_id;
+//     $class->academic_yr = $academicYr;
+//     $class->save();
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Class updated successfully',
+//         'data' => $class,
+//     ]);
+// }
+
+
 public function updateClass(Request $request, $id)
 {
     $validator = \Validator::make($request->all(), [
-        'name' => ['required', 'string', 'max:30'],
+        'name' => [
+            'required', 
+            'string', 
+            'max:30', 
+            \Illuminate\Validation\Rule::unique('classes')->ignore($id)
+        ],
         'department_id' => ['required', 'integer'],
     ], [
         'name.required' => 'The name field is required.',
         'name.string' => 'The name field must be a string.',
-        'name.max' => 'The name field must not exceed 255 characters.',
+        'name.max' => 'The name field must not exceed 30 characters.',
         'department_id.required' => 'The department ID is required.',
         'department_id.integer' => 'The department ID must be an integer.',
     ]);
+    
     if ($validator->fails()) {
         return response()->json([
             'status' => 422,
             'errors' => $validator->errors(),
         ], 422);
     }
+
     $class = Classes::find($id);
     if (!$class) {
         return response()->json(['message' => 'Class not found', 'success' => false], 404);
     }
+
     $payload = getTokenPayload($request);
     if (!$payload) {
         return response()->json(['error' => 'Invalid or missing token'], 401);
     }
+
     $academicYr = $payload->get('academic_year');
     $class->name = $request->name;
     $class->department_id = $request->department_id;
     $class->academic_yr = $academicYr;
     $class->save();
+
     return response()->json([
         'status' => 200,
         'message' => 'Class updated successfully',
         'data' => $class,
     ]);
 }
+
 
 public function showClass($id)
 {
