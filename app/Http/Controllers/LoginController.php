@@ -573,6 +573,193 @@ public function getSessionData(Request $request)
 
 
 
+// public function updateCsvData(Request $request, $section_id)
+// {
+//     // Validate the uploaded CSV file
+//     $request->validate([
+//         'file' => 'required|file|mimes:csv,txt|max:2048',
+//     ]);
+
+//     // Read the uploaded CSV file
+//     $file = $request->file('file');
+//     if (!$file->isValid()) {
+//         return response()->json(['message' => 'Invalid file upload'], 400);
+//     }
+
+//     // Get the contents of the CSV file
+//     $csvData = file_get_contents($file->getRealPath());
+//     $rows = array_map('str_getcsv', explode("\n", $csvData));
+//     $header = array_shift($rows); // Extract the header row
+
+//     // Define the CSV to database column mapping
+//     $columnMap = [
+//         'student_id' => 'student_id',
+//         '*First Name' => 'first_name',
+//         'Mid name' => 'mid_name',
+//         'last name' => 'last_name',
+//         '*Gender' => 'gender',
+//         '*DOB(in dd/mm/yyyy format)' => 'dob',
+//         'Student Aadhaar No.' => 'stu_aadhaar_no',
+//         'Mother Tongue' => 'mother_tongue',
+//         'Religion' => 'religion',
+//         '*Blood Group' => 'blood_group',
+//         'caste' => 'caste',
+//         'Sub Caste' => 'subcaste',
+//         '*Mother Name' => 'mother_name',
+//         'Mother Occupation' => 'mother_occupation',
+//         '*Mother Mobile No.(Only Indian Numbers)' => 'mother_mobile',
+//         '*Mother Email-Id' => 'mother_email',
+//         '*Father Name' => 'father_name',
+//         'Father Occupation' => 'father_occupation',
+//         '*Father Mobile No.(Only Indian Numbers)' => 'father_mobile',
+//         '*Father Email-Id' => 'father_email',
+//         'Mother Aadhaar No.' => 'mother_aadhaar_no',
+//         'Father Aadhaar No.' => 'father_aadhaar_no',
+//         '*Address' => 'permant_add',
+//         '*City' => 'city',
+//         '*State' => 'state',
+//         '*DOA(in dd/mm/yyyy format)' => 'admission_date',
+//         '*GRN No' => 'reg_no',
+//     ];
+
+//     // Prepare an array to store invalid rows for reporting
+//     $invalidRows = [];
+
+//     // Fetch the class_id using the provided section_id
+//     $division = Division::find($section_id);
+//     if (!$division) {
+//         return response()->json(['message' => 'Invalid section ID'], 400);
+//     }
+//     $class_id = $division->class_id;
+
+//     // Start processing the CSV rows
+//     foreach ($rows as $rowIndex => $row) {
+//         // Skip empty rows
+//         if (empty(array_filter($row))) {
+//             continue;
+//         }
+
+//         // Map CSV columns to database fields
+//         $studentData = [];
+//         foreach ($header as $index => $columnName) {
+//             if (isset($columnMap[$columnName])) {
+//                 $dbField = $columnMap[$columnName];
+//                 $studentData[$dbField] = $row[$index] ?? null;
+//             }
+//         }
+
+//         // Validate required fields
+//         if (empty($studentData['student_id'])) {
+//             $invalidRows[] = array_merge($row, ['error' => 'Missing student ID']);
+//             continue;
+//         }
+
+//         if (!in_array($studentData['gender'], ['M', 'F', 'O'])) {
+//             $invalidRows[] = array_merge($row, ['error' => 'Invalid gender value. Expected M, F, or O.']);
+//             continue;
+//         }
+
+//         // Validate and convert DOB and admission_date formats
+//         if (!$this->validateDate($studentData['dob'], 'd/m/Y')) {
+//             $invalidRows[] = array_merge($row, ['error' => 'Invalid DOB format. Expected dd/mm/yyyy.']);
+//             continue;
+//         } else {
+//             $studentData['dob'] = \Carbon\Carbon::createFromFormat('d/m/Y', $studentData['dob'])->format('Y-m-d');
+//         }
+
+//         if (!$this->validateDate($studentData['admission_date'], 'd/m/Y')) {
+//             $invalidRows[] = array_merge($row, ['error' => 'Invalid admission date format. Expected dd-mm-yyyy.']);
+//             continue;
+//         } else {
+//             $studentData['admission_date'] = \Carbon\Carbon::createFromFormat('d/m/Y', $studentData['admission_date'])->format('Y-m-d');
+//         }
+
+//         // Start a database transaction
+//         DB::beginTransaction();
+//         try {
+//             // Find the student by `student_id`
+//             $student = Student::where('student_id', $studentData['student_id'])->first();
+//             if (!$student) {
+//                 $invalidRows[] = array_merge($row, ['error' => 'Student not found']);
+//                 DB::rollBack();
+//                 continue;
+//             }
+
+//             // Handle parent creation or update
+//             $parentData = [
+//                 'father_name' => $studentData['father_name'] ?? null,
+//                 'father_occupation' => $studentData['father_occupation'] ?? null,
+//                 'f_mobile' => $studentData['father_mobile'] ?? null,
+//                 'f_email' => $studentData['father_email'] ?? null,
+//                 'mother_name' => $studentData['mother_name'] ?? null,
+//                 'mother_occupation' => $studentData['mother_occupation'] ?? null,
+//                 'm_mobile' => $studentData['mother_mobile'] ?? null,
+//                 'm_emailid' => $studentData['mother_email'] ?? null,
+//                 'parent_adhar_no' => $studentData['Father Aadhaar No.'] ?? null,
+//                 'm_adhar_no' => $studentData['Mother Aadhaar No.'] ?? null,
+//             ];
+
+//             // Check if parent exists, if not, create one
+//             $parent = Parents::where('f_mobile', $parentData['f_mobile'])->first();
+//             if (!$parent) {
+//                 $parent = Parents::create($parentData);
+//             }
+
+//             // Update the student's parent_id and class_id
+//             $student->parent_id = $parent->parent_id;
+//             $student->class_id = $class_id;
+//             $student->save();
+
+//             // Insert data into user_master table (skip if already exists)
+//             DB::table('user_master')->updateOrInsert(
+//                 ['user_id' => $studentData['father_email']],
+//                 [
+//                     'name' => $studentData['father_name'],
+//                     'password' => 'arnolds',
+//                     'reg_id' => $parent->parent_id,
+//                     'role_id' => 'P',
+//                     'IsDelete' => 'N',
+//                 ]
+//             );
+
+//             // Commit the transaction
+//             DB::commit();
+//         } catch (\Exception $e) {
+//             // Rollback the transaction in case of an error
+//             DB::rollBack();
+//             $invalidRows[] = array_merge($row, ['error' => 'Error updating student: ' . $e->getMessage()]);
+//             continue;
+//         }
+//     }
+
+//     // If there are invalid rows, generate a CSV for rejected rows
+//     if (!empty($invalidRows)) {
+//         $csv = Writer::createFromString('');
+//         $csv->insertOne(array_merge($header, ['error']));
+//         foreach ($invalidRows as $invalidRow) {
+//             $csv->insertOne($invalidRow);
+//         }
+//         $filePath = 'public/csv_rejected/rejected_rows_' . now()->format('Y_m_d_H_i_s') . '.csv';
+//         Storage::put($filePath, $csv->toString());
+
+//         return response()->json([
+//             'message' => 'Some rows contained errors.',
+//             'invalid_rows' => Storage::url($filePath),
+//         ], 422);
+//     }
+
+//     // Return a success response
+//     return response()->json(['message' => 'CSV data updated successfully.']);
+// }
+
+// // Helper method to validate date format
+// private function validateDate($date, $format = 'Y-m-d')
+// {
+//     $d = \DateTime::createFromFormat($format, $date);
+//     return $d && $d->format($format) === $date;
+// }
+
+
 public function updateCsvData(Request $request, $section_id)
 {
     // Validate the uploaded CSV file
@@ -660,18 +847,18 @@ public function updateCsvData(Request $request, $section_id)
         }
 
         // Validate and convert DOB and admission_date formats
-        if (!$this->validateDate($studentData['dob'], 'd/m/Y')) {
-            $invalidRows[] = array_merge($row, ['error' => 'Invalid DOB format. Expected dd/mm/yyyy.']);
+        if (!$this->validateAndConvertDate($studentData['dob'])) {
+            $invalidRows[] = array_merge($row, ['error' => 'Invalid DOB format. Expected dd/mm/yyyy or dd-mm-yyyy.']);
             continue;
         } else {
-            $studentData['dob'] = \Carbon\Carbon::createFromFormat('d/m/Y', $studentData['dob'])->format('Y-m-d');
+            $studentData['dob'] = $this->validateAndConvertDate($studentData['dob']);
         }
 
-        if (!$this->validateDate($studentData['admission_date'], 'd/m/Y')) {
-            $invalidRows[] = array_merge($row, ['error' => 'Invalid admission date format. Expected dd-mm-yyyy.']);
+        if (!$this->validateAndConvertDate($studentData['admission_date'])) {
+            $invalidRows[] = array_merge($row, ['error' => 'Invalid admission date format. Expected dd/mm/yyyy or dd-mm-yyyy.']);
             continue;
         } else {
-            $studentData['admission_date'] = \Carbon\Carbon::createFromFormat('d/m/Y', $studentData['admission_date'])->format('Y-m-d');
+            $studentData['admission_date'] = $this->validateAndConvertDate($studentData['admission_date']);
         }
 
         // Start a database transaction
@@ -749,14 +936,28 @@ public function updateCsvData(Request $request, $section_id)
     }
 
     // Return a success response
-    return response()->json(['message' => 'CSV data updated successfully.']);
+    return response()->json([
+        'success' =>200,
+        'message' => 'CSV data updated successfully.'
+    ]);
 }
 
-// Helper method to validate date format
-private function validateDate($date, $format = 'Y-m-d')
+/**
+ * Validate and convert date from multiple formats.
+ *
+ * @param string $date
+ * @return string|false
+ */
+protected function validateAndConvertDate($date)
 {
-    $d = \DateTime::createFromFormat($format, $date);
-    return $d && $d->format($format) === $date;
+    $formats = ['d/m/Y', 'd-m-Y'];
+    foreach ($formats as $format) {
+        $parsedDate = \Carbon\Carbon::createFromFormat($format, $date);
+        if ($parsedDate && $parsedDate->format($format) === $date) {
+            return $parsedDate->format('Y-m-d');
+        }
+    }
+    return false;
 }
 
 
