@@ -997,12 +997,21 @@ public function storeClass(Request $request)
 
 public function updateClass(Request $request, $id)
 {
+
+    $payload = getTokenPayload($request);
+    $academicYr = $payload->get('academic_year');
+    
     $validator = \Validator::make($request->all(), [
         'name' => [
             'required', 
             'string', 
             'max:30', 
-            \Illuminate\Validation\Rule::unique('classes')->ignore($id)
+            Rule::unique('class')
+                ->ignore($id, 'class_id')
+                ->where(function ($query) use ($academicYr) {
+                    $query->where('academic_yr', $academicYr);
+                })
+        
         ],
         'department_id' => ['required', 'integer'],
     ], [
@@ -1019,18 +1028,22 @@ public function updateClass(Request $request, $id)
             'errors' => $validator->errors(),
         ], 422);
     }
+    
+    
+    
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'errors' => $validator->errors(),
+        ], 422);
+    }
 
     $class = Classes::find($id);
     if (!$class) {
         return response()->json(['message' => 'Class not found', 'success' => false], 404);
     }
 
-    $payload = getTokenPayload($request);
-    if (!$payload) {
-        return response()->json(['error' => 'Invalid or missing token'], 401);
-    }
-
-    $academicYr = $payload->get('academic_year');
+   
     $class->name = $request->name;
     $class->department_id = $request->department_id;
     $class->academic_yr = $academicYr;
