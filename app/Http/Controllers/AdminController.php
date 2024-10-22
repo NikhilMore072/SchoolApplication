@@ -1077,18 +1077,43 @@ public function getDepartments()
     return response()->json($departments);
 }
 
+// public function destroyClass($id)
+// {
+//     $class = Classes::find($id);
+//     if (!$class) {
+//         return response()->json(['message' => 'Class not found', 'success' => false], 404);
+//     }
+//     $class->delete();
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Class deleted successfully',
+//     ]);
+// }
+
 public function destroyClass($id)
 {
     $class = Classes::find($id);
+
     if (!$class) {
         return response()->json(['message' => 'Class not found', 'success' => false], 404);
     }
+
+    $divisionExists = Division::where('class_id', $id)->exists();
+
+    if ($divisionExists) {
+        return response()->json([
+            'status' => 400,
+            'message' => 'This class is in use',
+        ], 400); 
+    }
+
     $class->delete();
     return response()->json([
         'status' => 200,
         'message' => 'Class deleted successfully',
     ]);
 }
+
 
 // Methods for the Divisons
 public function checkDivisionName(Request $request)
@@ -1211,22 +1236,47 @@ public function showDivision($id)
     return response()->json($division);
 }
 
+// public function destroyDivision($id)
+// {
+//     $division = Division::find($id);
+
+//     if (is_null($division)) {
+//         return response()->json(['message' => 'Division not found'], 404);
+//     }
+
+//     $division->delete();
+//     return response()->json([
+//         'status' => 200,
+//         'message' => 'Division deleted successfully',
+//         'success' => true
+//                           ]
+//    );
+// }
+
 public function destroyDivision($id)
 {
     $division = Division::find($id);
-
     if (is_null($division)) {
         return response()->json(['message' => 'Division not found'], 404);
     }
 
+    $studentExists = Student::where('section_id', $division->section_id)->exists();
+    $subjectAllotmentExists = SubjectAllotment::where('section_id', $division->section_id)->exists();
+    if ($studentExists || $subjectAllotmentExists) {
+        return response()->json([
+            'status' => 400,
+            'message' => 'Error: This division is already in use',
+        ], 400); 
+    }
     $division->delete();
+
     return response()->json([
         'status' => 200,
         'message' => 'Division deleted successfully',
         'success' => true
-                          ]
-                            );
+    ]);
 }
+
 
 
 public function getStaffList(Request $request) {
